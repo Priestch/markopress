@@ -1,0 +1,6 @@
+[submodule "docusaurus"]
+	path = docusaurus
+	url = https://github.com/facebook/docusaurus.git
+[submodule "vitepress"]
+	path = vitepress
+	url = https://github.com/vuejs/vitepress.git
