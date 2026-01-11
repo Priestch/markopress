@@ -1,0 +1,59 @@
+{
+  "name": "markopress",
+  "version": "0.1.0",
+  "description": "A general-purpose static site generator using Marko.js v6",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "markopress": "./bin/cli.js"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./config": "./dist/config/index.js",
+    "./markdown": "./dist/markdown/index.js",
+    "./content": "./dist/content/index.js",
+    "./plugin": "./dist/plugin/index.js",
+    "./theme": "./dist/theme/index.js",
+    "./vite": "./dist/vite/index.js"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.build.json",
+    "dev": "tsc --project tsconfig.build.json --watch",
+    "typecheck": "tsc --project tsconfig.build.json --noEmit"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "fast-glob": "^3.3.0",
+    "gray-matter": "^4.0.3",
+    "markdown-it": "^14.0.0",
+    "markdown-it-anchor": "^8.6.7",
+    "markdown-it-attrs": "^4.1.6",
+    "markdown-it-container": "^4.0.0",
+    "markdown-it-emoji": "^3.0.0",
+    "shiki": "^1.0.0"
+  },
+  "peerDependencies": {
+    "@marko/run": "^0.9.0",
+    "marko": "^6.0.0",
+    "vite": "^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@marko/run": "^0.9.4",
+    "@types/markdown-it": "^14.0.0",
+    "typescript": "^5.3.0",
+    "vite": "^7.3.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ]
+}

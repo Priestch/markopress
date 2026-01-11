@@ -1,0 +1,341 @@
+<div class="container">
+  <h1>${$global.title}</h1>
+  <div class="content">
+    <h1 id="get-in-touch" tabindex="-1"><a class="header-anchor" href="#get-in-touch">#</a> Get in Touch</h1>
+<p>Have questions, feedback, or need support? We’d love to hear from you. Reach out through any of the channels below.</p>
+<h2 id="quick-contact" tabindex="-1"><a class="header-anchor" href="#quick-contact">#</a> Quick Contact</h2>
+<h3 id="email" tabindex="-1"><a class="header-anchor" href="#email">#</a> Email</h3>
+<p><strong>General Inquiries</strong>
+<a href="mailto:hello@markopress.dev">hello@markopress.dev</a></p>
+<p><strong>Support</strong>
+<a href="mailto:support@markopress.dev">support@markopress.dev</a></p>
+<p><strong>Sales &amp; Enterprise</strong>
+<a href="mailto:sales@markopress.dev">sales@markopress.dev</a></p>
+<p><strong>Press &amp; Media</strong>
+<a href="mailto:press@markopress.dev">press@markopress.dev</a></p>
+<h3 id="community" tabindex="-1"><a class="header-anchor" href="#community">#</a> Community</h3>
+<p>Join our vibrant community of developers:</p>
+<p><strong>Discord</strong>
+<a href="https://discord.gg/markopress">discord.gg/markopress</a></p>
+<ul>
+<li>5,000+ members</li>
+<li>Real-time chat</li>
+<li>Help from community experts</li>
+<li>Feature discussions</li>
+</ul>
+<p><strong>GitHub</strong>
+<a href="https://github.com/markopress">github.com/markopress</a></p>
+<ul>
+<li>Report issues</li>
+<li>Request features</li>
+<li>Contribute code</li>
+<li>Track development</li>
+</ul>
+<p><strong>Twitter</strong>
+<a href="https://twitter.com/markopress">@markopress</a></p>
+<ul>
+<li>Latest updates</li>
+<li>Tips &amp; tricks</li>
+<li>Community spotlights</li>
+<li>Event announcements</li>
+</ul>
+<h2 id="contact-form" tabindex="-1"><a class="header-anchor" href="#contact-form">#</a> Contact Form</h2>
+<p>Prefer to send a message? Fill out the form below and we’ll get back to you within 24 hours.</p>
+<form class="contact-form" method="POST" action="/api/contact">
+<div class="form-group">
+<label for="name">Name *</label>
+<input type="text" id="name" name="name" required placeholder="Your name">
+</div>
+<div class="form-group">
+<label for="email">Email *</label>
+<input type="email" id="email" name="email" required placeholder="your@email.com">
+</div>
+<div class="form-group">
+<label for="subject">Subject *</label>
+<select id="subject" name="subject" required>
+  <option value="">Select a subject</option>
+  <option value="general">General Inquiry</option>
+  <option value="support">Technical Support</option>
+  <option value="sales">Sales & Pricing</option>
+  <option value="feedback">Feedback</option>
+  <option value="partnership">Partnership</option>
+  <option value="press">Press & Media</option>
+  <option value="other">Other</option>
+</select>
+</div>
+<div class="form-group">
+<label for="message">Message *</label>
+<textarea id="message" name="message" rows="6" required placeholder="How can we help you?"></textarea>
+</div>
+<div class="form-group">
+<label for="company">Company (optional)</label>
+<input type="text" id="company" name="company" placeholder="Your company name">
+</div>
+<p><button type="submit" class="submit-btn">Send Message</button></p>
+<p class="form-disclaimer">
+  By submitting this form, you agree to our <a href="/privacy">Privacy Policy</a>.
+  We'll only use your information to respond to your inquiry.
+</p>
+</form>
+<style>`
+  .contact-form {
+    max-width: 600px;
+    margin: 2rem 0;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+  }
+
+  .submit-btn {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .submit-btn:hover {
+    background: var(--accent-hover);
+  }
+
+  .form-disclaimer {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 1rem;
+  }
+
+  .form-disclaimer a {
+    color: var(--accent-color);
+  }
+`</style>
+<h2 id="office-locations" tabindex="-1"><a class="header-anchor" href="#office-locations">#</a> Office Locations</h2>
+<h3 id="headquarters" tabindex="-1"><a class="header-anchor" href="#headquarters">#</a> Headquarters</h3>
+<p><strong>MarkoPress Inc.</strong>
+123 Tech Street, Suite 400
+San Francisco, CA 94105
+United States</p>
+<p>📧 <a href="mailto:hq@markopress.dev">hq@markopress.dev</a>
+📱 +1 (555) 123-4567</p>
+<h3 id="european-office" tabindex="-1"><a class="header-anchor" href="#european-office">#</a> European Office</h3>
+<p><strong>MarkoPress Europe Ltd.</strong>
+45 Innovation Road
+London, EC1A 1BB
+United Kingdom</p>
+<p>📧 <a href="mailto:eu@markopress.dev">eu@markopress.dev</a>
+📱 +44 20 7123 4567</p>
+<h3 id="asia-pacific" tabindex="-1"><a class="header-anchor" href="#asia-pacific">#</a> Asia Pacific</h3>
+<p><strong>MarkoPress Asia Pacific</strong>
+Level 10, 88 Harbour Street
+Sydney, NSW 2000
+Australia</p>
+<p>📧 <a href="mailto:apac@markopress.dev">apac@markopress.dev</a>
+📱 +61 2 9876 5432</p>
+<h2 id="business-hours" tabindex="-1"><a class="header-anchor" href="#business-hours">#</a> Business Hours</h2>
+<p>Our support team is available:</p>
+<p><strong>Support Hours</strong></p>
+<ul>
+<li>Monday - Friday: 9:00 AM - 6:00 PM (PST)</li>
+<li>Saturday: 10:00 AM - 4:00 PM (PST)</li>
+<li>Sunday: Closed</li>
+</ul>
+<p><strong>Enterprise Support</strong>
+Pro and Enterprise customers get 24/7 support access.</p>
+<p><strong>Response Times</strong></p>
+<ul>
+<li>General inquiries: Within 24 hours</li>
+<li>Technical support: Within 12 hours</li>
+<li>Enterprise: Within 1 hour (24/7)</li>
+<li>Critical issues: Immediate (Enterprise only)</li>
+</ul>
+<h2 id="social-media" tabindex="-1"><a class="header-anchor" href="#social-media">#</a> Social Media</h2>
+<p>Stay connected with MarkoPress on social media:</p>
+<p><strong>Twitter</strong>
+<a href="https://twitter.com/markopress">@markopress</a></p>
+<ul>
+<li>Latest news and updates</li>
+<li>Product announcements</li>
+<li>Community highlights</li>
+<li>Development insights</li>
+</ul>
+<p><strong>GitHub</strong>
+<a href="https://github.com/markopress/markopress">github.com/markopress/markopress</a></p>
+<ul>
+<li>Open source development</li>
+<li>Issue tracking</li>
+<li>Feature requests</li>
+<li>Contributions</li>
+</ul>
+<p><strong>YouTube</strong>
+<a href="https://youtube.com/@markopress">MarkoPress Channel</a></p>
+<ul>
+<li>Video tutorials</li>
+<li>Feature demos</li>
+<li>Conference talks</li>
+<li>Developer interviews</li>
+</ul>
+<p><strong>LinkedIn</strong>
+<a href="https://linkedin.com/company/markopress">MarkoPress Company</a></p>
+<ul>
+<li>Company news</li>
+<li>Job postings</li>
+<li>Industry insights</li>
+<li>Networking</li>
+</ul>
+<p><strong>Discord</strong>
+<a href="https://discord.gg/markopress">discord.gg/markopress</a></p>
+<ul>
+<li>Community chat</li>
+<li>Real-time support</li>
+<li>Feature discussions</li>
+<li>Social events</li>
+</ul>
+<h2 id="press-%26-media" tabindex="-1"><a class="header-anchor" href="#press-%26-media">#</a> Press &amp; Media</h2>
+<p>For press inquiries, interviews, or media resources:</p>
+<p>📧 <a href="mailto:press@markopress.dev">press@markopress.dev</a></p>
+<p><strong>Press Kit:</strong>
+<a href="https://markopress.dev/press">markopress.dev/press</a></p>
+<p>Includes:</p>
+<ul>
+<li>Company logos</li>
+<li>Product screenshots</li>
+<li>Brand guidelines</li>
+<li>Executive bios</li>
+<li>Press releases</li>
+</ul>
+<h2 id="partnerships" tabindex="-1"><a class="header-anchor" href="#partnerships">#</a> Partnerships</h2>
+<p>Interested in partnering with MarkoPress?</p>
+<p>We partner with:</p>
+<ul>
+<li>Hosting providers</li>
+<li>Design agencies</li>
+<li>Consultancies</li>
+<li>Technology companies</li>
+<li>Educational institutions</li>
+</ul>
+<p>📧 <a href="mailto:partnerships@markopress.dev">partnerships@markopress.dev</a></p>
+<h2 id="need-support-faster%3F" tabindex="-1"><a class="header-anchor" href="#need-support-faster%3F">#</a> Need Support Faster?</h2>
+<p>For urgent technical issues, check these resources first:</p>
+<p><strong>Documentation</strong>
+📖 <a href="https://markopress.dev/docs">markopress.dev/docs</a></p>
+<ul>
+<li>Getting started guides</li>
+<li>Configuration reference</li>
+<li>Theming guide</li>
+<li>Plugin development</li>
+<li>API documentation</li>
+</ul>
+<p><strong>Community</strong>
+💬 <a href="https://discord.gg/markopress">Discord</a></p>
+<ul>
+<li>Get help from other users</li>
+<li>Share your work</li>
+<li>Feature discussions</li>
+<li>Real-time chat</li>
+</ul>
+<p><strong>Issues</strong>
+🐛 <a href="https://github.com/markopress/markopress/issues">GitHub Issues</a></p>
+<ul>
+<li>Bug reports</li>
+<li>Feature requests</li>
+<li>Technical issues</li>
+<li>Documentation problems</li>
+</ul>
+<p><strong>Status Page</strong>
+📊 <a href="https://status.markopress.dev">status.markopress.dev</a></p>
+<ul>
+<li>System uptime</li>
+<li>Incident reports</li>
+<li>Scheduled maintenance</li>
+<li>Service history</li>
+</ul>
+<h2 id="stay-updated" tabindex="-1"><a class="header-anchor" href="#stay-updated">#</a> Stay Updated</h2>
+<p>Subscribe to our newsletter for the latest news, tips, and updates:</p>
+<form class="newsletter-form" method="POST" action="/api/newsletter">
+<div class="newsletter-group">
+  <input type="email" name="email" required placeholder="Enter your email" />
+  <button type="submit">Subscribe</button>
+</div>
+<p class="newsletter-note">
+  Weekly updates. No spam. Unsubscribe anytime.
+</p>
+</form>
+<style>`
+  .newsletter-form {
+    max-width: 500px;
+    margin: 2rem 0;
+  }
+
+  .newsletter-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .newsletter-group input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+
+  .newsletter-group button {
+    padding: 0.75rem 1.5rem;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .newsletter-note {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+  }
+
+  @media (max-width: 600px) {
+    .newsletter-group {
+      flex-direction: column;
+    }
+  }
+`</style>
+<hr>
+<p><em>We typically respond to all inquiries within 24 hours. For faster assistance, join our <a href="https://discord.gg/markopress">Discord community</a>.</em></p>
+
+  </div>
+</div>

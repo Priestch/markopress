@@ -1,0 +1,45 @@
+<div class="container">
+  <h1>${$global.title}</h1>
+  <div class="content">
+    <h1 id="getting-started-with-markopress" tabindex="-1"><a class="header-anchor" href="#getting-started-with-markopress">#</a> Getting Started with MarkoPress</h1>
+<p>Welcome! This guide will help you get started with MarkoPress.</p>
+<h2 id="installation" tabindex="-1"><a class="header-anchor" href="#installation">#</a> Installation</h2>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> install</span><span style="color:#032F62"> markopress</span></span>
+<span class="line"></span></code></pre>
+<h2 id="quick-start" tabindex="-1"><a class="header-anchor" href="#quick-start">#</a> Quick Start</h2>
+<ol>
+<li>Create a <code>markopress.config.ts</code> file:</li>
+</ol>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">import</span><span style="color:#24292E"> { defineConfig } </span><span style="color:#D73A49">from</span><span style="color:#032F62"> 'markopress'</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  site: {</span></span>
+<span class="line"><span style="color:#24292E">    title: </span><span style="color:#032F62">'My Site'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    description: </span><span style="color:#032F62">'Welcome to my site'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">  content: {</span></span>
+<span class="line"><span style="color:#24292E">    pages: </span><span style="color:#032F62">'content/pages'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    docs: </span><span style="color:#032F62">'content/docs'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    blog: </span><span style="color:#032F62">'content/blog'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+<ol start="2">
+<li>
+<p>Create your content in the <code>content/</code> directory</p>
+</li>
+<li>
+<p>Start the development server:</p>
+</li>
+</ol>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> run</span><span style="color:#032F62"> dev</span></span>
+<span class="line"></span></code></pre>
+<h2 id="next-steps" tabindex="-1"><a class="header-anchor" href="#next-steps">#</a> Next Steps</h2>
+<ul>
+<li>Learn about <a href="/docs/configuration">configuration</a></li>
+<li>Explore <a href="/docs/theming">themes</a></li>
+<li>Build <a href="/docs/plugins">plugins</a></li>
+</ul>
+
+  </div>
+</div>

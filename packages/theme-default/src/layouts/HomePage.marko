@@ -1,0 +1,19 @@
+/*!
+ * Home Page Layout
+ * Grid layout for displaying all pages
+ */
+
+<div class="pages-grid" id="grid">
+  <for|page| of=input.pages>
+    <a class="page-card" href="#" onclick=input.onPageClick(page)>
+      <span class="page-type ${page.typeClass}">
+        ${page.typeLabel}
+      </span>
+      <div class="page-title">${page.title}</div>
+      <if(page.description)>
+        <div class="page-description">${page.description}</div>
+      </if>
+      <div class="page-url">${page.url}</div>
+    </a>
+  </for>
+</div>

@@ -1,0 +1,50 @@
+/**
+ * Blog listing layout
+ */
+
+class {
+  onCreate() {
+    this.state = {
+      title: input.frontmatter?.title || 'Blog',
+      posts: input.posts || [],
+    };
+  }
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${state.title}</title>
+</head>
+<body>
+  <div class="blog-layout">
+    <@header/>
+    <main class="blog-content">
+      <h1>${state.title}</h1>
+      <div class="posts-list">
+        <for|post| in=(state.posts)>
+          <article class="post-summary">
+            <h2>
+              <a href="${post.urlPath}">${post.frontmatter.title}</a>
+            </h2>
+            <p class="post-meta">
+              <if(post.frontmatter.date)>
+                <span>${post.frontmatter.date}</span>
+              </if>
+              <if(post.frontmatter.author)>
+                <span> by ${post.frontmatter.author}</span>
+              </if>
+            </p>
+            <if(post.processed.excerpt)>
+              <p class="post-excerpt">${post.processed.excerpt}</p>
+            </if>
+          </article>
+        </for>
+      </div>
+    </main>
+    <@footer/>
+  </div>
+</body>
+</html>

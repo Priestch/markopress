@@ -1,0 +1,19 @@
+/*!
+ * Sidebar Component
+ * Navigation sidebar for documentation
+ */
+
+<aside class="sidebar" id="sidebar">
+  <h3>${input.title || 'Documentation'}</h3>
+  <ul class="sidebar-nav" id="sidebar-nav">
+    <for|item| of=input.items>
+      <li>
+        <a href="#"
+           class="${item.active ? 'active' : ''}"
+           onclick=item.onClick>
+          ${item.label}
+        </a>
+      </li>
+    </for>
+  </ul>
+</aside>

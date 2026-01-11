@@ -1,0 +1,77 @@
+/**
+ * Table of contents component
+ */
+
+class {
+  onCreate() {
+    this.state = {
+      headers: input.headers || [],
+    };
+  }
+}
+
+<nav class="toc">
+  <h3 class="toc-title">On this page</h3>
+  <ul class="toc-list">
+    <for|header| in=(state.headers)>
+      <li class="toc-item toc-level-${header.level}">
+        <a href="#${header.slug}" class="toc-link">${header.title}</a>
+        <if(header.children.length)>
+          <ul class="toc-list nested">
+            <for|child| in=(header.children)>
+              <li class="toc-item toc-level-${child.level}">
+                <a href="#${child.slug}" class="toc-link">${child.title}</a>
+              </li>
+            </for>
+          </ul>
+        </if>
+      </li>
+    </for>
+  </ul>
+</nav>
+
+<style>
+  .toc {
+    width: 200px;
+    padding-left: 2rem;
+    position: sticky;
+    top: 2rem;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+  }
+
+  .toc-title {
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .toc-list.nested {
+    padding-left: 1rem;
+  }
+
+  .toc-item {
+    margin-bottom: 0.25rem;
+  }
+
+  .toc-link {
+    text-decoration: none;
+    color: inherit;
+    font-size: 0.875rem;
+    display: block;
+    padding: 0.125rem 0;
+  }
+
+  .toc-level-3 {
+    padding-left: 0.75rem;
+  }
+
+  .toc-link:hover {
+    color: var(--accent-color);
+  }
+</style>

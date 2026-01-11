@@ -1,0 +1,8 @@
+export default {
+  async get(context) {
+    return {
+      title: "Welcome to Test Site",
+      description: "Testing MarkoPress with custom content directory"
+    };
+  }
+};

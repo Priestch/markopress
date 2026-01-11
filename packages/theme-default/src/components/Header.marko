@@ -1,0 +1,20 @@
+/*!
+ * Header Component
+ * Displays site title, description, and statistics
+ */
+
+<div class="header">
+  <h1>🚀 ${input.title || 'MarkoPress'}</h1>
+  <p>${input.description || 'A general-purpose static site generator using Marko.js v6'}</p>
+
+  <if(input.stats)>
+    <div class="stats stats-container">
+      <for|stat| of=input.stats>
+        <div class="stat">
+          <div class="stat-value">${stat.value}</div>
+          <div class="stat-label">${stat.label}</div>
+        </div>
+      </for>
+    </div>
+  </if>
+</div>

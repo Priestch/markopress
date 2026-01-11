@@ -1,0 +1,18 @@
+{
+  "<markopress-header>": {
+    "renderer": "./components/header.marko",
+    "display-name": "Header"
+  },
+  "<markopress-footer>": {
+    "renderer": "./components/footer.marko",
+    "display-name": "Footer"
+  },
+  "<markopress-sidebar>": {
+    "renderer": "./components/sidebar.marko",
+    "display-name": "Sidebar"
+  },
+  "<markopress-toc>": {
+    "renderer": "./components/toc.marko",
+    "display-name": "TableOfContents"
+  }
+}

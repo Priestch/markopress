@@ -1,33 +1,23 @@
 <div class="container">
-  <header>
-    <img src="./logo.svg" alt="Marko" class="logo">
-  </header>
-  <main>
-    <p>
-      Edit
-      <code>./src/routes/+page.marko</code>
-       and save to reload.
-    </p>
-    <a href="https://markojs.com/docs/introduction/getting-started">
-      Learn Marko
-    </a>
-  </main>
-</div>
-<mouse-mask/>
+  <h1>${$global.title}</h1>
+  <div class="content">
+    <h1 id="welcome-to-markopress" tabindex="-1"><a class="header-anchor" href="#welcome-to-markopress">#</a> Welcome to MarkoPress</h1>
+<p>MarkoPress is a modern static site generator that combines the simplicity of Markdown-based content with the power of Marko.js components.</p>
+<h2 id="features" tabindex="-1"><a class="header-anchor" href="#features">#</a> Features</h2>
+<ul>
+<li><strong>Markdown + Frontmatter</strong> - Write content in Markdown with YAML frontmatter</li>
+<li><strong>File-based Routing</strong> - Auto-generate routes from your content structure</li>
+<li><strong>Plugin System</strong> - Extend functionality with a powerful plugin architecture</li>
+<li><strong>Theme System</strong> - Customize your site with slot-based theme overrides</li>
+<li><strong>VitePress Compatible</strong> - Use existing VitePress content with minimal changes</li>
+<li><strong>Docusaurus Compatible</strong> - Migrate from Docusaurus with ease</li>
+</ul>
+<h2 id="getting-started" tabindex="-1"><a class="header-anchor" href="#getting-started">#</a> Getting Started</h2>
+<p>Create your first markdown file in <code>content/pages/</code> and start writing!</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#24292E">console.</span><span style="color:#6F42C1">log</span><span style="color:#24292E">(</span><span style="color:#032F62">'Hello, MarkoPress!'</span><span style="color:#24292E">);</span></span>
+<span class="line"></span></code></pre>
+<h2 id="documentation" tabindex="-1"><a class="header-anchor" href="#documentation">#</a> Documentation</h2>
+<p>Check out the <a href="/docs/getting-started">docs</a> for more information.</p>
 
-<style>
-  .container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    font-size: clamp(1em, 2vw, 2em);
-    padding: 1em;
-    box-sizing: border-box;
-    height: 100%;
-    width: 100%;
-  }
-  img.logo {
-    width: 12em;
-  }
-</style>
+  </div>
+</div>

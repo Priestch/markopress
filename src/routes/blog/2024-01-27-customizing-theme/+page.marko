@@ -1,0 +1,659 @@
+<article class="blog-post">
+  <header>
+    <h1>${$global.title}</h1>
+    <div class="meta">
+      <if=$global.date>
+        <span class="date">${$global.date}</span>
+      </if>
+      <if=$global.author>
+        <span class="author"> by ${$global.author}</span>
+      </if>
+    </div>
+  </header>
+  <div class="content">
+    <h1 id="customizing-your-markopress-theme" tabindex="-1"><a class="header-anchor" href="#customizing-your-markopress-theme">#</a> Customizing Your MarkoPress Theme</h1>
+<p>Make your MarkoPress site uniquely yours with custom themes. In this comprehensive guide, you’ll learn how to customize colors, override components, and create stunning layouts without forking the entire theme.</p>
+<h2 id="what-you%E2%80%99ll-learn" tabindex="-1"><a class="header-anchor" href="#what-you%E2%80%99ll-learn">#</a> What You’ll Learn</h2>
+<ul>
+<li>✅ CSS variable customization</li>
+<li>✅ Component overrides</li>
+<li>✅ Custom layouts</li>
+<li>✅ Building a theme from scratch</li>
+<li>✅ Dark mode customization</li>
+<li>✅ Responsive design best practices</li>
+</ul>
+<p><strong>Prerequisites:</strong> Completed <a href="/blog/2024-01-15-building-static-site">Building a Static Site</a> tutorial</p>
+<h2 id="understanding-the-theme-system" tabindex="-1"><a class="header-anchor" href="#understanding-the-theme-system">#</a> Understanding the Theme System</h2>
+<p>MarkoPress uses a <strong>slot-based theme system</strong> that lets you customize any part of your site:</p>
+<pre><code>.markopress/
+└── theme/
+    ├── components/      # Override components
+    │   ├── Header.marko
+    │   ├── Footer.marko
+    │   └── Sidebar.marko
+    ├── layouts/         # Override layouts
+    │   ├── default.marko
+    │   └── docs.marko
+    └── styles.css       # Custom CSS variables
+</code></pre>
+<p><strong>No forking required</strong> - Just override what you need!</p>
+<h2 id="step-1%3A-quick-color-customization" tabindex="-1"><a class="header-anchor" href="#step-1%3A-quick-color-customization">#</a> Step 1: Quick Color Customization</h2>
+<p>The fastest way to customize is through CSS variables.</p>
+<h3 id="view-default-variables" tabindex="-1"><a class="header-anchor" href="#view-default-variables">#</a> View Default Variables</h3>
+<p>The default theme uses these variables:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">  /* Brand Colors */</span></span>
+<span class="line"><span style="color:#E36209">  --bg-primary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#f8f9fa</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --bg-secondary</span><span style="color:#24292E">: </span><span style="color:#005CC5">white</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --bg-gradient</span><span style="color:#24292E">: </span><span style="color:#005CC5">linear-gradient</span><span style="color:#24292E">(</span><span style="color:#005CC5">135</span><span style="color:#D73A49">deg</span><span style="color:#24292E">, </span><span style="color:#005CC5">#667eea</span><span style="color:#005CC5"> 0</span><span style="color:#D73A49">%</span><span style="color:#24292E">, </span><span style="color:#005CC5">#764ba2</span><span style="color:#005CC5"> 100</span><span style="color:#D73A49">%</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /* Text Colors */</span></span>
+<span class="line"><span style="color:#E36209">  --text-primary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#333</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --text-secondary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#666</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --text-inverted</span><span style="color:#24292E">: </span><span style="color:#005CC5">white</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /* Accent Colors */</span></span>
+<span class="line"><span style="color:#E36209">  --accent-color</span><span style="color:#24292E">: </span><span style="color:#005CC5">#667eea</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --accent-hover</span><span style="color:#24292E">: </span><span style="color:#005CC5">#5568d3</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /* UI Elements */</span></span>
+<span class="line"><span style="color:#E36209">  --border-color</span><span style="color:#24292E">: </span><span style="color:#005CC5">#e9ecef</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --card-shadow</span><span style="color:#24292E">: </span><span style="color:#005CC5">0</span><span style="color:#005CC5"> 2</span><span style="color:#D73A49">px</span><span style="color:#005CC5"> 4</span><span style="color:#D73A49">px</span><span style="color:#005CC5"> rgba</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">, </span><span style="color:#005CC5">0</span><span style="color:#24292E">, </span><span style="color:#005CC5">0</span><span style="color:#24292E">, </span><span style="color:#005CC5">0.1</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#E36209">  --code-bg</span><span style="color:#24292E">: </span><span style="color:#005CC5">#f4f4f4</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h3 id="create-custom-colors" tabindex="-1"><a class="header-anchor" href="#create-custom-colors">#</a> Create Custom Colors</h3>
+<p>Create <code>.markopress/theme/styles.css</code>:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">  /* Your Brand Colors */</span></span>
+<span class="line"><span style="color:#E36209">  --bg-gradient</span><span style="color:#24292E">: </span><span style="color:#005CC5">linear-gradient</span><span style="color:#24292E">(</span><span style="color:#005CC5">135</span><span style="color:#D73A49">deg</span><span style="color:#24292E">, </span><span style="color:#005CC5">#667eea</span><span style="color:#005CC5"> 0</span><span style="color:#D73A49">%</span><span style="color:#24292E">, </span><span style="color:#005CC5">#764ba2</span><span style="color:#005CC5"> 100</span><span style="color:#D73A49">%</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#E36209">  --accent-color</span><span style="color:#24292E">: </span><span style="color:#005CC5">#667eea</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --accent-hover</span><span style="color:#24292E">: </span><span style="color:#005CC5">#5568d3</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h3 id="theme-presets" tabindex="-1"><a class="header-anchor" href="#theme-presets">#</a> Theme Presets</h3>
+<p><strong>Ocean Theme:</strong></p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#E36209">  --bg-gradient</span><span style="color:#24292E">: </span><span style="color:#005CC5">linear-gradient</span><span style="color:#24292E">(</span><span style="color:#005CC5">135</span><span style="color:#D73A49">deg</span><span style="color:#24292E">, </span><span style="color:#005CC5">#0061ff</span><span style="color:#005CC5"> 0</span><span style="color:#D73A49">%</span><span style="color:#24292E">, </span><span style="color:#005CC5">#60efff</span><span style="color:#005CC5"> 100</span><span style="color:#D73A49">%</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#E36209">  --accent-color</span><span style="color:#24292E">: </span><span style="color:#005CC5">#0061ff</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --accent-hover</span><span style="color:#24292E">: </span><span style="color:#005CC5">#0052cc</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<p><strong>Sunset Theme:</strong></p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#E36209">  --bg-gradient</span><span style="color:#24292E">: </span><span style="color:#005CC5">linear-gradient</span><span style="color:#24292E">(</span><span style="color:#005CC5">135</span><span style="color:#D73A49">deg</span><span style="color:#24292E">, </span><span style="color:#005CC5">#f093fb</span><span style="color:#005CC5"> 0</span><span style="color:#D73A49">%</span><span style="color:#24292E">, </span><span style="color:#005CC5">#f5576c</span><span style="color:#005CC5"> 100</span><span style="color:#D73A49">%</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#E36209">  --accent-color</span><span style="color:#24292E">: </span><span style="color:#005CC5">#f5576c</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --accent-hover</span><span style="color:#24292E">: </span><span style="color:#005CC5">#d64558</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<p><strong>Forest Theme:</strong></p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#E36209">  --bg-gradient</span><span style="color:#24292E">: </span><span style="color:#005CC5">linear-gradient</span><span style="color:#24292E">(</span><span style="color:#005CC5">135</span><span style="color:#D73A49">deg</span><span style="color:#24292E">, </span><span style="color:#005CC5">#11998e</span><span style="color:#005CC5"> 0</span><span style="color:#D73A49">%</span><span style="color:#24292E">, </span><span style="color:#005CC5">#38ef7d</span><span style="color:#005CC5"> 100</span><span style="color:#D73A49">%</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#E36209">  --accent-color</span><span style="color:#24292E">: </span><span style="color:#005CC5">#11998e</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --accent-hover</span><span style="color:#24292E">: </span><span style="color:#005CC5">#0e8076</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<p><strong>Dark Theme:</strong></p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#E36209">  --bg-primary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#0a0a0a</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --bg-secondary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#1a1a1a</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --text-primary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#e0e0e0</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --text-secondary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#a0a0a0</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --accent-color</span><span style="color:#24292E">: </span><span style="color:#005CC5">#7c8ffc</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --border-color</span><span style="color:#24292E">: </span><span style="color:#005CC5">#333</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --code-bg</span><span style="color:#24292E">: </span><span style="color:#005CC5">#1e1e1e</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h2 id="step-2%3A-dark-mode-customization" tabindex="-1"><a class="header-anchor" href="#step-2%3A-dark-mode-customization">#</a> Step 2: Dark Mode Customization</h2>
+<p>Customize dark mode separately.</p>
+<h3 id="dark-mode-variables" tabindex="-1"><a class="header-anchor" href="#dark-mode-variables">#</a> Dark Mode Variables</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">  /* Light mode (default) */</span></span>
+<span class="line"><span style="color:#E36209">  --bg-primary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#f8f9fa</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --bg-secondary</span><span style="color:#24292E">: </span><span style="color:#005CC5">white</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --text-primary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#333</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">.dark-mode</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">  /* Dark mode overrides */</span></span>
+<span class="line"><span style="color:#E36209">  --bg-primary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#1a1a1a</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --bg-secondary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#2d2d2d</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --text-primary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#e0e0e0</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --text-secondary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#a0a0a0</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --border-color</span><span style="color:#24292E">: </span><span style="color:#005CC5">#404040</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --accent-color</span><span style="color:#24292E">: </span><span style="color:#005CC5">#7c8ffc</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --code-bg</span><span style="color:#24292E">: </span><span style="color:#005CC5">#1e1e1e</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h3 id="test-dark-mode" tabindex="-1"><a class="header-anchor" href="#test-dark-mode">#</a> Test Dark Mode</h3>
+<p>Toggle dark mode using the button in the top-right corner, or press <code>Cmd/Ctrl + Shift + D</code>.</p>
+<h2 id="step-3%3A-override-components" tabindex="-1"><a class="header-anchor" href="#step-3%3A-override-components">#</a> Step 3: Override Components</h2>
+<p>Override any theme component by copying it to your project.</p>
+<h3 id="custom-header" tabindex="-1"><a class="header-anchor" href="#custom-header">#</a> Custom Header</h3>
+<p>Copy the Header component:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">mkdir</span><span style="color:#005CC5"> -p</span><span style="color:#032F62"> .markopress/theme/components</span></span>
+<span class="line"><span style="color:#6F42C1">cp</span><span style="color:#032F62"> node_modules/@markopress/theme-default/src/components/Header.marko</span><span style="color:#005CC5"> \</span></span>
+<span class="line"><span style="color:#032F62">   .markopress/theme/components/</span></span>
+<span class="line"></span></code></pre>
+<p>Edit <code>.markopress/theme/components/Header.marko</code>:</p>
+<pre><code class="language-marko">&lt;header class=&quot;custom-header&quot;&gt;
+  &lt;div class=&quot;header-container&quot;&gt;
+    &lt;!-- Logo --&gt;
+    &lt;a href=&quot;/&quot; class=&quot;logo&quot;&gt;
+      &lt;img src=&quot;/logo.svg&quot; alt=&quot;My Site&quot; /&gt;
+    &lt;/a&gt;
+
+    &lt;!-- Navigation --&gt;
+    &lt;nav class=&quot;navbar&quot;&gt;
+      &lt;ul class=&quot;nav-links&quot;&gt;
+        &lt;for|item| of=input.navbar&gt;
+          &lt;li&gt;
+            &lt;a href=item.link target=item.target || '_self'&gt;
+              $\{item.text}
+            &lt;/a&gt;
+          &lt;/li&gt;
+        &lt;/for&gt;
+      &lt;/ul&gt;
+    &lt;/nav&gt;
+
+    &lt;!-- Search --&gt;
+    &lt;div class=&quot;search-box&quot;&gt;
+      &lt;input type=&quot;search&quot; placeholder=&quot;Search...&quot; /&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/header&gt;
+
+&lt;style&gt;`
+  .custom-header {
+    background: var(--bg-secondary);
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 2rem;
+  }
+
+  .header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .logo img {
+    height: 40px;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .nav-links a {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover {
+    color: var(--accent-color);
+  }
+
+  .search-box input {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+
+  @media (max-width: 768px) {
+    .header-container {
+      flex-wrap: wrap;
+    }
+
+    .nav-links {
+      display: none;
+    }
+  }
+`&lt;/style&gt;
+</code></pre>
+<h3 id="custom-footer" tabindex="-1"><a class="header-anchor" href="#custom-footer">#</a> Custom Footer</h3>
+<p>Create <code>.markopress/theme/components/Footer.marko</code>:</p>
+<pre><code class="language-marko">&lt;footer class=&quot;custom-footer&quot;&gt;
+  &lt;div class=&quot;footer-container&quot;&gt;
+    &lt;!-- Brand --&gt;
+    &lt;div class=&quot;footer-brand&quot;&gt;
+      &lt;h3&gt;My Site&lt;/h3&gt;
+      &lt;p&gt;Built with MarkoPress&lt;/p&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Links --&gt;
+    &lt;nav class=&quot;footer-links&quot;&gt;
+      &lt;div class=&quot;link-column&quot;&gt;
+        &lt;h4&gt;Product&lt;/h4&gt;
+        &lt;a href=&quot;/features&quot;&gt;Features&lt;/a&gt;
+        &lt;a href=&quot;/pricing&quot;&gt;Pricing&lt;/a&gt;
+        &lt;a href=&quot;/docs&quot;&gt;Documentation&lt;/a&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;link-column&quot;&gt;
+        &lt;h4&gt;Company&lt;/h4&gt;
+        &lt;a href=&quot;/about&quot;&gt;About&lt;/a&gt;
+        &lt;a href=&quot;/blog&quot;&gt;Blog&lt;/a&gt;
+        &lt;a href=&quot;/careers&quot;&gt;Careers&lt;/a&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;link-column&quot;&gt;
+        &lt;h4&gt;Legal&lt;/h4&gt;
+        &lt;a href=&quot;/privacy&quot;&gt;Privacy&lt;/a&gt;
+        &lt;a href=&quot;/terms&quot;&gt;Terms&lt;/a&gt;
+      &lt;/div&gt;
+    &lt;/nav&gt;
+
+    &lt;!-- Social --&gt;
+    &lt;div class=&quot;footer-social&quot;&gt;
+      &lt;a href=&quot;https://twitter.com/user&quot; aria-label=&quot;Twitter&quot;&gt;
+        &lt;svg&gt;&lt;!-- Twitter icon --&gt;&lt;/svg&gt;
+      &lt;/a&gt;
+      &lt;a href=&quot;https://github.com/user&quot; aria-label=&quot;GitHub&quot;&gt;
+        &lt;svg&gt;&lt;!-- GitHub icon --&gt;&lt;/svg&gt;
+      &lt;/a&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;footer-bottom&quot;&gt;
+    &lt;p&gt;$\{input.copyright || '© {year} My Site'}&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/footer&gt;
+
+&lt;style&gt;`
+  .custom-footer {
+    background: var(--bg-secondary);
+    padding: 3rem 2rem 1rem;
+    margin-top: 4rem;
+    border-radius: 12px;
+  }
+
+  .footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 2fr 3fr 1fr;
+    gap: 3rem;
+  }
+
+  .footer-brand h3 {
+    margin-bottom: 0.5rem;
+  }
+
+  .footer-links {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+
+  .link-column h4 {
+    margin-bottom: 1rem;
+  }
+
+  .link-column a {
+    display: block;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+  }
+
+  .link-column a:hover {
+    color: var(--accent-color);
+  }
+
+  .footer-social {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .footer-bottom {
+    max-width: 1200px;
+    margin: 2rem auto 0;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    color: var(--text-secondary);
+  }
+
+  @media (max-width: 768px) {
+    .footer-container {
+      grid-template-columns: 1fr;
+    }
+
+    .footer-links {
+      grid-template-columns: 1fr;
+    }
+  }
+`&lt;/style&gt;
+</code></pre>
+<h2 id="step-4%3A-custom-layouts" tabindex="-1"><a class="header-anchor" href="#step-4%3A-custom-layouts">#</a> Step 4: Custom Layouts</h2>
+<p>Create custom layouts for different page types.</p>
+<h3 id="documentation-layout" tabindex="-1"><a class="header-anchor" href="#documentation-layout">#</a> Documentation Layout</h3>
+<p>Create <code>.markopress/theme/layouts/docs.marko</code>:</p>
+<pre><code class="language-marko">&lt;include('./layouts/default.marko')&gt;
+  &lt;@header&gt;input.header || &lt;components.Header/&gt; &lt;/@header&gt;
+  &lt;@body&gt;
+    &lt;div class=&quot;docs-layout&quot;&gt;
+      &lt;!-- Sidebar --&gt;
+      &lt;aside class=&quot;docs-sidebar&quot;&gt;
+        &lt;include(input.sidebar/&gt;
+      &lt;/aside&gt;
+
+      &lt;!-- Main Content --&gt;
+      &lt;main class=&quot;docs-main&quot;&gt;
+        &lt;include(input.content/&gt;
+
+        &lt;!-- Prev/Next Navigation --&gt;
+        &lt;if(input.prev || input.next)&gt;
+          &lt;nav class=&quot;docs-nav&quot;&gt;
+            &lt;if(input.prev)&gt;
+              &lt;a href=input.prev.link class=&quot;nav-prev&quot;&gt;
+                ← $\{input.prev.title}
+              &lt;/a&gt;
+            &lt;/if&gt;
+            &lt;if(input.next)&gt;
+              &lt;a href=input.next.link class=&quot;nav-next&quot;&gt;
+                $\{input.next.title} →
+              &lt;/a&gt;
+            &lt;/if&gt;
+          &lt;/nav&gt;
+        &lt;/if&gt;
+      &lt;/main&gt;
+
+      &lt;!-- Table of Contents --&gt;
+      &lt;aside class=&quot;docs-toc&quot;&gt;
+        &lt;include(input.toc/&gt;
+      &lt;/aside&gt;
+    &lt;/div&gt;
+  &lt;/@body&gt;
+  &lt;@footer&gt;input.footer || &lt;components.Footer/&gt; &lt;/@footer&gt;
+&lt;/include&gt;
+
+&lt;style&gt;`
+  .docs-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr 200px;
+    gap: 2rem;
+    position: relative;
+  }
+
+  .docs-sidebar {
+    position: sticky;
+    top: 2rem;
+    height: fit-content;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+  }
+
+  .docs-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 2px solid var(--border-color);
+  }
+
+  .docs-nav a {
+    flex: 1;
+    padding: 1rem;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: all 0.2s;
+  }
+
+  .docs-nav a:hover {
+    border-color: var(--accent-color);
+  }
+
+  @media (max-width: 1024px) {
+    .docs-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .docs-sidebar,
+    .docs-toc {
+      display: none;
+    }
+  }
+`&lt;/style&gt;
+</code></pre>
+<h2 id="step-5%3A-typography" tabindex="-1"><a class="header-anchor" href="#step-5%3A-typography">#</a> Step 5: Typography</h2>
+<p>Customize fonts and typography.</p>
+<h3 id="add-custom-fonts" tabindex="-1"><a class="header-anchor" href="#add-custom-fonts">#</a> Add Custom Fonts</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D">/* .markopress/theme/styles.css */</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">@import</span><span style="color:#005CC5"> url</span><span style="color:#24292E">(</span><span style="color:#032F62">'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&#x26;display=swap'</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#E36209">  --font-family</span><span style="color:#24292E">: </span><span style="color:#032F62">'Inter'</span><span style="color:#24292E">, </span><span style="color:#005CC5">-apple-system</span><span style="color:#24292E">, BlinkMacSystemFont, </span><span style="color:#032F62">'Segoe UI'</span><span style="color:#24292E">, </span><span style="color:#005CC5">sans-serif</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --font-heading</span><span style="color:#24292E">: </span><span style="color:#032F62">'Inter'</span><span style="color:#24292E">, </span><span style="color:#005CC5">sans-serif</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --font-mono</span><span style="color:#24292E">: </span><span style="color:#032F62">'SF Mono'</span><span style="color:#24292E">, Monaco, </span><span style="color:#032F62">'Courier New'</span><span style="color:#24292E">, </span><span style="color:#005CC5">monospace</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#22863A">body</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">  font-family</span><span style="color:#24292E">: </span><span style="color:#005CC5">var</span><span style="color:#24292E">(</span><span style="color:#E36209">--font-family</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#22863A">h1</span><span style="color:#24292E">, </span><span style="color:#22863A">h2</span><span style="color:#24292E">, </span><span style="color:#22863A">h3</span><span style="color:#24292E">, </span><span style="color:#22863A">h4</span><span style="color:#24292E">, </span><span style="color:#22863A">h5</span><span style="color:#24292E">, </span><span style="color:#22863A">h6</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">  font-family</span><span style="color:#24292E">: </span><span style="color:#005CC5">var</span><span style="color:#24292E">(</span><span style="color:#E36209">--font-heading</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#005CC5">  font-weight</span><span style="color:#24292E">: </span><span style="color:#005CC5">600</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#22863A">code</span><span style="color:#24292E">, </span><span style="color:#22863A">pre</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">  font-family</span><span style="color:#24292E">: </span><span style="color:#005CC5">var</span><span style="color:#24292E">(</span><span style="color:#E36209">--font-mono</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h3 id="typography-scale" tabindex="-1"><a class="header-anchor" href="#typography-scale">#</a> Typography Scale</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#E36209">  --font-size-xs</span><span style="color:#24292E">: </span><span style="color:#005CC5">0.75</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;    </span><span style="color:#6A737D">/* 12px */</span></span>
+<span class="line"><span style="color:#E36209">  --font-size-sm</span><span style="color:#24292E">: </span><span style="color:#005CC5">0.875</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;   </span><span style="color:#6A737D">/* 14px */</span></span>
+<span class="line"><span style="color:#E36209">  --font-size-base</span><span style="color:#24292E">: </span><span style="color:#005CC5">1</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;     </span><span style="color:#6A737D">/* 16px */</span></span>
+<span class="line"><span style="color:#E36209">  --font-size-lg</span><span style="color:#24292E">: </span><span style="color:#005CC5">1.125</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;   </span><span style="color:#6A737D">/* 18px */</span></span>
+<span class="line"><span style="color:#E36209">  --font-size-xl</span><span style="color:#24292E">: </span><span style="color:#005CC5">1.25</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;    </span><span style="color:#6A737D">/* 20px */</span></span>
+<span class="line"><span style="color:#E36209">  --font-size-2xl</span><span style="color:#24292E">: </span><span style="color:#005CC5">1.5</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;    </span><span style="color:#6A737D">/* 24px */</span></span>
+<span class="line"><span style="color:#E36209">  --font-size-3xl</span><span style="color:#24292E">: </span><span style="color:#005CC5">1.875</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;  </span><span style="color:#6A737D">/* 30px */</span></span>
+<span class="line"><span style="color:#E36209">  --font-size-4xl</span><span style="color:#24292E">: </span><span style="color:#005CC5">2.25</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;   </span><span style="color:#6A737D">/* 36px */</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#22863A">h1</span><span style="color:#24292E"> { </span><span style="color:#005CC5">font-size</span><span style="color:#24292E">: </span><span style="color:#005CC5">var</span><span style="color:#24292E">(</span><span style="color:#E36209">--font-size-4xl</span><span style="color:#24292E">); }</span></span>
+<span class="line"><span style="color:#22863A">h2</span><span style="color:#24292E"> { </span><span style="color:#005CC5">font-size</span><span style="color:#24292E">: </span><span style="color:#005CC5">var</span><span style="color:#24292E">(</span><span style="color:#E36209">--font-size-3xl</span><span style="color:#24292E">); }</span></span>
+<span class="line"><span style="color:#22863A">h3</span><span style="color:#24292E"> { </span><span style="color:#005CC5">font-size</span><span style="color:#24292E">: </span><span style="color:#005CC5">var</span><span style="color:#24292E">(</span><span style="color:#E36209">--font-size-2xl</span><span style="color:#24292E">); }</span></span>
+<span class="line"><span style="color:#22863A">h4</span><span style="color:#24292E"> { </span><span style="color:#005CC5">font-size</span><span style="color:#24292E">: </span><span style="color:#005CC5">var</span><span style="color:#24292E">(</span><span style="color:#E36209">--font-size-xl</span><span style="color:#24292E">); }</span></span>
+<span class="line"><span style="color:#22863A">h5</span><span style="color:#24292E"> { </span><span style="color:#005CC5">font-size</span><span style="color:#24292E">: </span><span style="color:#005CC5">var</span><span style="color:#24292E">(</span><span style="color:#E36209">--font-size-lg</span><span style="color:#24292E">); }</span></span>
+<span class="line"><span style="color:#22863A">h6</span><span style="color:#24292E"> { </span><span style="color:#005CC5">font-size</span><span style="color:#24292E">: </span><span style="color:#005CC5">var</span><span style="color:#24292E">(</span><span style="color:#E36209">--font-size-base</span><span style="color:#24292E">); }</span></span>
+<span class="line"></span></code></pre>
+<h2 id="step-6%3A-responsive-design" tabindex="-1"><a class="header-anchor" href="#step-6%3A-responsive-design">#</a> Step 6: Responsive Design</h2>
+<p>Make your theme work on all devices.</p>
+<h3 id="mobile-first-approach" tabindex="-1"><a class="header-anchor" href="#mobile-first-approach">#</a> Mobile-First Approach</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D">/* Base styles (mobile) */</span></span>
+<span class="line"><span style="color:#6F42C1">.component</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">  padding</span><span style="color:#24292E">: </span><span style="color:#005CC5">1</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#005CC5">  font-size</span><span style="color:#24292E">: </span><span style="color:#005CC5">1</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">/* Tablet */</span></span>
+<span class="line"><span style="color:#D73A49">@media</span><span style="color:#24292E"> (</span><span style="color:#005CC5">min-width</span><span style="color:#24292E">: </span><span style="color:#005CC5">768</span><span style="color:#D73A49">px</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#6F42C1">  .component</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">    padding</span><span style="color:#24292E">: </span><span style="color:#005CC5">1.5</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#005CC5">    font-size</span><span style="color:#24292E">: </span><span style="color:#005CC5">1.125</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">/* Desktop */</span></span>
+<span class="line"><span style="color:#D73A49">@media</span><span style="color:#24292E"> (</span><span style="color:#005CC5">min-width</span><span style="color:#24292E">: </span><span style="color:#005CC5">1024</span><span style="color:#D73A49">px</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#6F42C1">  .component</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">    padding</span><span style="color:#24292E">: </span><span style="color:#005CC5">2</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#005CC5">    font-size</span><span style="color:#24292E">: </span><span style="color:#005CC5">1.25</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h3 id="grid-layouts" tabindex="-1"><a class="header-anchor" href="#grid-layouts">#</a> Grid Layouts</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">.container</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">  display</span><span style="color:#24292E">: </span><span style="color:#005CC5">grid</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#005CC5">  grid-template-columns</span><span style="color:#24292E">: </span><span style="color:#005CC5">1</span><span style="color:#D73A49">fr</span><span style="color:#24292E">; </span><span style="color:#6A737D">/* Mobile: 1 column */</span></span>
+<span class="line"><span style="color:#005CC5">  gap</span><span style="color:#24292E">: </span><span style="color:#005CC5">1</span><span style="color:#D73A49">rem</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">@media</span><span style="color:#24292E"> (</span><span style="color:#005CC5">min-width</span><span style="color:#24292E">: </span><span style="color:#005CC5">768</span><span style="color:#D73A49">px</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#6F42C1">  .container</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">    grid-template-columns</span><span style="color:#24292E">: </span><span style="color:#005CC5">repeat</span><span style="color:#24292E">(</span><span style="color:#005CC5">2</span><span style="color:#24292E">, </span><span style="color:#005CC5">1</span><span style="color:#D73A49">fr</span><span style="color:#24292E">); </span><span style="color:#6A737D">/* Tablet: 2 columns */</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">@media</span><span style="color:#24292E"> (</span><span style="color:#005CC5">min-width</span><span style="color:#24292E">: </span><span style="color:#005CC5">1024</span><span style="color:#D73A49">px</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#6F42C1">  .container</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">    grid-template-columns</span><span style="color:#24292E">: </span><span style="color:#005CC5">repeat</span><span style="color:#24292E">(</span><span style="color:#005CC5">3</span><span style="color:#24292E">, </span><span style="color:#005CC5">1</span><span style="color:#D73A49">fr</span><span style="color:#24292E">); </span><span style="color:#6A737D">/* Desktop: 3 columns */</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h2 id="step-7%3A-animations" tabindex="-1"><a class="header-anchor" href="#step-7%3A-animations">#</a> Step 7: Animations</h2>
+<p>Add smooth animations and transitions.</p>
+<h3 id="transition-utilities" tabindex="-1"><a class="header-anchor" href="#transition-utilities">#</a> Transition Utilities</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#E36209">  --transition-fast</span><span style="color:#24292E">: </span><span style="color:#005CC5">150</span><span style="color:#D73A49">ms</span><span style="color:#005CC5"> ease</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --transition-base</span><span style="color:#24292E">: </span><span style="color:#005CC5">300</span><span style="color:#D73A49">ms</span><span style="color:#005CC5"> ease</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --transition-slow</span><span style="color:#24292E">: </span><span style="color:#005CC5">500</span><span style="color:#D73A49">ms</span><span style="color:#005CC5"> ease</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">.button</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">  transition</span><span style="color:#24292E">: </span><span style="color:#005CC5">all</span><span style="color:#005CC5"> var</span><span style="color:#24292E">(</span><span style="color:#E36209">--transition-base</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">.button:hover</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">  transform</span><span style="color:#24292E">: </span><span style="color:#005CC5">translateY</span><span style="color:#24292E">(</span><span style="color:#005CC5">-2</span><span style="color:#D73A49">px</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#005CC5">  box-shadow</span><span style="color:#24292E">: </span><span style="color:#005CC5">0</span><span style="color:#005CC5"> 4</span><span style="color:#D73A49">px</span><span style="color:#005CC5"> 12</span><span style="color:#D73A49">px</span><span style="color:#005CC5"> rgba</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">, </span><span style="color:#005CC5">0</span><span style="color:#24292E">, </span><span style="color:#005CC5">0</span><span style="color:#24292E">, </span><span style="color:#005CC5">0.15</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h3 id="fade-in-animation" tabindex="-1"><a class="header-anchor" href="#fade-in-animation">#</a> Fade In Animation</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">@keyframes</span><span style="color:#E36209"> fadeIn</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6F42C1">  from</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">    opacity</span><span style="color:#24292E">: </span><span style="color:#005CC5">0</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#005CC5">    transform</span><span style="color:#24292E">: </span><span style="color:#005CC5">translateY</span><span style="color:#24292E">(</span><span style="color:#005CC5">20</span><span style="color:#D73A49">px</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#6F42C1">  to</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">    opacity</span><span style="color:#24292E">: </span><span style="color:#005CC5">1</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#005CC5">    transform</span><span style="color:#24292E">: </span><span style="color:#005CC5">translateY</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">.fade-in</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">  animation</span><span style="color:#24292E">: fadeIn </span><span style="color:#005CC5">var</span><span style="color:#24292E">(</span><span style="color:#E36209">--transition-base</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h2 id="step-8%3A-build-a-complete-theme" tabindex="-1"><a class="header-anchor" href="#step-8%3A-build-a-complete-theme">#</a> Step 8: Build a Complete Theme</h2>
+<p>Create a custom theme from scratch.</p>
+<h3 id="theme-structure" tabindex="-1"><a class="header-anchor" href="#theme-structure">#</a> Theme Structure</h3>
+<pre><code>my-custom-theme/
+├── package.json
+├── src/
+│   ├── components/
+│   │   ├── Header.marko
+│   │   └── Footer.marko
+│   ├── layouts/
+│   │   └── default.marko
+│   └── styles.css
+└── index.ts
+</code></pre>
+<h3 id="package.json" tabindex="-1"><a class="header-anchor" href="#package.json">#</a> Package.json</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#005CC5">  "name"</span><span style="color:#24292E">: </span><span style="color:#032F62">"@username/theme-custom"</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">  "version"</span><span style="color:#24292E">: </span><span style="color:#032F62">"1.0.0"</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">  "main"</span><span style="color:#24292E">: </span><span style="color:#032F62">"index.ts"</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">  "peerDependencies"</span><span style="color:#24292E">: {</span></span>
+<span class="line"><span style="color:#005CC5">    "markopress"</span><span style="color:#24292E">: </span><span style="color:#032F62">"^1.0.0"</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h3 id="theme-entry-point" tabindex="-1"><a class="header-anchor" href="#theme-entry-point">#</a> Theme Entry Point</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D">// index.ts</span></span>
+<span class="line"><span style="color:#D73A49">import</span><span style="color:#D73A49"> type</span><span style="color:#24292E"> { Theme } </span><span style="color:#D73A49">from</span><span style="color:#032F62"> 'markopress'</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> const</span><span style="color:#005CC5"> theme</span><span style="color:#D73A49">:</span><span style="color:#6F42C1"> Theme</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">  name: </span><span style="color:#032F62">'@username/theme-custom'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  layout: </span><span style="color:#032F62">'./src/layouts/default.marko'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  components: {</span></span>
+<span class="line"><span style="color:#24292E">    Header: </span><span style="color:#032F62">'./src/components/Header.marko'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    Footer: </span><span style="color:#032F62">'./src/components/Footer.marko'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">  styles: [</span><span style="color:#032F62">'./src/styles.css'</span><span style="color:#24292E">],</span></span>
+<span class="line"><span style="color:#24292E">};</span></span>
+<span class="line"></span></code></pre>
+<h3 id="use-your-theme" tabindex="-1"><a class="header-anchor" href="#use-your-theme">#</a> Use Your Theme</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D">// markopress.config.ts</span></span>
+<span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  theme: </span><span style="color:#032F62">'@username/theme-custom'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+<h2 id="best-practices" tabindex="-1"><a class="header-anchor" href="#best-practices">#</a> Best Practices</h2>
+<h3 id="1.-use-css-variables" tabindex="-1"><a class="header-anchor" href="#1.-use-css-variables">#</a> 1. Use CSS Variables</h3>
+<p>Always prefer variables over hard-coded values:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D">/* ❌ Bad */</span></span>
+<span class="line"><span style="color:#6F42C1">.button</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">  background</span><span style="color:#24292E">: </span><span style="color:#005CC5">#667eea</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">/* ✅ Good */</span></span>
+<span class="line"><span style="color:#6F42C1">.button</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">  background</span><span style="color:#24292E">: </span><span style="color:#005CC5">var</span><span style="color:#24292E">(</span><span style="color:#E36209">--accent-color</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h3 id="2.-respect-dark-mode" tabindex="-1"><a class="header-anchor" href="#2.-respect-dark-mode">#</a> 2. Respect Dark Mode</h3>
+<p>Always define dark mode overrides:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#E36209">  --bg-primary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#f8f9fa</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">.dark-mode</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#E36209">  --bg-primary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#1a1a1a</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h3 id="3.-ensure-accessibility" tabindex="-1"><a class="header-anchor" href="#3.-ensure-accessibility">#</a> 3. Ensure Accessibility</h3>
+<p>Maintain proper contrast ratios:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">  /* WCAG AA compliant */</span></span>
+<span class="line"><span style="color:#E36209">  --text-primary</span><span style="color:#24292E">: </span><span style="color:#005CC5">#333</span><span style="color:#24292E">;      </span><span style="color:#6A737D">/* 12.6:1 contrast on white */</span></span>
+<span class="line"><span style="color:#E36209">  --accent-color</span><span style="color:#24292E">: </span><span style="color:#005CC5">#667eea</span><span style="color:#24292E">;   </span><span style="color:#6A737D">/* 4.5:1 contrast on white */</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h3 id="4.-optimize-performance" tabindex="-1"><a class="header-anchor" href="#4.-optimize-performance">#</a> 4. Optimize Performance</h3>
+<p>Use efficient selectors:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D">/* ❌ Bad: Expensive */</span></span>
+<span class="line"><span style="color:#22863A">div</span><span style="color:#D73A49"> ></span><span style="color:#22863A"> ul</span><span style="color:#D73A49"> ></span><span style="color:#22863A"> li</span><span style="color:#D73A49"> ></span><span style="color:#22863A"> a</span><span style="color:#24292E"> { }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">/* ✅ Good: Efficient */</span></span>
+<span class="line"><span style="color:#6F42C1">.nav-link</span><span style="color:#24292E"> { }</span></span>
+<span class="line"></span></code></pre>
+<h2 id="inspiration" tabindex="-1"><a class="header-anchor" href="#inspiration">#</a> Inspiration</h2>
+<p>Need ideas? Check out these themes:</p>
+<ul>
+<li><strong>Minimal</strong> - Clean typography, lots of whitespace</li>
+<li><strong>Bold</strong> - Large gradients, strong colors</li>
+<li><strong>Technical</strong> - Monospace fonts, code-focused</li>
+<li><strong>Playful</strong> - Bright colors, rounded corners</li>
+<li><strong>Elegant</strong> - Serif fonts, subtle animations</li>
+</ul>
+<h2 id="next-steps" tabindex="-1"><a class="header-anchor" href="#next-steps">#</a> Next Steps</h2>
+<p>Now that you’ve mastered theming:</p>
+<ul>
+<li>🎨 Create custom <a href="/docs/interactive-components">components</a></li>
+<li>🔌 Build theme <a href="/docs/plugins">plugins</a></li>
+<li>📖 Read full <a href="/docs/theming">theme documentation</a></li>
+<li>🚀 <a href="/docs/deployment">Deploy</a> your custom site</li>
+</ul>
+<hr>
+<p><em>Share your custom theme with us on <a href="https://twitter.com/markopress">Twitter</a> with #MyMarkoPressTheme!</em></p>
+
+  </div>
+</article>

@@ -1,0 +1,461 @@
+<article class="blog-post">
+  <header>
+    <h1>${$global.title}</h1>
+    <div class="meta">
+      <if=$global.date>
+        <span class="date">${$global.date}</span>
+      </if>
+      <if=$global.author>
+        <span class="author"> by ${$global.author}</span>
+      </if>
+    </div>
+  </header>
+  <div class="content">
+    <h1 id="building-a-static-site-with-markopress" tabindex="-1"><a class="header-anchor" href="#building-a-static-site-with-markopress">#</a> Building a Static Site with MarkoPress</h1>
+<p>Welcome to your comprehensive guide to building a static site with MarkoPress. Whether you’re creating a personal blog, portfolio, or documentation site, this tutorial will take you from zero to deployed site.</p>
+<h2 id="what-you%E2%80%99ll-learn" tabindex="-1"><a class="header-anchor" href="#what-you%E2%80%99ll-learn">#</a> What You’ll Learn</h2>
+<p>In this tutorial, you’ll:</p>
+<ul>
+<li>✅ Install and set up MarkoPress</li>
+<li>✅ Create pages, blog posts, and documentation</li>
+<li>✅ Customize your site’s appearance</li>
+<li>✅ Deploy your site to the web</li>
+<li>✅ Add features like dark mode and RSS feeds</li>
+</ul>
+<p><strong>Time required:</strong> 30-45 minutes
+<strong>Prerequisites:</strong> Basic knowledge of markdown and command line</p>
+<h2 id="what-is-markopress%3F" tabindex="-1"><a class="header-anchor" href="#what-is-markopress%3F">#</a> What is MarkoPress?</h2>
+<p>MarkoPress is a modern static site generator that combines:</p>
+<ul>
+<li><strong>⚡ Blazing Fast</strong> - Builds 10x faster than alternatives</li>
+<li><strong>📝 Markdown Native</strong> - Write content in markdown</li>
+<li><strong>🎨 Beautiful Themes</strong> - Stunning default theme with dark mode</li>
+<li><strong>🔌 Plugin System</strong> - Extend functionality easily</li>
+<li><strong>📦 File-Based Routing</strong> - Automatic URL generation from files</li>
+</ul>
+<p>It’s perfect for blogs, portfolios, documentation sites, and marketing pages.</p>
+<h2 id="step-1%3A-installation" tabindex="-1"><a class="header-anchor" href="#step-1%3A-installation">#</a> Step 1: Installation</h2>
+<p>First, ensure you have <a href="https://nodejs.org/">Node.js 18+</a> installed.</p>
+<h3 id="create-a-new-site" tabindex="-1"><a class="header-anchor" href="#create-a-new-site">#</a> Create a New Site</h3>
+<p>Open your terminal and run:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> create</span><span style="color:#032F62"> markopress@latest</span><span style="color:#032F62"> my-site</span></span>
+<span class="line"></span></code></pre>
+<p>This creates a new directory called <code>my-site</code> with everything you need.</p>
+<h3 id="navigate-and-install" tabindex="-1"><a class="header-anchor" href="#navigate-and-install">#</a> Navigate and Install</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#005CC5">cd</span><span style="color:#032F62"> my-site</span></span>
+<span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> install</span></span>
+<span class="line"></span></code></pre>
+<h3 id="project-structure" tabindex="-1"><a class="header-anchor" href="#project-structure">#</a> Project Structure</h3>
+<p>Your site now has this structure:</p>
+<pre><code>my-site/
+├── .markopress/
+│   └── config.ts          # Site configuration
+├── content/
+│   ├── pages/             # → /route
+│   │   ├── index.md       # Homepage
+│   │   └── about.md       # About page
+│   ├── docs/              # → /docs/route
+│   │   └── intro.md       # Documentation
+│   └── blog/              # → /blog/route
+│       └── first-post.md  # Blog post
+├── public/                # Static assets
+├── markopress.config.ts   # Alternative config
+└── package.json
+</code></pre>
+<h2 id="step-2%3A-start-development-server" tabindex="-1"><a class="header-anchor" href="#step-2%3A-start-development-server">#</a> Step 2: Start Development Server</h2>
+<p>Run the development server:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> run</span><span style="color:#032F62"> dev</span></span>
+<span class="line"></span></code></pre>
+<p>Visit <code>http://localhost:4173</code> to see your site!</p>
+<p>You’ll see:</p>
+<ul>
+<li>A beautiful homepage with gradient background</li>
+<li>Sample pages, docs, and blog posts</li>
+<li>Dark mode toggle in the top-right</li>
+<li>Responsive navigation</li>
+</ul>
+<p><strong>Try it:</strong> Click the dark mode toggle to see instant theme switching!</p>
+<h2 id="step-3%3A-create-your-first-page" tabindex="-1"><a class="header-anchor" href="#step-3%3A-create-your-first-page">#</a> Step 3: Create Your First Page</h2>
+<p>Let’s create a new page.</p>
+<h3 id="create-the-file" tabindex="-1"><a class="header-anchor" href="#create-the-file">#</a> Create the File</h3>
+<p>Create <code>content/pages/contact.md</code>:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#005CC5;font-weight:bold">---</span></span>
+<span class="line"><span style="color:#24292E">title: "Contact"</span></span>
+<span class="line"><span style="color:#24292E">description: "Get in touch with us"</span></span>
+<span class="line"><span style="color:#005CC5;font-weight:bold">---</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5;font-weight:bold"># Contact Us</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">Have questions? We'd love to hear from you!</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5;font-weight:bold">## Email</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">General inquiries: hello@mysite.com</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5;font-weight:bold">## Social</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E36209">-</span><span style="color:#24292E"> Twitter: [</span><span style="color:#032F62;text-decoration:underline">@mysite</span><span style="color:#24292E">](</span><span style="color:#24292E;text-decoration:underline">https://twitter.com/mysite</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#E36209">-</span><span style="color:#24292E"> GitHub: [</span><span style="color:#032F62;text-decoration:underline">mysite</span><span style="color:#24292E">](</span><span style="color:#24292E;text-decoration:underline">https://github.com/mysite</span><span style="color:#24292E">)</span></span>
+<span class="line"></span></code></pre>
+<h3 id="view-your-page" tabindex="-1"><a class="header-anchor" href="#view-your-page">#</a> View Your Page</h3>
+<p>Visit <code>http://localhost:4173/contact</code> to see your new page!</p>
+<p>MarkoPress automatically:</p>
+<ul>
+<li>Created the route from the filename</li>
+<li>Applied your site’s theme</li>
+<li>Added navigation (if configured)</li>
+<li>Generated proper HTML with SEO tags</li>
+</ul>
+<h2 id="step-4%3A-add-documentation" tabindex="-1"><a class="header-anchor" href="#step-4%3A-add-documentation">#</a> Step 4: Add Documentation</h2>
+<p>Create documentation with automatic sidebar navigation.</p>
+<h3 id="create-a-doc-file" tabindex="-1"><a class="header-anchor" href="#create-a-doc-file">#</a> Create a Doc File</h3>
+<p>Create <code>content/docs/getting-started.md</code>:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#005CC5;font-weight:bold">---</span></span>
+<span class="line"><span style="color:#24292E">title: "Getting Started"</span></span>
+<span class="line"><span style="color:#24292E">description: "Quick start guide for MarkoPress"</span></span>
+<span class="line"><span style="color:#24292E">order: 1</span></span>
+<span class="line"><span style="color:#005CC5;font-weight:bold">---</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5;font-weight:bold"># Getting Started</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">Welcome to the documentation!</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5;font-weight:bold">## Installation</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">Install MarkoPress using npm:</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5">\`\`\`</span><span style="color:#24292E">bash</span></span>
+<span class="line"><span style="color:#24292E">npm create markopress@latest my-site</span></span>
+<span class="line"><span style="color:#005CC5">\`\`\`</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5;font-weight:bold">## Configuration</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">Configure your site in </span><span style="color:#005CC5">`markopress.config.ts`</span><span style="color:#24292E">:</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5">\`\`\`</span><span style="color:#24292E">typescript</span></span>
+<span class="line"><span style="color:#24292E">import { defineConfig } from 'markopress';</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">export default defineConfig({</span></span>
+<span class="line"><span style="color:#24292E">  site: {</span></span>
+<span class="line"><span style="color:#24292E">    title: 'My Site',</span></span>
+<span class="line"><span style="color:#24292E">    description: 'My awesome site',</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"><span style="color:#005CC5">\`\`\`</span></span>
+<span class="line"></span></code></pre>
+<h3 id="configure-sidebar" tabindex="-1"><a class="header-anchor" href="#configure-sidebar">#</a> Configure Sidebar</h3>
+<p>Edit <code>markopress.config.ts</code>:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  themeConfig: {</span></span>
+<span class="line"><span style="color:#24292E">    sidebar: {</span></span>
+<span class="line"><span style="color:#032F62">      '/docs/'</span><span style="color:#24292E">: [</span></span>
+<span class="line"><span style="color:#24292E">        {</span></span>
+<span class="line"><span style="color:#24292E">          text: </span><span style="color:#032F62">'Guide'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">          items: [</span></span>
+<span class="line"><span style="color:#24292E">            { text: </span><span style="color:#032F62">'Getting Started'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/docs/getting-started'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">          ],</span></span>
+<span class="line"><span style="color:#24292E">        },</span></span>
+<span class="line"><span style="color:#24292E">      ],</span></span>
+<span class="line"><span style="color:#24292E">    },</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+<p>Now your docs have:</p>
+<ul>
+<li>✅ Sidebar navigation</li>
+<li>✅ Prev/next links</li>
+<li>✅ Table of contents</li>
+<li>✅ Breadcrumbs</li>
+</ul>
+<h2 id="step-5%3A-write-a-blog-post" tabindex="-1"><a class="header-anchor" href="#step-5%3A-write-a-blog-post">#</a> Step 5: Write a Blog Post</h2>
+<p>Create blog posts with automatic RSS feed generation.</p>
+<h3 id="create-a-blog-post" tabindex="-1"><a class="header-anchor" href="#create-a-blog-post">#</a> Create a Blog Post</h3>
+<p>Create <code>content/blog/2024-01-15-my-first-post.md</code>:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#005CC5;font-weight:bold">---</span></span>
+<span class="line"><span style="color:#24292E">title: "My First Post"</span></span>
+<span class="line"><span style="color:#24292E">description: "Hello world!"</span></span>
+<span class="line"><span style="color:#24292E">date: 2024-01-15</span></span>
+<span class="line"><span style="color:#24292E">author: "Your Name"</span></span>
+<span class="line"><span style="color:#24292E">tags: ["announcement", "first-post"]</span></span>
+<span class="line"><span style="color:#24292E">categories: [</span><span style="color:#032F62;text-decoration:underline">"News"</span><span style="color:#24292E">]</span></span>
+<span class="line"><span style="color:#005CC5;font-weight:bold">---</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5;font-weight:bold"># My First Post</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">Welcome to my blog! This is my first post using MarkoPress.</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5;font-weight:bold">## Why MarkoPress?</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">I chose MarkoPress because:</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E36209">-</span><span style="color:#24292E"> ⚡ It's incredibly fast</span></span>
+<span class="line"><span style="color:#E36209">-</span><span style="color:#24292E"> 🎨 The themes are beautiful</span></span>
+<span class="line"><span style="color:#E36209">-</span><span style="color:#24292E"> 📝 Markdown is easy to write</span></span>
+<span class="line"><span style="color:#E36209">-</span><span style="color:#24292E"> 🔌 Plugins add extra features</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5;font-weight:bold">## What's Next?</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">Stay tuned for more posts!</span></span>
+<span class="line"></span></code></pre>
+<h3 id="blog-features" tabindex="-1"><a class="header-anchor" href="#blog-features">#</a> Blog Features</h3>
+<p>Your blog now has:</p>
+<ul>
+<li>✅ RSS feed at <code>/api/rss/xml</code></li>
+<li>✅ Tag pages at <code>/blog/tags/{tag}</code></li>
+<li>✅ Date-based sorting</li>
+<li>✅ Post metadata (author, tags, date)</li>
+<li>✅ SEO optimization</li>
+</ul>
+<h2 id="step-6%3A-customize-your-theme" tabindex="-1"><a class="header-anchor" href="#step-6%3A-customize-your-theme">#</a> Step 6: Customize Your Theme</h2>
+<p>Make your site unique with CSS variables.</p>
+<h3 id="edit-theme-colors" tabindex="-1"><a class="header-anchor" href="#edit-theme-colors">#</a> Edit Theme Colors</h3>
+<p>Create <code>.markopress/theme/styles.css</code>:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">:root</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">  /* Ocean Theme */</span></span>
+<span class="line"><span style="color:#E36209">  --bg-gradient</span><span style="color:#24292E">: </span><span style="color:#005CC5">linear-gradient</span><span style="color:#24292E">(</span><span style="color:#005CC5">135</span><span style="color:#D73A49">deg</span><span style="color:#24292E">, </span><span style="color:#005CC5">#0061ff</span><span style="color:#005CC5"> 0</span><span style="color:#D73A49">%</span><span style="color:#24292E">, </span><span style="color:#005CC5">#60efff</span><span style="color:#005CC5"> 100</span><span style="color:#D73A49">%</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#E36209">  --accent-color</span><span style="color:#24292E">: </span><span style="color:#005CC5">#0061ff</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  --accent-hover</span><span style="color:#24292E">: </span><span style="color:#005CC5">#0052cc</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+<h3 id="custom-header" tabindex="-1"><a class="header-anchor" href="#custom-header">#</a> Custom Header</h3>
+<p>Create <code>.markopress/theme/components/Header.marko</code>:</p>
+<pre><code class="language-marko">&lt;header class=&quot;custom-header&quot;&gt;
+  &lt;nav class=&quot;navbar&quot;&gt;
+    &lt;a href=&quot;/&quot; class=&quot;logo&quot;&gt;My Site&lt;/a&gt;
+    &lt;ul class=&quot;nav-links&quot;&gt;
+      &lt;li&gt;&lt;a href=&quot;/&quot;&gt;Home&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;/docs&quot;&gt;Docs&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;/blog&quot;&gt;Blog&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/nav&gt;
+&lt;/header&gt;
+
+&lt;style&gt;`
+  .custom-header {
+    background: var(--bg-secondary);
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--accent-color);
+    text-decoration: none;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+
+  .nav-links a:hover {
+    color: var(--accent-color);
+  }
+`&lt;/style&gt;
+</code></pre>
+<h2 id="step-7%3A-configure-your-site" tabindex="-1"><a class="header-anchor" href="#step-7%3A-configure-your-site">#</a> Step 7: Configure Your Site</h2>
+<p>Add navigation, footer, and site metadata.</p>
+<h3 id="complete-config" tabindex="-1"><a class="header-anchor" href="#complete-config">#</a> Complete Config</h3>
+<p>Edit <code>markopress.config.ts</code>:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">import</span><span style="color:#24292E"> { defineConfig } </span><span style="color:#D73A49">from</span><span style="color:#032F62"> 'markopress'</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  site: {</span></span>
+<span class="line"><span style="color:#24292E">    title: </span><span style="color:#032F62">'My Site'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    description: </span><span style="color:#032F62">'My awesome site built with MarkoPress'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    base: </span><span style="color:#032F62">'/'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    lang: </span><span style="color:#032F62">'en-US'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  themeConfig: {</span></span>
+<span class="line"><span style="color:#24292E">    navbar: [</span></span>
+<span class="line"><span style="color:#24292E">      { text: </span><span style="color:#032F62">'Home'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">      { text: </span><span style="color:#032F62">'Docs'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/docs/getting-started'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">      { text: </span><span style="color:#032F62">'Blog'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/blog'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">      { text: </span><span style="color:#032F62">'About'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/about'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">    ],</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    sidebar: {</span></span>
+<span class="line"><span style="color:#032F62">      '/docs/'</span><span style="color:#24292E">: [</span></span>
+<span class="line"><span style="color:#24292E">        {</span></span>
+<span class="line"><span style="color:#24292E">          text: </span><span style="color:#032F62">'Getting Started'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">          items: [</span></span>
+<span class="line"><span style="color:#24292E">            { text: </span><span style="color:#032F62">'Introduction'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/docs/getting-started'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">            { text: </span><span style="color:#032F62">'Installation'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/docs/installation'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">          ],</span></span>
+<span class="line"><span style="color:#24292E">        },</span></span>
+<span class="line"><span style="color:#24292E">      ],</span></span>
+<span class="line"><span style="color:#24292E">    },</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    footer: {</span></span>
+<span class="line"><span style="color:#24292E">      copyright: </span><span style="color:#032F62">'© {year} My Site. All rights reserved.'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">      links: [</span></span>
+<span class="line"><span style="color:#24292E">        { text: </span><span style="color:#032F62">'GitHub'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'https://github.com/user/repo'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">        { text: </span><span style="color:#032F62">'Twitter'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'https://twitter.com/user'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">      ],</span></span>
+<span class="line"><span style="color:#24292E">    },</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  markdown: {</span></span>
+<span class="line"><span style="color:#24292E">    lineNumbers: </span><span style="color:#005CC5">true</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    theme: {</span></span>
+<span class="line"><span style="color:#24292E">      light: </span><span style="color:#032F62">'github-light'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">      dark: </span><span style="color:#032F62">'github-dark'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    },</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+<h2 id="step-8%3A-build-for-production" tabindex="-1"><a class="header-anchor" href="#step-8%3A-build-for-production">#</a> Step 8: Build for Production</h2>
+<p>Create an optimized production build.</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> run</span><span style="color:#032F62"> build</span></span>
+<span class="line"></span></code></pre>
+<p>This creates a <code>dist/</code> directory with:</p>
+<ul>
+<li>Minified HTML, CSS, and JavaScript</li>
+<li>Optimized assets</li>
+<li>Sitemap and robots.txt</li>
+<li>RSS feeds</li>
+<li>Open Graph tags</li>
+</ul>
+<h3 id="preview-production-build" tabindex="-1"><a class="header-anchor" href="#preview-production-build">#</a> Preview Production Build</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> run</span><span style="color:#032F62"> preview</span></span>
+<span class="line"></span></code></pre>
+<p>Visit <code>http://localhost:4173</code> to see the production build.</p>
+<h2 id="step-9%3A-deploy-your-site" tabindex="-1"><a class="header-anchor" href="#step-9%3A-deploy-your-site">#</a> Step 9: Deploy Your Site</h2>
+<h3 id="deploy-to-vercel" tabindex="-1"><a class="header-anchor" href="#deploy-to-vercel">#</a> Deploy to Vercel</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> install</span><span style="color:#005CC5"> -g</span><span style="color:#032F62"> vercel</span></span>
+<span class="line"><span style="color:#6F42C1">vercel</span><span style="color:#005CC5"> --prod</span></span>
+<span class="line"></span></code></pre>
+<p>That’s it! Your site is live.</p>
+<h3 id="deploy-to-netlify" tabindex="-1"><a class="header-anchor" href="#deploy-to-netlify">#</a> Deploy to Netlify</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> install</span><span style="color:#005CC5"> -g</span><span style="color:#032F62"> netlify-cli</span></span>
+<span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> run</span><span style="color:#032F62"> build</span></span>
+<span class="line"><span style="color:#6F42C1">netlify</span><span style="color:#032F62"> deploy</span><span style="color:#005CC5"> --prod</span><span style="color:#005CC5"> --dir=dist</span></span>
+<span class="line"></span></code></pre>
+<h3 id="deploy-to-github-pages" tabindex="-1"><a class="header-anchor" href="#deploy-to-github-pages">#</a> Deploy to GitHub Pages</h3>
+<ol>
+<li>Push your code to GitHub</li>
+<li>Go to Settings → Pages</li>
+<li>Select GitHub Actions as source</li>
+<li>Create <code>.github/workflows/deploy.yml</code>:</li>
+</ol>
+<pre><code class="language-yaml">name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+</code></pre>
+<h2 id="next-steps" tabindex="-1"><a class="header-anchor" href="#next-steps">#</a> Next Steps</h2>
+<p>Congratulations! You’ve built and deployed your first MarkoPress site! 🎉</p>
+<h3 id="continue-learning" tabindex="-1"><a class="header-anchor" href="#continue-learning">#</a> Continue Learning</h3>
+<ul>
+<li>📖 <a href="/docs/configuration">Configuration Guide</a></li>
+<li>🎨 <a href="/docs/theming">Theming Guide</a></li>
+<li>🔌 <a href="/docs/plugins">Plugin Development</a></li>
+<li>🚀 <a href="/docs/deployment">Deployment Guide</a></li>
+</ul>
+<h3 id="add-more-features" tabindex="-1"><a class="header-anchor" href="#add-more-features">#</a> Add More Features</h3>
+<ul>
+<li>🔍 Add search functionality</li>
+<li>📊 Integrate analytics</li>
+<li>💬 Add comments</li>
+<li>🖼️ Create image galleries</li>
+<li>🌍 Add multi-language support</li>
+</ul>
+<h3 id="common-tasks" tabindex="-1"><a class="header-anchor" href="#common-tasks">#</a> Common Tasks</h3>
+<p><strong>Add a new page:</strong></p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D"># Create file in content/pages/</span></span>
+<span class="line"><span style="color:#005CC5">echo</span><span style="color:#032F62"> "# New Page"</span><span style="color:#D73A49"> ></span><span style="color:#032F62"> content/pages/new-page.md</span></span>
+<span class="line"></span></code></pre>
+<p><strong>Add a blog post:</strong></p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D"># Create file in content/blog/</span></span>
+<span class="line"><span style="color:#005CC5">echo</span><span style="color:#032F62"> "---\ntitle: </span><span style="color:#005CC5">\"</span><span style="color:#032F62">New Post</span><span style="color:#005CC5">\"</span><span style="color:#032F62">\ndate: 2024-01-15\n---\n\n# Content"</span><span style="color:#D73A49"> ></span><span style="color:#032F62"> content/blog/2024-01-15-new-post.md</span></span>
+<span class="line"></span></code></pre>
+<p><strong>Change the theme:</strong></p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D"># Create custom styles</span></span>
+<span class="line"><span style="color:#6F42C1">mkdir</span><span style="color:#005CC5"> -p</span><span style="color:#032F62"> .markopress/theme</span></span>
+<span class="line"><span style="color:#005CC5">echo</span><span style="color:#032F62"> ":root { --accent-color: purple; }"</span><span style="color:#D73A49"> ></span><span style="color:#032F62"> .markopress/theme/styles.css</span></span>
+<span class="line"></span></code></pre>
+<h2 id="troubleshooting" tabindex="-1"><a class="header-anchor" href="#troubleshooting">#</a> Troubleshooting</h2>
+<h3 id="port-already-in-use" tabindex="-1"><a class="header-anchor" href="#port-already-in-use">#</a> Port Already in Use</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D"># Use a different port</span></span>
+<span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> run</span><span style="color:#032F62"> dev</span><span style="color:#005CC5"> --</span><span style="color:#005CC5"> --port</span><span style="color:#005CC5"> 3000</span></span>
+<span class="line"></span></code></pre>
+<h3 id="build-errors" tabindex="-1"><a class="header-anchor" href="#build-errors">#</a> Build Errors</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D"># Clean and rebuild</span></span>
+<span class="line"><span style="color:#6F42C1">rm</span><span style="color:#005CC5"> -rf</span><span style="color:#032F62"> node_modules</span><span style="color:#032F62"> dist</span><span style="color:#032F62"> package-lock.json</span></span>
+<span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> install</span></span>
+<span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> run</span><span style="color:#032F62"> build</span></span>
+<span class="line"></span></code></pre>
+<h3 id="styles-not-loading" tabindex="-1"><a class="header-anchor" href="#styles-not-loading">#</a> Styles Not Loading</h3>
+<p>Make sure your <code>.markopress/theme/styles.css</code> file is in the correct location and contains valid CSS.</p>
+<h3 id="pages-not-showing" tabindex="-1"><a class="header-anchor" href="#pages-not-showing">#</a> Pages Not Showing</h3>
+<p>Check that:</p>
+<ul>
+<li>Files are in the correct directories (<code>content/pages/</code>, <code>content/docs/</code>, <code>content/blog/</code>)</li>
+<li>Files have valid frontmatter (title, description)</li>
+<li>File paths in config match actual file locations</li>
+</ul>
+<h2 id="summary" tabindex="-1"><a class="header-anchor" href="#summary">#</a> Summary</h2>
+<p>In this tutorial, you learned how to:</p>
+<ol>
+<li>✅ Install and set up MarkoPress</li>
+<li>✅ Create pages, documentation, and blog posts</li>
+<li>✅ Customize your site’s appearance</li>
+<li>✅ Configure navigation and sidebars</li>
+<li>✅ Build and deploy your site</li>
+</ol>
+<p>Your site is now live and ready to share with the world!</p>
+<h2 id="resources" tabindex="-1"><a class="header-anchor" href="#resources">#</a> Resources</h2>
+<ul>
+<li><a href="/docs/getting-started">Documentation</a></li>
+<li><a href="https://github.com/markopress/markopress">GitHub</a></li>
+<li><a href="https://discord.gg/markopress">Discord Community</a></li>
+<li><a href="https://github.com/markopress/examples">Examples</a></li>
+</ul>
+<hr>
+<p><em>Found this tutorial helpful? Subscribe to our <a href="/api/rss/xml">RSS feed</a> for more content!</em></p>
+
+  </div>
+</article>

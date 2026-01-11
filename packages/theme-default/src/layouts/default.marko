@@ -1,0 +1,84 @@
+/*!
+ * Default Layout for MarkoPress
+ * This is the main layout wrapper for all pages
+ */
+
+class {
+  onCreate() {
+    this.state = {
+      darkMode: false,
+      sidebarOpen: false,
+    };
+  }
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Dynamic Title -->
+  <title>${input.title || 'MarkoPress'}</title>
+
+  <!-- Meta Description -->
+  <meta name="description" content="${input.description || 'A general-purpose static site generator using Marko.js v6'}">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="">
+  <meta property="og:title" content="${input.title || 'MarkoPress'}">
+  <meta property="og:description" content="${input.description || 'A general-purpose static site generator using Marko.js v6'}">
+  <meta property="og:image" content="/og-image.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:title" content="${input.title || 'MarkoPress'}">
+  <meta property="twitter:description" content="${input.description || 'A general-purpose static site generator using Marko.js v6'}">
+  <meta property="twitter:image" content="/og-image.png">
+
+  <!-- RSS Feed -->
+  <link rel="alternate" type="application/rss+xml" title="MarkoPress Blog RSS Feed" href="/api/rss/xml">
+
+  <!-- Sitemap -->
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+
+  <!-- Analytics -->
+  <html-script src="/analytics.js"></html-script>
+
+  <!-- Theme Styles -->
+  <style>
+    <include('../styles.css')/>
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header Slot -->
+    <include(input.header || <components.Header/>)/>
+
+    <!-- Main Content Slot -->
+    <include(input.body)/>
+
+    <!-- Footer Slot -->
+    <include(input.footer || <components.Footer/>)/>
+
+    <!-- Sidebar (conditionally rendered) -->
+    <if(input.sidebar)>
+      <aside class="sidebar" id="sidebar">
+        <include(input.sidebar)/>
+      </aside>
+    </if>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">☰</button>
+  </div>
+
+  <!-- Dark Mode Toggle -->
+  <button class="dark-mode-toggle" id="dark-mode-toggle" aria-label="Toggle dark mode">
+    🌙
+  </button>
+
+  <!-- Theme Scripts -->
+  <html-script src="/theme.js"></html-script>
+</body>
+</html>

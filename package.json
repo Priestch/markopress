@@ -1,19 +1,29 @@
 {
-  "name": "markopress",
-  "description": "The default Marko starter app with TypeScript",
+  "name": "markopress-monorepo",
+  "description": "MarkoPress - A general-purpose static site generator using Marko.js v6",
   "version": "1.0.0",
   "type": "module",
-  "dependencies": {
-    "marko": "^6.0.0"
-  },
-  "devDependencies": {
-    "@marko/run": "^0.9.3"
-  },
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "marko-run",
     "build": "marko-run build",
     "preview": "marko-run preview",
     "start": "node --enable-source-maps ./dist/index.mjs"
+  },
+  "devDependencies": {
+    "@marko/run": "^0.9.3",
+    "@marko/run-adapter-static": "^2.0.4",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "rss": "^1.2.2",
+    "shiki": "^1.29.2"
   }
 }

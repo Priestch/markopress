@@ -1,0 +1,22 @@
+{
+  "name": "markopress-test-project",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "markopress dev",
+    "build": "markopress build",
+    "preview": "markopress preview"
+  },
+  "dependencies": {
+    "markopress": "workspace:*",
+    "@markopress/theme-default": "workspace:*",
+    "@markopress/plugin-content-pages": "workspace:*",
+    "@markopress/plugin-content-docs": "workspace:*",
+    "@markopress/plugin-content-blog": "workspace:*"
+  },
+  "devDependencies": {
+    "@marko/run": "^0.9.4",
+    "marko": "^6.0.0"
+  }
+}

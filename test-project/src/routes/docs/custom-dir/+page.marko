@@ -1,0 +1,112 @@
+<div class="container">
+  <h1>${$global.title}</h1>
+  <div class="content">
+    <h1 id="using-custom-content-directories" tabindex="-1"><a class="header-anchor" href="#using-custom-content-directories">#</a> Using Custom Content Directories</h1>
+<p>By default, MarkoPress looks for content in the <code>content/</code> directory. However, you can customize this to match your project structure.</p>
+<h2 id="why-use-custom-directories%3F" tabindex="-1"><a class="header-anchor" href="#why-use-custom-directories%3F">#</a> Why Use Custom Directories?</h2>
+<ul>
+<li><strong>Multi-project repos</strong>: Separate documentation from main site</li>
+<li><strong>Legacy migration</strong>: Keep existing content structure</li>
+<li><strong>Organizational preference</strong>: Match your team’s conventions</li>
+<li><strong>Multiple content sources</strong>: Combine content from different locations</li>
+</ul>
+<h2 id="configuration-options" tabindex="-1"><a class="header-anchor" href="#configuration-options">#</a> Configuration Options</h2>
+<h3 id="basic-configuration" tabindex="-1"><a class="header-anchor" href="#basic-configuration">#</a> Basic Configuration</h3>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D">// markopress.config.ts</span></span>
+<span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  content: {</span></span>
+<span class="line"><span style="color:#24292E">    pages: </span><span style="color:#032F62">'my-content/pages'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    docs: </span><span style="color:#032F62">'my-content/docs'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    blog: </span><span style="color:#032F62">'my-content/blog'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+<h3 id="absolute-paths" tabindex="-1"><a class="header-anchor" href="#absolute-paths">#</a> Absolute Paths</h3>
+<p>You can also use absolute paths:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">import</span><span style="color:#24292E"> path </span><span style="color:#D73A49">from</span><span style="color:#032F62"> 'path'</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  content: {</span></span>
+<span class="line"><span style="color:#24292E">    pages: path.</span><span style="color:#6F42C1">resolve</span><span style="color:#24292E">(__dirname, </span><span style="color:#032F62">'custom-content/pages'</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">    docs: path.</span><span style="color:#6F42C1">resolve</span><span style="color:#24292E">(__dirname, </span><span style="color:#032F62">'custom-content/docs'</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">    blog: path.</span><span style="color:#6F42C1">resolve</span><span style="color:#24292E">(__dirname, </span><span style="color:#032F62">'custom-content/blog'</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+<h3 id="parent-directory" tabindex="-1"><a class="header-anchor" href="#parent-directory">#</a> Parent Directory</h3>
+<p>Reference content from a parent directory:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  content: {</span></span>
+<span class="line"><span style="color:#24292E">    pages: </span><span style="color:#032F62">'../shared-content/pages'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    docs: </span><span style="color:#032F62">'../shared-content/docs'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    blog: </span><span style="color:#032F62">'../shared-content/blog'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+<h2 id="mapped-routes" tabindex="-1"><a class="header-anchor" href="#mapped-routes">#</a> Mapped Routes</h2>
+<p>Regardless of where your content is located, the routes remain the same:</p>
+<table>
+<thead>
+<tr>
+<th>Content Location</th>
+<th>Route</th>
+<th>Example File</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>my-content/pages/</code></td>
+<td><code>/</code></td>
+<td><code>index.md</code></td>
+<td><code>/</code></td>
+</tr>
+<tr>
+<td><code>my-content/pages/</code></td>
+<td><code>/</code></td>
+<td><code>about.md</code></td>
+<td><code>/about</code></td>
+</tr>
+<tr>
+<td><code>my-content/docs/</code></td>
+<td><code>/docs/*</code></td>
+<td><code>intro.md</code></td>
+<td><code>/docs/intro</code></td>
+</tr>
+<tr>
+<td><code>my-content/blog/</code></td>
+<td><code>/blog/*</code></td>
+<td><code>post.md</code></td>
+<td><code>/blog/post</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="best-practices" tabindex="-1"><a class="header-anchor" href="#best-practices">#</a> Best Practices</h2>
+<ol>
+<li><strong>Keep it simple</strong>: Use relative paths when possible</li>
+<li><strong>Document your structure</strong>: Add a README explaining your directory layout</li>
+<li><strong>Consistent naming</strong>: Use clear, descriptive directory names</li>
+<li><strong>Version control</strong>: Commit your <code>.markopress</code> config file</li>
+</ol>
+<h2 id="example%3A-monorepo-setup" tabindex="-1"><a class="header-anchor" href="#example%3A-monorepo-setup">#</a> Example: Monorepo Setup</h2>
+<p>For a monorepo with multiple sites:</p>
+<pre><code>company-repo/
+├── packages/
+│   ├── main-site/
+│   │   ├── markopress.config.ts  → content: '../../content/main'
+│   │   └── package.json
+│   ├── docs-site/
+│   │   ├── markopress.config.ts  → content: '../../content/docs'
+│   │   └── package.json
+│   └── blog-site/
+│       ├── markopress.config.ts  → content: '../../content/blog'
+│       └── package.json
+└── content/
+    ├── main/
+    ├── docs/
+    └── blog/
+</code></pre>
+<p>This setup allows multiple sites to share or separate content as needed.</p>
+
+  </div>
+</div>

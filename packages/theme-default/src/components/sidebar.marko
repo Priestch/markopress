@@ -1,0 +1,87 @@
+/**
+ * Sidebar component for documentation
+ */
+
+class {
+  onCreate() {
+    this.state = {
+      sidebar: input.sidebar || [],
+      currentPath: input.currentPath || '',
+    };
+  }
+}
+
+<nav class="sidebar">
+  <for|section| in=(state.sidebar)>
+    <div class="sidebar-section">
+      <if(section.text)>
+        <h3 class="sidebar-title">${section.text}</h3>
+      </if>
+      <if(section.items)>
+        <ul class="sidebar-links">
+          <for|item| in=(section.items)>
+            <li class="sidebar-item">
+              <a href="${item.link}" class="sidebar-link">
+                ${item.text}
+              </a>
+              <if(item.items)>
+                <ul class="sidebar-links nested">
+                  <for|subItem| in=(item.items)>
+                    <li class="sidebar-item">
+                      <a href="${subItem.link}" class="sidebar-link">
+                        ${subItem.text}
+                      </a>
+                    </li>
+                  </for>
+                </ul>
+              </if>
+            </li>
+          </for>
+        </ul>
+      </if>
+    </div>
+  </for>
+</nav>
+
+<style>
+  .sidebar {
+    width: 280px;
+    padding-right: 2rem;
+  }
+
+  .sidebar-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .sidebar-title {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.75rem;
+  }
+
+  .sidebar-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .sidebar-links.nested {
+    padding-left: 1rem;
+  }
+
+  .sidebar-item {
+    margin-bottom: 0.5rem;
+  }
+
+  .sidebar-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    padding: 0.25rem 0;
+  }
+
+  .sidebar-link:hover {
+    color: var(--accent-color);
+  }
+</style>

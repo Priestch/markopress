@@ -1,0 +1,82 @@
+<article class="blog-post">
+  <header>
+    <h1>${$global.title}</h1>
+    <div class="meta">
+      <if=$global.date>
+        <span class="date">${$global.date}</span>
+      </if>
+      <if=$global.author>
+        <span class="author"> by ${$global.author}</span>
+      </if>
+    </div>
+  </header>
+  <div class="content">
+    <h1 id="introducing-markopress" tabindex="-1"><a class="header-anchor" href="#introducing-markopress">#</a> Introducing MarkoPress</h1>
+<p>We’re excited to introduce MarkoPress, a general-purpose static site generator powered by Marko.js v6!</p>
+<h2 id="why-markopress%3F" tabindex="-1"><a class="header-anchor" href="#why-markopress%3F">#</a> Why MarkoPress?</h2>
+<p>MarkoPress was built to bring the power of Marko.js to the world of static site generation. While tools like VitePress and Docusaurus are great, we wanted something that:</p>
+<ol>
+<li>Uses the powerful Marko.js templating engine</li>
+<li>Provides full TypeScript support out of the box</li>
+<li>Has a flexible plugin system</li>
+<li>Supports existing content from VitePress and Docusaurus</li>
+</ol>
+<h2 id="key-features" tabindex="-1"><a class="header-anchor" href="#key-features">#</a> Key Features</h2>
+<h3 id="markdown-%2B-frontmatter" tabindex="-1"><a class="header-anchor" href="#markdown-%2B-frontmatter">#</a> Markdown + Frontmatter</h3>
+<p>Write your content in Markdown with YAML frontmatter, just like you’re used to:</p>
+<pre><code class="language-yaml">---
+title: My Post
+description: This is my post
+date: 2024-01-11
+tags: [news, updates]
+---
+</code></pre>
+<h3 id="file-based-routing" tabindex="-1"><a class="header-anchor" href="#file-based-routing">#</a> File-based Routing</h3>
+<p>Your content structure automatically becomes your site structure:</p>
+<pre><code>content/
+├── pages/
+│   └── index.md        → /
+├── docs/
+│   └── guide.md        → /docs/guide
+└── blog/
+    └── 2024-01-11.md   → /blog/2024-01-11
+</code></pre>
+<h3 id="plugin-system" tabindex="-1"><a class="header-anchor" href="#plugin-system">#</a> Plugin System</h3>
+<p>Extend MarkoPress with plugins for additional functionality:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  plugins: [</span></span>
+<span class="line"><span style="color:#032F62">    '@markopress/plugin-content-blog'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    [</span><span style="color:#032F62">'my-custom-plugin'</span><span style="color:#24292E">, { option: </span><span style="color:#032F62">'value'</span><span style="color:#24292E"> }],</span></span>
+<span class="line"><span style="color:#24292E">  ],</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+<h3 id="theme-system" tabindex="-1"><a class="header-anchor" href="#theme-system">#</a> Theme System</h3>
+<p>Customize your site with theme overrides:</p>
+<pre><code>my-site/
+└── .markopress/
+    └── theme/
+        └── layouts/
+            └── docs.marko
+</code></pre>
+<h2 id="getting-started" tabindex="-1"><a class="header-anchor" href="#getting-started">#</a> Getting Started</h2>
+<p>Install MarkoPress and create your first site:</p>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> install</span><span style="color:#032F62"> markopress</span></span>
+<span class="line"><span style="color:#6F42C1">npx</span><span style="color:#032F62"> markopress</span><span style="color:#032F62"> init</span><span style="color:#032F62"> my-site</span></span>
+<span class="line"><span style="color:#005CC5">cd</span><span style="color:#032F62"> my-site</span></span>
+<span class="line"><span style="color:#6F42C1">npm</span><span style="color:#032F62"> run</span><span style="color:#032F62"> dev</span></span>
+<span class="line"></span></code></pre>
+<h2 id="what%E2%80%99s-next%3F" tabindex="-1"><a class="header-anchor" href="#what%E2%80%99s-next%3F">#</a> What’s Next?</h2>
+<p>We’re actively developing MarkoPress and have many exciting features planned:</p>
+<ul>
+<li>Enhanced plugin ecosystem</li>
+<li>More theme options</li>
+<li>Improved performance</li>
+<li>Better tooling and documentation</li>
+</ul>
+<p>Stay tuned for more updates!</p>
+<h2 id="get-involved" tabindex="-1"><a class="header-anchor" href="#get-involved">#</a> Get Involved</h2>
+<p>MarkoPress is open source and we welcome contributions. Check out our <a href="https://github.com">GitHub repository</a> to get involved.</p>
+<p>Happy building!</p>
+
+  </div>
+</article>

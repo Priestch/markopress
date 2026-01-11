@@ -1,0 +1,36 @@
+/**
+ * Default page layout
+ */
+
+class {
+  onCreate() {
+    this.state = {
+      title: input.frontmatter?.title || 'Page',
+      description: input.frontmatter?.description || '',
+    };
+  }
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${state.title}</title>
+  <if(state.description)>
+    <meta name="description" content="${state.description}">
+  </if>
+</head>
+<body>
+  <div class="page">
+    <@header/>
+    <main class="content">
+      <article>
+        <h1>${state.title}</h1>
+        <${input.renderBody()} />
+      </article>
+    </main>
+    <@footer/>
+  </div>
+</body>
+</html>

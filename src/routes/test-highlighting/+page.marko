@@ -1,0 +1,51 @@
+<div class="container">
+  <h1>${$global.title}</h1>
+  <div class="content">
+    <h1 id="syntax-highlighting-test" tabindex="-1"><a class="header-anchor" href="#syntax-highlighting-test">#</a> Syntax Highlighting Test</h1>
+<p>This page tests Shiki syntax highlighting.</p>
+<h2 id="javascript" tabindex="-1"><a class="header-anchor" href="#javascript">#</a> JavaScript</h2>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">function</span><span style="color:#6F42C1"> greet</span><span style="color:#24292E">(</span><span style="color:#E36209">name</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">  console.</span><span style="color:#6F42C1">log</span><span style="color:#24292E">(</span><span style="color:#032F62">`Hello, $\{</span><span style="color:#24292E">name</span><span style="color:#032F62">}!`</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">  return</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">greet</span><span style="color:#24292E">(</span><span style="color:#032F62">'MarkoPress'</span><span style="color:#24292E">);</span></span>
+<span class="line"></span></code></pre>
+<h2 id="typescript" tabindex="-1"><a class="header-anchor" href="#typescript">#</a> TypeScript</h2>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">interface</span><span style="color:#6F42C1"> User</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#E36209">  id</span><span style="color:#D73A49">:</span><span style="color:#005CC5"> number</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  name</span><span style="color:#D73A49">:</span><span style="color:#005CC5"> string</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#E36209">  email</span><span style="color:#D73A49">:</span><span style="color:#005CC5"> string</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">const</span><span style="color:#005CC5"> user</span><span style="color:#D73A49">:</span><span style="color:#6F42C1"> User</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">  id: </span><span style="color:#005CC5">1</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  name: </span><span style="color:#032F62">'John Doe'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  email: </span><span style="color:#032F62">'john@example.com'</span></span>
+<span class="line"><span style="color:#24292E">};</span></span>
+<span class="line"></span></code></pre>
+<h2 id="python" tabindex="-1"><a class="header-anchor" href="#python">#</a> Python</h2>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">def</span><span style="color:#6F42C1"> factorial</span><span style="color:#24292E">(n):</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> n </span><span style="color:#D73A49">&#x3C;=</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">:</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#005CC5"> 1</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> n </span><span style="color:#D73A49">*</span><span style="color:#24292E"> factorial(n </span><span style="color:#D73A49">-</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#005CC5">print</span><span style="color:#24292E">(factorial(</span><span style="color:#005CC5">5</span><span style="color:#24292E">))</span></span>
+<span class="line"></span></code></pre>
+<h2 id="bash" tabindex="-1"><a class="header-anchor" href="#bash">#</a> Bash</h2>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D">#!/bin/bash</span></span>
+<span class="line"><span style="color:#005CC5">echo</span><span style="color:#032F62"> "Hello from Bash!"</span></span>
+<span class="line"><span style="color:#D73A49">for</span><span style="color:#24292E"> file </span><span style="color:#D73A49">in</span><span style="color:#032F62"> *.md</span><span style="color:#24292E">; </span><span style="color:#D73A49">do</span></span>
+<span class="line"><span style="color:#005CC5">  echo</span><span style="color:#032F62"> "Processing </span><span style="color:#24292E">$file</span><span style="color:#032F62">"</span></span>
+<span class="line"><span style="color:#D73A49">done</span></span>
+<span class="line"></span></code></pre>
+<h2 id="json" tabindex="-1"><a class="header-anchor" href="#json">#</a> JSON</h2>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#005CC5">  "name"</span><span style="color:#24292E">: </span><span style="color:#032F62">"markopress"</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">  "version"</span><span style="color:#24292E">: </span><span style="color:#032F62">"0.1.0"</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">  "features"</span><span style="color:#24292E">: [</span><span style="color:#032F62">"markdown"</span><span style="color:#24292E">, </span><span style="color:#032F62">"syntax-highlighting"</span><span style="color:#24292E">, </span><span style="color:#032F62">"ssg"</span><span style="color:#24292E">]</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span></code></pre>
+
+  </div>
+</div>

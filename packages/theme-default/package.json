@@ -1,0 +1,19 @@
+{
+  "name": "@markopress/theme-default",
+  "version": "1.0.0",
+  "description": "Default theme for MarkoPress",
+  "main": "src/index.ts",
+  "marko": {
+    "src": "src"
+  },
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "markopress",
+    "theme",
+    "marko"
+  ],
+  "author": "MarkoPress",
+  "license": "MIT"
+}

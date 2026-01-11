@@ -1,0 +1,46 @@
+# pnpm workspace configuration
+
+packages:
+  # Core packages
+  - 'packages/*'
+
+# Enable workspace protocol
+# This allows packages to reference each other using workspace: prefix
+# Example: "markopress": "workspace:*"
+
+# Catalog settings (optional but recommended)
+catalogs:
+  default:
+    # Default catalog for shared dependencies
+    # This helps keep versions consistent across packages
+    react: ^18.0.0
+    react-dom: ^18.0.0
+
+    # MarkoPress internal packages
+    # These will be available as workspace: references
+    markopress: "workspace:*"
+    "@markopress/theme-default": "workspace:*"
+    "@markopress/plugin-content-pages": "workspace:*"
+    "@markopress/plugin-content-docs": "workspace:*"
+    "@markopress/plugin-content-blog": "workspace:*"
+
+# Workspace settings
+# See: https://pnpm.io/npmrc.html
+
+# Enable public workspace protocol (recommended for monorepos)
+# This allows workspace dependencies to be referenced externally
+public-hoist-pattern:
+  - '*'
+  - '**/*'
+
+# Link workspace packages (default: true)
+# When true, pnpm creates links to workspace packages instead of copying
+link-workspace-packages: true
+
+# Prefer workspace versions (default: true)
+# When true, pnpm prefers local workspace versions over registry versions
+prefer-workspace-packages: true
+
+# Workspace package location (default: node_modules/.pnpm)
+# Where to store links to workspace packages
+# workspace-package-location: node_modules/.pnpm

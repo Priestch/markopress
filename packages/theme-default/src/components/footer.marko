@@ -1,0 +1,38 @@
+/**
+ * Footer component
+ */
+
+class {
+  onCreate() {
+    this.state = {
+      message: input.message || '',
+      copyright: input.copyright || '',
+    };
+  }
+}
+
+<footer class="site-footer">
+  <div class="footer-container">
+    <if(state.message)>
+      <p class="footer-message">${state.message}</p>
+    </if>
+    <if(state.copyright)>
+      <p class="footer-copyright">${state.copyright}</p>
+    </if>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 2rem 0;
+    margin-top: 4rem;
+  }
+
+  .footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    text-align: center;
+  }
+</style>

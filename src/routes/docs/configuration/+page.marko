@@ -1,0 +1,75 @@
+<div class="container">
+  <h1>${$global.title}</h1>
+  <div class="content">
+    <h1 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration">#</a> Configuration</h1>
+<p>MarkoPress is configured via <code>markopress.config.ts</code> in your project root.</p>
+<h2 id="site-configuration" tabindex="-1"><a class="header-anchor" href="#site-configuration">#</a> Site Configuration</h2>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  site: {</span></span>
+<span class="line"><span style="color:#24292E">    title: </span><span style="color:#032F62">'My Site'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    description: </span><span style="color:#032F62">'Site description'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    base: </span><span style="color:#032F62">'/'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    lang: </span><span style="color:#032F62">'en-US'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    head: [</span></span>
+<span class="line"><span style="color:#24292E">      [</span><span style="color:#032F62">'meta'</span><span style="color:#24292E">, { name: </span><span style="color:#032F62">'theme-color'</span><span style="color:#24292E">, content: </span><span style="color:#032F62">'#3c8772'</span><span style="color:#24292E"> }],</span></span>
+<span class="line"><span style="color:#24292E">      [</span><span style="color:#032F62">'link'</span><span style="color:#24292E">, { rel: </span><span style="color:#032F62">'icon'</span><span style="color:#24292E">, href: </span><span style="color:#032F62">'/favicon.ico'</span><span style="color:#24292E"> }],</span></span>
+<span class="line"><span style="color:#24292E">    ],</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+<h2 id="content-configuration" tabindex="-1"><a class="header-anchor" href="#content-configuration">#</a> Content Configuration</h2>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  content: {</span></span>
+<span class="line"><span style="color:#24292E">    pages: </span><span style="color:#032F62">'content/pages'</span><span style="color:#24292E">,    </span><span style="color:#6A737D">// → /route</span></span>
+<span class="line"><span style="color:#24292E">    docs: </span><span style="color:#032F62">'content/docs'</span><span style="color:#24292E">,       </span><span style="color:#6A737D">// → /docs/*</span></span>
+<span class="line"><span style="color:#24292E">    blog: </span><span style="color:#032F62">'content/blog'</span><span style="color:#24292E">,       </span><span style="color:#6A737D">// → /blog/*</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+<h2 id="theme-configuration" tabindex="-1"><a class="header-anchor" href="#theme-configuration">#</a> Theme Configuration</h2>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  theme: {</span></span>
+<span class="line"><span style="color:#24292E">    name: </span><span style="color:#032F62">'@markopress/theme-default'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    options: {</span></span>
+<span class="line"><span style="color:#24292E">      navbar: [</span></span>
+<span class="line"><span style="color:#24292E">        { text: </span><span style="color:#032F62">'Guide'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/docs/guide'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">        { text: </span><span style="color:#032F62">'Blog'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/blog'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">      ],</span></span>
+<span class="line"><span style="color:#24292E">      sidebar: {</span></span>
+<span class="line"><span style="color:#032F62">        '/docs/'</span><span style="color:#24292E">: [</span></span>
+<span class="line"><span style="color:#24292E">          {</span></span>
+<span class="line"><span style="color:#24292E">            text: </span><span style="color:#032F62">'Getting Started'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">            items: [</span></span>
+<span class="line"><span style="color:#24292E">              { text: </span><span style="color:#032F62">'Introduction'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/docs/guide/introduction'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">              { text: </span><span style="color:#032F62">'Installation'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/docs/guide/installation'</span><span style="color:#24292E"> },</span></span>
+<span class="line"><span style="color:#24292E">            ],</span></span>
+<span class="line"><span style="color:#24292E">          },</span></span>
+<span class="line"><span style="color:#24292E">        ],</span></span>
+<span class="line"><span style="color:#24292E">      },</span></span>
+<span class="line"><span style="color:#24292E">    },</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+<h2 id="markdown-configuration" tabindex="-1"><a class="header-anchor" href="#markdown-configuration">#</a> Markdown Configuration</h2>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  markdown: {</span></span>
+<span class="line"><span style="color:#24292E">    lineNumbers: </span><span style="color:#005CC5">true</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    theme: {</span></span>
+<span class="line"><span style="color:#24292E">      light: </span><span style="color:#032F62">'github-light'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">      dark: </span><span style="color:#032F62">'github-dark'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    },</span></span>
+<span class="line"><span style="color:#24292E">  },</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+<h2 id="plugin-configuration" tabindex="-1"><a class="header-anchor" href="#plugin-configuration">#</a> Plugin Configuration</h2>
+<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
+<span class="line"><span style="color:#24292E">  plugins: [</span></span>
+<span class="line"><span style="color:#032F62">    '@markopress/plugin-content-pages'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    '@markopress/plugin-content-docs'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    '@markopress/plugin-content-blog'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  ],</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span></code></pre>
+
+  </div>
+</div>
