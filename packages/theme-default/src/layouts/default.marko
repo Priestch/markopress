@@ -1,84 +1,262 @@
 /*!
  * Default Layout for MarkoPress
- * This is the main layout wrapper for all pages
+ * Main layout wrapper with theme support, navigation, and SEO
  */
 
 class {
   onCreate() {
     this.state = {
       darkMode: false,
-      sidebarOpen: false,
+      mobileMenuOpen: false,
+      sidebarOpen: true,
     };
+  }
+
+  onMount() {
+    // Check for saved theme preference or system preference
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+      this.state.darkMode = true;
+      document.documentElement.classList.add('dark');
+    }
+
+    // Check for saved sidebar state
+    const sidebarState = localStorage.getItem('sidebar');
+    if (sidebarState === 'closed') {
+      this.state.sidebarOpen = false;
+    }
+  }
+
+  toggleDarkMode() {
+    this.state.darkMode = !this.state.darkMode;
+    document.documentElement.classList.toggle('dark', this.state.darkMode);
+    localStorage.setItem('theme', this.state.darkMode ? 'dark' : 'light');
+  }
+
+  toggleMobileMenu() {
+    this.state.mobileMenuOpen = !this.state.mobileMenuOpen;
+  }
+
+  toggleSidebar() {
+    this.state.sidebarOpen = !this.state.sidebarOpen;
+    localStorage.setItem('sidebar', this.state.sidebarOpen ? 'open' : 'closed');
   }
 }
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang=$input.lang||"en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href=input.favicon||"/logo.svg">
 
-  <!-- Dynamic Title -->
-  <title>${input.title || 'MarkoPress'}</title>
+  <!-- Dynamic Title with Template -->
+  <title>${input.title ? `${input.title} | ${input.siteTitle || 'MarkoPress'}` : input.siteTitle || 'MarkoPress'}</title>
 
   <!-- Meta Description -->
-  <meta name="description" content="${input.description || 'A general-purpose static site generator using Marko.js v6'}">
+  <if(input.description)>
+    <meta name="description" content=input.description>
+  </if>
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="">
-  <meta property="og:title" content="${input.title || 'MarkoPress'}">
-  <meta property="og:description" content="${input.description || 'A general-purpose static site generator using Marko.js v6'}">
-  <meta property="og:image" content="/og-image.png">
+  <meta property="og:title" content=input.title||input.siteTitle||'MarkoPress'>
+  <meta property="og:description" content=input.description||'A modern static site generator'>
+  <if(input.ogImage)>
+    <meta property="og:image" content=input.ogImage>
+  </if>
+  <if=input.url>
+    <meta property="og:url" content=input.url>
+  </if>
 
   <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:title" content="${input.title || 'MarkoPress'}">
-  <meta property="twitter:description" content="${input.description || 'A general-purpose static site generator using Marko.js v6'}">
-  <meta property="twitter:image" content="/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content=input.title||input.siteTitle||'MarkoPress'>
+  <meta name="twitter:description" content=input.description||'A modern static site generator'>
+  <if=input.twitterImage>
+    <meta name="twitter:image" content=input.twitterImage>
+  </if>
 
-  <!-- RSS Feed -->
-  <link rel="alternate" type="application/rss+xml" title="MarkoPress Blog RSS Feed" href="/api/rss/xml">
+  <!-- Canonical URL -->
+  <if=input.canonical>
+    <link rel="canonical" href=input.canonical>
+  </if>
 
-  <!-- Sitemap -->
-  <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-
-  <!-- Analytics -->
-  <html-script src="/analytics.js"></html-script>
+  <!-- Additional Head Tags -->
+  <for(input.head||[])>
+    <include(...)/>
+  </for>
 
   <!-- Theme Styles -->
   <style>
     <include('../styles.css')/>
   </style>
 </head>
-<body>
-  <div class="container">
-    <!-- Header Slot -->
-    <include(input.header || <components.Header/>)/>
+<body class=${[
+  'theme-default',
+  state.darkMode ? 'dark' : 'light',
+  !state.sidebarOpen ? 'sidebar-closed' : ''
+].filter(Boolean).join(' ')}>
 
-    <!-- Main Content Slot -->
-    <include(input.body)/>
+  <!-- Skip to content link (accessibility) -->
+  <a href="#content" class="skip-to-content">Skip to main content</a>
 
-    <!-- Footer Slot -->
-    <include(input.footer || <components.Footer/>)/>
+  <!-- Background Pattern -->
+  <div class="background-pattern"></div>
 
-    <!-- Sidebar (conditionally rendered) -->
-    <if(input.sidebar)>
-      <aside class="sidebar" id="sidebar">
-        <include(input.sidebar)/>
-      </aside>
-    </if>
+  <div class="app-container">
+    <!-- Header/Navbar -->
+    <header class="navbar">
+      <div class="navbar-container">
+        <!-- Logo and Site Title -->
+        <a href=input.base||"/" class="navbar-brand">
+          <if=input.logo>
+            <img src=input.logo alt="Logo" class="navbar-logo">
+          </if>
+          <span class="navbar-title">${input.siteTitle || 'MarkoPress'}</span>
+        </a>
 
-    <!-- Mobile Sidebar Toggle -->
-    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">☰</button>
+        <!-- Desktop Navigation -->
+        <nav class="navbar-nav">
+          <include(input.nav||<components.NavBar/>)>
+        </nav>
+
+        <!-- Header Actions -->
+        <div class="navbar-actions">
+          <!-- Search Button -->
+          <button class="btn-icon" aria-label="Search" on-click('triggerSearch')>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+          </button>
+
+          <!-- Dark Mode Toggle -->
+          <button class="btn-icon" aria-label="Toggle dark mode" on-click('toggleDarkMode')}>
+            <if(state.darkMode)>
+              <!-- Sun Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            <else>
+              <!-- Moon Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </if>
+          </button>
+
+          <!-- Mobile Menu Toggle -->
+          <button class="btn-icon mobile-menu-toggle" aria-label="Toggle menu" on-click('toggleMobileMenu')>
+            <if(state.mobileMenuOpen)>
+              <!-- Close Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            <else>
+              <!-- Menu Icon -->
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            </if>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <if(state.mobileMenuOpen)>
+        <div class="navbar-mobile-menu">
+          <include(input.nav||<components.NavBar/>)>
+        </div>
+      </if>
+    </header>
+
+    <div class="layout-container">
+      <!-- Sidebar (if provided) -->
+      <if(input.sidebar)>
+        <aside class="sidebar" class-list={collapsed: !state.sidebarOpen}>
+          <div class="sidebar-container">
+            <!-- Collapse Button -->
+            <button class="sidebar-toggle-btn" on-click('toggleSidebar') aria-label="Toggle sidebar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+
+            <!-- Sidebar Content -->
+            <include(input.sidebar)>
+              <components.Sidebar/>
+            </include>
+          </div>
+        </aside>
+      </if>
+
+      <!-- Main Content Area -->
+      <main class="main-content" id="content">
+        <!-- Breadcrumbs (if provided) -->
+        <if=input.breadcrumbs>
+          <nav class="breadcrumbs" aria-label="Breadcrumb">
+            <include(input.breadcrumbs)>
+              <components.Breadcrumbs/>
+            </include>
+          </nav>
+        </if>
+
+        <!-- Page Content -->
+        <include(input.body)/>
+
+        <!-- Prev/Next Navigation (if provided) -->
+        <if=(input.prev || input.next)>
+          <div class="page-nav">
+            <if=input.prev>
+              <a class="page-nav-prev" href=input.prev.url>
+                <span class="page-nav-label">← Previous</span>
+                <span class="page-nav-title">${input.prev.title}</span>
+              </a>
+            </if>
+            <if=input.next>
+              <a class="page-nav-next" href=input.next.url>
+                <span class="page-nav-label">Next →</span>
+                <span class="page-nav-title">${input.next.title}</span>
+              </a>
+            </if>
+          </div>
+        </if>
+      </main>
+
+      <!-- Table of Contents (if provided) -->
+      <if=input.toc>
+        <aside class="toc-aside">
+          <div class="toc-container">
+            <h2 class="toc-title">On This Page</h2>
+            <include(input.toc)>
+              <components.TOC/>
+            </include>
+          </div>
+        </aside>
+      </if>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <include(input.footer||<components.Footer/>)>
+    </footer>
   </div>
 
-  <!-- Dark Mode Toggle -->
-  <button class="dark-mode-toggle" id="dark-mode-toggle" aria-label="Toggle dark mode">
-    🌙
-  </button>
-
-  <!-- Theme Scripts -->
-  <html-script src="/theme.js"></html-script>
+  <!-- Client Scripts -->
+  <script src="/theme.js"></script>
 </body>
 </html>
