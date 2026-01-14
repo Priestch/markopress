@@ -32,4 +32,6 @@ export interface Header {
 export interface MarkdownEnv {
   path?: string;
   relativePath?: string;
+  rootDir?: string;
+  filePath?: string;
 }

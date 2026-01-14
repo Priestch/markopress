@@ -17,172 +17,20 @@ import type { MarkdownOptions, ProcessedMarkdown, Header, MarkdownEnv } from './
 let highlighterInstance: Awaited<ReturnType<typeof createHighlighter>> | null = null;
 
 /**
- * Get or create Shiki highlighter with 100+ languages
+ * Get or create Shiki highlighter with all bundled languages
  */
 async function getHighlighterInstance() {
   if (!highlighterInstance) {
+    // Load all bundled languages from Shiki
+    // This avoids errors from unsupported language names
+    const { bundledLanguages, bundledLanguagesInfo } = await import('shiki/langs');
+
+    // Extract language names from bundled languages
+    const langNames = Object.keys(bundledLanguages);
+
     highlighterInstance = await createHighlighter({
       themes: ['github-light', 'github-dark'],
-      langs: [
-        // Most popular languages
-        'javascript',
-        'typescript',
-        'python',
-        'java',
-        'cpp',
-        'csharp',
-        'php',
-        'ruby',
-        'go',
-        'rust',
-        'swift',
-        'kotlin',
-        'dart',
-        'scala',
-        'html',
-        'css',
-        'json',
-        'yaml',
-        'toml',
-        'xml',
-        'sql',
-        'bash',
-        'shell',
-        'powershell',
-        'markdown',
-        'mdx',
-
-        // Web & Mobile
-        'jsx',
-        'tsx',
-        'vue',
-        'svelte',
-        'astro',
-
-        // Config & Data
-        'jsonc',
-        'json5',
-        'graphql',
-        'dockerfile',
-        'regex',
-
-        // Scripting
-        'lua',
-        'perl',
-        'r',
-        'tcl',
-        'awk',
-
-        // .NET & C
-        'c',
-        'objective-c',
-        'objective-cpp',
-
-        // Systems & Assembly
-        'asm',
-        'nasm',
-
-        // Functional
-        'haskell',
-        'elm',
-        'purescript',
-        'fsharp',
-        'ocaml',
-        'reason',
-        'lisp',
-        'clojure',
-        'scheme',
-        'racket',
-
-        // Scientific
-        'julia',
-        'matlab',
-        'mathematica',
-        'sas',
-        'stata',
-
-        // Templates
-        'ejs',
-        'erb',
-        'jade',
-        'pug',
-        'handlebars',
-        'mustache',
-        'twig',
-        'liquid',
-
-        // Styles
-        'scss',
-        'sass',
-        'less',
-        'stylus',
-
-        // Build & Config
-        'webpack',
-        'rollup',
-        'vite',
-        'babel',
-
-        // Testing
-        'jest',
-
-        // Documentation
-        'latex',
-        'tex',
-
-        // Version Control
-        'git',
-        'git-commit',
-        'git-rebase',
-
-        // Infrastructure
-        'terraform',
-        'helm',
-        'kotlin',
-
-        // Databases
-        'mongodb',
-        'redis',
-        'postgresql',
-        'mysql',
-
-        // Protocols & Formats
-        'http',
-        'websocket',
-        'graphql',
-
-        // Other
-        'actionscript',
-        'coffee',
-        'coffeescript',
-        'livescript',
-        'dart',
-        'nim',
-        'zig',
-        'v',
-        'wren',
-        'crystal',
-        'erlang',
-        'elixir',
-        'factor',
-        'forth',
-        'fortran',
-        'idris',
-        'janet',
-        'nim',
-        'nix',
-        'ocaml',
-        'pony',
-        'pure',
-        'rebol',
-        'red',
-        'r',
-        'tcl',
-        'unison',
-        'verilog',
-        'vhdl',
-        'zed',
-      ],
+      langs: langNames,
     });
   }
   return highlighterInstance;
@@ -204,8 +52,8 @@ export async function parseMarkdown(
 
   // Preprocess file includes
   const content = await preprocessIncludesWithRegions(rawContent, {
-    root: env.rootDir,
-    currentFile: env.filePath,
+    root: env.rootDir ?? process.cwd(),
+    currentFile: env.filePath ?? '',
   });
 
   // Setup markdown-it with Shiki
@@ -238,7 +86,7 @@ async function setupMarkdownIt(options: MarkdownOptions): Promise<MarkdownIt> {
   });
 
   const md = new MarkdownIt({
-    html: true,
+    html: true, // Allow HTML in markdown (authors are trusted in SSG context)
     linkify: true,
     typographer: true,
     highlight: (code, lang, attrs) => {

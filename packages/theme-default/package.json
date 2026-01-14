@@ -2,12 +2,33 @@
   "name": "@markopress/theme-default",
   "version": "1.0.0",
   "description": "Default theme for MarkoPress",
-  "main": "src/index.ts",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./design-systems": {
+      "import": "./dist/design-systems/index.js",
+      "types": "./dist/design-systems/index.d.ts"
+    },
+    "./build": {
+      "import": "./dist/build/index.js",
+      "types": "./dist/build/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
   "marko": {
     "src": "src"
   },
   "files": [
-    "src"
+    "src",
+    "dist"
   ],
   "keywords": [
     "markopress",
@@ -15,5 +36,8 @@
     "marko"
   ],
   "author": "MarkoPress",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
 }

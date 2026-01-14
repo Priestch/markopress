@@ -3,6 +3,15 @@
  * Handles dark mode, sidebar, and other interactive features
  */
 
+declare global {
+  interface Window {
+    MarkoPressTheme?: {
+      toggleDarkMode: () => void;
+      toggleSidebar: () => void;
+    };
+  }
+}
+
 (function() {
   'use strict';
 
@@ -14,14 +23,18 @@
     const currentTheme = localStorage.getItem(DARK_MODE_KEY) || 'light';
     if (currentTheme === 'dark') {
       document.body.classList.add('dark-mode');
-      darkModeToggle.textContent = '☀️';
+      if (darkModeToggle) {
+        darkModeToggle.textContent = '☀️';
+      }
     }
   }
 
   function toggleDarkMode() {
     document.body.classList.toggle('dark-mode');
     const isDarkMode = document.body.classList.contains('dark-mode');
-    darkModeToggle.textContent = isDarkMode ? '☀️' : '🌙';
+    if (darkModeToggle) {
+      darkModeToggle.textContent = isDarkMode ? '☀️' : '🌙';
+    }
     localStorage.setItem(DARK_MODE_KEY, isDarkMode ? 'dark' : 'light');
   }
 

@@ -92,6 +92,9 @@ export interface ContentContext extends PluginContext {
 export interface MarkoPressPlugin {
   name: string;
 
+  // Plugin dependencies (optional array of plugin names that must load before this plugin)
+  dependencies?: string[];
+
   // Config hooks
   config?: (config: ResolvedConfig) => ResolvedConfig | Promise<ResolvedConfig>;
 

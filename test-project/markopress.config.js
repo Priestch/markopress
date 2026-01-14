@@ -15,6 +15,7 @@ export default defineConfig({
   },
   theme: {
     name: '@markopress/theme-default',
+    designSystem: "docusaurus",
     options: {
       navbar: [
         { text: 'Home', link: '/' },
@@ -22,15 +23,9 @@ export default defineConfig({
         { text: 'Blog', link: '/blog' },
       ],
       sidebar: {
-        '/docs/': [
-          {
-            text: 'Documentation',
-            items: [
-              { text: 'Introduction', link: '/docs/intro' },
-              { text: 'Custom Directory', link: '/docs/custom-dir' },
-            ],
-          },
-        ],
+        '/docs/': {
+          autoGenerate: true,  // Auto-generate from file structure
+        },
       },
     },
   },

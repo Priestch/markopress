@@ -1,0 +1,67 @@
+<div class="content">
+  <h1>${$global.title}</h1>
+  <div class="content-body" no-parse>
+    <h1 id="configuration" tabindex="-1"><a class="header-anchor" href="#configuration">#</a> Configuration</h1>
+<p>MarkoPress uses a <code>markopress.config.js</code> file for site configuration.</p>
+<h2 id="basic-config" tabindex="-1"><a class="header-anchor" href="#basic-config">#</a> Basic Config</h2>
+<pre class="shiki github-light line-numbers"><code><span class="line" data-line="1"><span class="line"><span style="color:#D73A49">import</span><span style="color:#24292E"> { defineConfig } </span><span style="color:#D73A49">from</span><span style="color:#032F62"> 'markopress/config'</span><span style="color:#24292E">;</span></span></span>
+<span class="line" data-line="2"><span class="line"></span></span>
+<span class="line" data-line="3"><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span></span>
+<span class="line" data-line="4"><span class="line"><span style="color:#24292E">  site: {</span></span></span>
+<span class="line" data-line="5"><span class="line"><span style="color:#24292E">    title: </span><span style="color:#032F62">'My Site'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="6"><span class="line"><span style="color:#24292E">    description: </span><span style="color:#032F62">'My awesome site'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="7"><span class="line"><span style="color:#24292E">  },</span></span></span>
+<span class="line" data-line="8"><span class="line"><span style="color:#24292E">  theme: {</span></span></span>
+<span class="line" data-line="9"><span class="line"><span style="color:#24292E">    name: </span><span style="color:#032F62">'@markopress/theme-default'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="10"><span class="line"><span style="color:#24292E">    options: {</span></span></span>
+<span class="line" data-line="11"><span class="line"><span style="color:#24292E">      navbar: [</span></span></span>
+<span class="line" data-line="12"><span class="line"><span style="color:#24292E">        { text: </span><span style="color:#032F62">'Home'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/'</span><span style="color:#24292E"> },</span></span></span>
+<span class="line" data-line="13"><span class="line"><span style="color:#24292E">        { text: </span><span style="color:#032F62">'Guide'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/docs/getting-started'</span><span style="color:#24292E"> },</span></span></span>
+<span class="line" data-line="14"><span class="line"><span style="color:#24292E">      ],</span></span></span>
+<span class="line" data-line="15"><span class="line"><span style="color:#24292E">      sidebar: {</span></span></span>
+<span class="line" data-line="16"><span class="line"><span style="color:#032F62">        '/docs/'</span><span style="color:#24292E">: [</span></span></span>
+<span class="line" data-line="17"><span class="line"><span style="color:#24292E">          {</span></span></span>
+<span class="line" data-line="18"><span class="line"><span style="color:#24292E">            text: </span><span style="color:#032F62">'Getting Started'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="19"><span class="line"><span style="color:#24292E">            items: [</span></span></span>
+<span class="line" data-line="20"><span class="line"><span style="color:#24292E">              { text: </span><span style="color:#032F62">'Installation'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/docs/getting-started'</span><span style="color:#24292E"> },</span></span></span>
+<span class="line" data-line="21"><span class="line"><span style="color:#24292E">              { text: </span><span style="color:#032F62">'Configuration'</span><span style="color:#24292E">, link: </span><span style="color:#032F62">'/docs/configuration'</span><span style="color:#24292E"> },</span></span></span>
+<span class="line" data-line="22"><span class="line"><span style="color:#24292E">            ],</span></span></span>
+<span class="line" data-line="23"><span class="line"><span style="color:#24292E">          },</span></span></span>
+<span class="line" data-line="24"><span class="line"><span style="color:#24292E">        ],</span></span></span>
+<span class="line" data-line="25"><span class="line"><span style="color:#24292E">      },</span></span></span>
+<span class="line" data-line="26"><span class="line"><span style="color:#24292E">    },</span></span></span>
+<span class="line" data-line="27"><span class="line"><span style="color:#24292E">  },</span></span></span>
+<span class="line" data-line="28"><span class="line"><span style="color:#24292E">});</span></span></span>
+<span class="line" data-line="29"><span class="line"></span></span></code></pre>
+<h2 id="site-config" tabindex="-1"><a class="header-anchor" href="#site-config">#</a> Site Config</h2>
+<p>Configure your site’s metadata:</p>
+<ul>
+<li><code>title</code> - Site title</li>
+<li><code>description</code> - Site description</li>
+<li><code>base</code> - Base URL (default: <code>/</code>)</li>
+<li><code>lang</code> - Site language (default: <code>en-US</code>)</li>
+</ul>
+<h2 id="content-directories" tabindex="-1"><a class="header-anchor" href="#content-directories">#</a> Content Directories</h2>
+<p>Customize where your content lives:</p>
+<pre class="shiki github-light line-numbers"><code><span class="line" data-line="1"><span class="line"><span style="color:#6F42C1">content</span><span style="color:#24292E">: {</span></span></span>
+<span class="line" data-line="2"><span class="line"><span style="color:#6F42C1">  pages</span><span style="color:#24292E">: </span><span style="color:#032F62">'my-pages'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="3"><span class="line"><span style="color:#6F42C1">  docs</span><span style="color:#24292E">: </span><span style="color:#032F62">'my-docs'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="4"><span class="line"><span style="color:#6F42C1">  blog</span><span style="color:#24292E">: </span><span style="color:#032F62">'my-blog'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="5"><span class="line"><span style="color:#24292E">}</span></span></span>
+<span class="line" data-line="6"><span class="line"></span></span></code></pre>
+<h2 id="theme-options" tabindex="-1"><a class="header-anchor" href="#theme-options">#</a> Theme Options</h2>
+<p>Configure the default theme:</p>
+<ul>
+<li><code>navbar</code> - Top navigation links</li>
+<li><code>sidebar</code> - Side navigation per route</li>
+<li><code>logo</code> - Site logo path</li>
+<li><code>footer</code> - Footer configuration</li>
+</ul>
+<p>See also:</p>
+<ul>
+<li><a href="/docs/advanced/markdown">Markdown Options</a></li>
+<li><a href="/docs/advanced/build">Build Options</a></li>
+</ul>
+
+  </div>
+</div>

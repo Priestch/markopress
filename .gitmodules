@@ -4,3 +4,6 @@
 [submodule "vitepress"]
 	path = vitepress
 	url = https://github.com/vuejs/vitepress.git
+[submodule "rspress"]
+	path = rspress
+	url = https://github.com/web-infra-dev/rspress.git

@@ -1,0 +1,57 @@
+<div class="content">
+  <h1>${$global.title}</h1>
+  <div class="content-body" no-parse>
+    <h1 id="markdown-options" tabindex="-1"><a class="header-anchor" href="#markdown-options">#</a> Markdown Options</h1>
+<p>Configure how MarkoPress processes markdown content.</p>
+<h2 id="line-numbers" tabindex="-1"><a class="header-anchor" href="#line-numbers">#</a> Line Numbers</h2>
+<p>Enable or disable line numbers globally:</p>
+<pre class="shiki github-light line-numbers"><code><span class="line" data-line="1"><span class="line"><span style="color:#6F42C1">markdown</span><span style="color:#24292E">: {</span></span></span>
+<span class="line" data-line="2"><span class="line"><span style="color:#6F42C1">  lineNumbers</span><span style="color:#24292E">: </span><span style="color:#005CC5">true</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="3"><span class="line"><span style="color:#24292E">}</span></span></span>
+<span class="line" data-line="4"><span class="line"></span></span></code></pre>
+<p>Disable for specific blocks:</p>
+<pre class="shiki github-light line-numbers"><code><span class="line" data-line="1"><span class="line"><span style="color:#24292E">```javascript no-line-numbers</span></span></span>
+<span class="line" data-line="2"><span class="line"><span style="color:#D73A49">const</span><span style="color:#005CC5"> x</span><span style="color:#D73A49"> =</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">;</span></span></span>
+<span class="line" data-line="3"><span class="line"><span style="color:#24292E">```</span></span></span>
+<span class="line" data-line="4"><span class="line"></span></span></code></pre>
+<h2 id="syntax-themes" tabindex="-1"><a class="header-anchor" href="#syntax-themes">#</a> Syntax Themes</h2>
+<p>Configure light and dark themes:</p>
+<pre class="shiki github-light line-numbers"><code><span class="line" data-line="1"><span class="line"><span style="color:#6F42C1">markdown</span><span style="color:#24292E">: {</span></span></span>
+<span class="line" data-line="2"><span class="line"><span style="color:#6F42C1">  theme</span><span style="color:#24292E">: {</span></span></span>
+<span class="line" data-line="3"><span class="line"><span style="color:#6F42C1">    light</span><span style="color:#24292E">: </span><span style="color:#032F62">'github-light'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="4"><span class="line"><span style="color:#6F42C1">    dark</span><span style="color:#24292E">: </span><span style="color:#032F62">'github-dark'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="5"><span class="line"><span style="color:#24292E">  },</span></span></span>
+<span class="line" data-line="6"><span class="line"><span style="color:#24292E">}</span></span></span>
+<span class="line" data-line="7"><span class="line"></span></span></code></pre>
+<p>Available themes:</p>
+<ul>
+<li><code>github-light</code>, <code>github-dark</code></li>
+<li><code>monokai</code>, <code>nord</code></li>
+<li><code>dracula</code>, <code>material</code></li>
+</ul>
+<h2 id="custom-containers" tabindex="-1"><a class="header-anchor" href="#custom-containers">#</a> Custom Containers</h2>
+<p>Configure custom container types:</p>
+<pre class="shiki github-light line-numbers"><code><span class="line" data-line="1"><span class="line"><span style="color:#6F42C1">markdown</span><span style="color:#24292E">: {</span></span></span>
+<span class="line" data-line="2"><span class="line"><span style="color:#6F42C1">  containers</span><span style="color:#24292E">: {</span></span></span>
+<span class="line" data-line="3"><span class="line"><span style="color:#6F42C1">    tip</span><span style="color:#24292E">: </span><span style="color:#032F62">'💡 Tip'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="4"><span class="line"><span style="color:#6F42C1">    warning</span><span style="color:#24292E">: </span><span style="color:#032F62">'⚠️ Warning'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="5"><span class="line"><span style="color:#6F42C1">    danger</span><span style="color:#24292E">: </span><span style="color:#032F62">'🚨 Danger'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="6"><span class="line"><span style="color:#6F42C1">    info</span><span style="color:#24292E">: </span><span style="color:#032F62">'ℹ️ Info'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="7"><span class="line"><span style="color:#24292E">  },</span></span></span>
+<span class="line" data-line="8"><span class="line"><span style="color:#24292E">}</span></span></span>
+<span class="line" data-line="9"><span class="line"></span></span></code></pre>
+<h2 id="headers" tabindex="-1"><a class="header-anchor" href="#headers">#</a> Headers</h2>
+<p>Headers automatically generate:</p>
+<ul>
+<li>Anchor links for navigation</li>
+<li>Table of contents data</li>
+<li>Breadcrumb trails</li>
+</ul>
+<p>See also:</p>
+<ul>
+<li><a href="/docs/advanced/overview">Advanced Features Overview</a></li>
+<li><a href="/docs/api/markdown">API Reference</a></li>
+</ul>
+
+  </div>
+</div>

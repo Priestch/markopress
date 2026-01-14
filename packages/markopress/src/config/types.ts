@@ -20,9 +20,42 @@ export interface ContentConfig {
   blog?: string;
 }
 
+/**
+ * Navigation link item
+ */
+export interface NavItem {
+  text: string;
+  link: string;
+}
+
+/**
+ * Sidebar configuration
+ */
+export interface SidebarConfig {
+  [path: string]: SidebarItem[] | { autoGenerate: boolean };
+}
+
+/**
+ * Sidebar item
+ */
+export interface SidebarItem {
+  text: string;
+  link: string;
+}
+
+/**
+ * Theme options for default theme
+ */
+export interface ThemeOptions {
+  navbar?: NavItem[];
+  sidebar?: SidebarConfig;
+  [key: string]: unknown;
+}
+
 export interface ThemeConfig {
   name?: string;
-  options?: Record<string, unknown>;
+  designSystem?: string;
+  options?: ThemeOptions;
 }
 
 export interface MarkdownConfig {

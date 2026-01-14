@@ -17,4 +17,14 @@ export default defineConfig({
       }),
     }),
   ],
+  server: {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+    },
+  },
+  preview: {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+    },
+  },
 });

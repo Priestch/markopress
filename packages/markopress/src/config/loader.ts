@@ -5,6 +5,8 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { ZodError } from 'zod';
+import { validateConfigSafe } from './validation.js';
 import type {
   UserConfig,
   ResolvedConfig,
@@ -71,49 +73,21 @@ function isObject(value: any): value is Record<string, any> {
 }
 
 /**
- * Validate configuration
+ * Validate configuration using Zod schema
  */
 function validateConfig(config: UserConfig): { valid: boolean; errors: string[] } {
-  const errors: string[] = [];
+  const result = validateConfigSafe(config);
 
-  // Validate site config
-  if (!config.site) {
-    errors.push('site configuration is required');
-  } else {
-    if (!config.site.title) {
-      errors.push('site.title is required');
-    }
-
-    if (config.site.base && !config.site.base.startsWith('/')) {
-      errors.push('site.base must start with /');
-    }
-
-    if (config.site.base && !config.site.base.endsWith('/')) {
-      errors.push('site.base must end with /');
-    }
-  }
-
-  // Validate markdown theme
-  if (config.markdown?.theme) {
-    const theme = config.markdown.theme;
-    if (typeof theme.light !== 'string' && theme.light !== undefined) {
-      errors.push('markdown.theme.light must be a string');
-    }
-    if (typeof theme.dark !== 'string' && theme.dark !== undefined) {
-      errors.push('markdown.theme.dark must be a string');
-    }
-  }
-
-  // Validate build config
-  if (config.build?.outDir) {
-    if (path.isAbsolute(config.build.outDir)) {
-      errors.push('build.outDir must be a relative path');
-    }
+  if (!result.success) {
+    return {
+      valid: false,
+      errors: result.errors.map((err: { path: string; message: string }) => `${err.path}: ${err.message}`),
+    };
   }
 
   return {
-    valid: errors.length === 0,
-    errors,
+    valid: true,
+    errors: [],
   };
 }
 

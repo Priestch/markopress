@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${$global.title || 'MarkoPress Site'}</title>
+  <if=$global.description>
+    <meta name="description" content=$global.description>
+  </if>
+  <link rel="stylesheet" href="/theme.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <a href="/" class="navbar-brand">
+          <span class="navbar-title">MarkoPress Site</span>
+        </a>
+        <if=$global.navbar>
+          <nav class="navbar-nav">
+            <for|item| of=$global.navbar>
+              <a href=item.link class="nav-link">${item.text}</a>
+            </for>
+          </nav>
+        </if>
+      </div>
+    </nav>
+
+    <!-- Main content area with optional sidebar -->
+    <div class="main-wrapper">
+      <if=$global.sidebar>
+        <!-- Sidebar for docs -->
+        <aside class="sidebar">
+          <nav class="sidebar-nav">
+            <for|item| of=$global.sidebar>
+              <a href=item.link class="sidebar-link">${item.text}</a>
+            </for>
+          </nav>
+        </aside>
+      </if>
+
+      <!-- Page content -->
+      <main class="main-content">
+        <${input.content}/>
+      </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-container">
+        <p>&copy; 2024 MarkoPress Site. Built with MarkoPress.</p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

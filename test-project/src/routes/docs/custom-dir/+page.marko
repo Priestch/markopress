@@ -1,6 +1,6 @@
-<div class="container">
+<div class="content">
   <h1>${$global.title}</h1>
-  <div class="content">
+  <div class="content-body" no-parse>
     <h1 id="using-custom-content-directories" tabindex="-1"><a class="header-anchor" href="#using-custom-content-directories">#</a> Using Custom Content Directories</h1>
 <p>By default, MarkoPress looks for content in the <code>content/</code> directory. However, you can customize this to match your project structure.</p>
 <h2 id="why-use-custom-directories%3F" tabindex="-1"><a class="header-anchor" href="#why-use-custom-directories%3F">#</a> Why Use Custom Directories?</h2>
@@ -12,37 +12,37 @@
 </ul>
 <h2 id="configuration-options" tabindex="-1"><a class="header-anchor" href="#configuration-options">#</a> Configuration Options</h2>
 <h3 id="basic-configuration" tabindex="-1"><a class="header-anchor" href="#basic-configuration">#</a> Basic Configuration</h3>
-<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#6A737D">// markopress.config.ts</span></span>
-<span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
-<span class="line"><span style="color:#24292E">  content: {</span></span>
-<span class="line"><span style="color:#24292E">    pages: </span><span style="color:#032F62">'my-content/pages'</span><span style="color:#24292E">,</span></span>
-<span class="line"><span style="color:#24292E">    docs: </span><span style="color:#032F62">'my-content/docs'</span><span style="color:#24292E">,</span></span>
-<span class="line"><span style="color:#24292E">    blog: </span><span style="color:#032F62">'my-content/blog'</span><span style="color:#24292E">,</span></span>
-<span class="line"><span style="color:#24292E">  },</span></span>
-<span class="line"><span style="color:#24292E">});</span></span>
-<span class="line"></span></code></pre>
+<pre class="shiki github-light line-numbers"><code><span class="line" data-line="1"><span class="line"><span style="color:#6A737D">// markopress.config.ts</span></span></span>
+<span class="line" data-line="2"><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span></span>
+<span class="line" data-line="3"><span class="line"><span style="color:#24292E">  content: {</span></span></span>
+<span class="line" data-line="4"><span class="line"><span style="color:#24292E">    pages: </span><span style="color:#032F62">'my-content/pages'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="5"><span class="line"><span style="color:#24292E">    docs: </span><span style="color:#032F62">'my-content/docs'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="6"><span class="line"><span style="color:#24292E">    blog: </span><span style="color:#032F62">'my-content/blog'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="7"><span class="line"><span style="color:#24292E">  },</span></span></span>
+<span class="line" data-line="8"><span class="line"><span style="color:#24292E">});</span></span></span>
+<span class="line" data-line="9"><span class="line"></span></span></code></pre>
 <h3 id="absolute-paths" tabindex="-1"><a class="header-anchor" href="#absolute-paths">#</a> Absolute Paths</h3>
 <p>You can also use absolute paths:</p>
-<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">import</span><span style="color:#24292E"> path </span><span style="color:#D73A49">from</span><span style="color:#032F62"> 'path'</span><span style="color:#24292E">;</span></span>
-<span class="line"></span>
-<span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
-<span class="line"><span style="color:#24292E">  content: {</span></span>
-<span class="line"><span style="color:#24292E">    pages: path.</span><span style="color:#6F42C1">resolve</span><span style="color:#24292E">(__dirname, </span><span style="color:#032F62">'custom-content/pages'</span><span style="color:#24292E">),</span></span>
-<span class="line"><span style="color:#24292E">    docs: path.</span><span style="color:#6F42C1">resolve</span><span style="color:#24292E">(__dirname, </span><span style="color:#032F62">'custom-content/docs'</span><span style="color:#24292E">),</span></span>
-<span class="line"><span style="color:#24292E">    blog: path.</span><span style="color:#6F42C1">resolve</span><span style="color:#24292E">(__dirname, </span><span style="color:#032F62">'custom-content/blog'</span><span style="color:#24292E">),</span></span>
-<span class="line"><span style="color:#24292E">  },</span></span>
-<span class="line"><span style="color:#24292E">});</span></span>
-<span class="line"></span></code></pre>
+<pre class="shiki github-light line-numbers"><code><span class="line" data-line="1"><span class="line"><span style="color:#D73A49">import</span><span style="color:#24292E"> path </span><span style="color:#D73A49">from</span><span style="color:#032F62"> 'path'</span><span style="color:#24292E">;</span></span></span>
+<span class="line" data-line="2"><span class="line"></span></span>
+<span class="line" data-line="3"><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span></span>
+<span class="line" data-line="4"><span class="line"><span style="color:#24292E">  content: {</span></span></span>
+<span class="line" data-line="5"><span class="line"><span style="color:#24292E">    pages: path.</span><span style="color:#6F42C1">resolve</span><span style="color:#24292E">(__dirname, </span><span style="color:#032F62">'custom-content/pages'</span><span style="color:#24292E">),</span></span></span>
+<span class="line" data-line="6"><span class="line"><span style="color:#24292E">    docs: path.</span><span style="color:#6F42C1">resolve</span><span style="color:#24292E">(__dirname, </span><span style="color:#032F62">'custom-content/docs'</span><span style="color:#24292E">),</span></span></span>
+<span class="line" data-line="7"><span class="line"><span style="color:#24292E">    blog: path.</span><span style="color:#6F42C1">resolve</span><span style="color:#24292E">(__dirname, </span><span style="color:#032F62">'custom-content/blog'</span><span style="color:#24292E">),</span></span></span>
+<span class="line" data-line="8"><span class="line"><span style="color:#24292E">  },</span></span></span>
+<span class="line" data-line="9"><span class="line"><span style="color:#24292E">});</span></span></span>
+<span class="line" data-line="10"><span class="line"></span></span></code></pre>
 <h3 id="parent-directory" tabindex="-1"><a class="header-anchor" href="#parent-directory">#</a> Parent Directory</h3>
 <p>Reference content from a parent directory:</p>
-<pre class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0"><code><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span>
-<span class="line"><span style="color:#24292E">  content: {</span></span>
-<span class="line"><span style="color:#24292E">    pages: </span><span style="color:#032F62">'../shared-content/pages'</span><span style="color:#24292E">,</span></span>
-<span class="line"><span style="color:#24292E">    docs: </span><span style="color:#032F62">'../shared-content/docs'</span><span style="color:#24292E">,</span></span>
-<span class="line"><span style="color:#24292E">    blog: </span><span style="color:#032F62">'../shared-content/blog'</span><span style="color:#24292E">,</span></span>
-<span class="line"><span style="color:#24292E">  },</span></span>
-<span class="line"><span style="color:#24292E">});</span></span>
-<span class="line"></span></code></pre>
+<pre class="shiki github-light line-numbers"><code><span class="line" data-line="1"><span class="line"><span style="color:#D73A49">export</span><span style="color:#D73A49"> default</span><span style="color:#6F42C1"> defineConfig</span><span style="color:#24292E">({</span></span></span>
+<span class="line" data-line="2"><span class="line"><span style="color:#24292E">  content: {</span></span></span>
+<span class="line" data-line="3"><span class="line"><span style="color:#24292E">    pages: </span><span style="color:#032F62">'../shared-content/pages'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="4"><span class="line"><span style="color:#24292E">    docs: </span><span style="color:#032F62">'../shared-content/docs'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="5"><span class="line"><span style="color:#24292E">    blog: </span><span style="color:#032F62">'../shared-content/blog'</span><span style="color:#24292E">,</span></span></span>
+<span class="line" data-line="6"><span class="line"><span style="color:#24292E">  },</span></span></span>
+<span class="line" data-line="7"><span class="line"><span style="color:#24292E">});</span></span></span>
+<span class="line" data-line="8"><span class="line"></span></span></code></pre>
 <h2 id="mapped-routes" tabindex="-1"><a class="header-anchor" href="#mapped-routes">#</a> Mapped Routes</h2>
 <p>Regardless of where your content is located, the routes remain the same:</p>
 <table>
