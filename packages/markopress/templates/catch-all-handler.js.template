@@ -1,0 +1,47 @@
+import manifest from '{{MANIFEST_PATH}}';
+
+export async function GET(context, next) {
+  const slug = context.params.slug || 'index';
+  const contentType = '{{CONTENT_TYPE}}'; // 'docs', 'blog', or 'pages'
+  
+  // Look up content from manifest
+  const content = manifest[contentType][slug];
+  
+  if (!content) {
+    // Let it fall through to 404
+    return next();
+  }
+  
+  // Set context for template
+  context.title = content.title;
+  context.description = content.description;
+  context.content = content.html;
+  context.slug = slug;
+  
+  // Blog-specific fields
+  if (content.date) {
+    context.date = content.date;
+  }
+  if (content.author) {
+    context.author = content.author;
+  }
+  if (content.tags) {
+    context.tags = content.tags;
+  }
+  
+  // Docs sidebar
+  if (contentType === 'docs') {
+    // Determine which sidebar to use based on the path
+    let sidebarKey = '/docs';
+    for (const key of Object.keys(manifest.sidebar)) {
+      if (context.url.pathname.startsWith(key)) {
+        sidebarKey = key;
+        break;
+      }
+    }
+    context.sidebar = manifest.sidebar[sidebarKey] || [];
+  }
+  
+  // Navbar
+  context.navbar = manifest.navbar || [];
+}

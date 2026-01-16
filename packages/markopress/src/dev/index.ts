@@ -8,13 +8,14 @@ import { spawn } from 'node:child_process';
 import { loadConfig } from '../config/index.js';
 import { scanContent } from '../content/scanner.js';
 import { PluginManager } from '../plugin/manager.js';
-import { generateRoutes, copyThemeCSS } from '../build/index.js';
+import { generateRoutes, copyThemeCSS, generateCatchAllRoutes } from '../build/index.js';
 
 interface DevServerOptions {
   port?: number;
   host?: string;
   open?: boolean;
   base?: string;
+  useCatchAllRoutes?: boolean;
 }
 
 /**
@@ -50,7 +51,14 @@ export async function startDevServer(options: DevServerOptions = {}) {
   // Generate routes
   console.log('📝 Generating routes from content...');
   const routesDir = path.join(config.root, 'src', 'routes');
-  await generateRoutes(manifest, routesDir, config, false);
+  const routeMode = options.useCatchAllRoutes ?? config.build.useCatchAllRoutes;
+  if (routeMode) {
+    await generateCatchAllRoutes(manifest, routesDir, config, false);
+    console.log('   Using catch-all dynamic routes');
+  } else {
+    await generateRoutes(manifest, routesDir, config, false);
+    console.log('   Using static routes');
+  }
   console.log('   Routes generated\n');
 
   // Copy theme CSS

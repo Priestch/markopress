@@ -38,6 +38,7 @@ const DEFAULT_CONFIG: Omit<ResolvedConfig, 'root'> = {
     },
   },
   build: {
+    useCatchAllRoutes: false,
     outDir: 'dist',
     assetsDir: 'assets',
   },

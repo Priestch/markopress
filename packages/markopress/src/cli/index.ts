@@ -12,11 +12,13 @@ interface DevOptions {
   port: string;
   host: string;
   open: boolean;
+  catchAll: boolean;
 }
 
 interface BuildOptions {
   debug: boolean;
   output: string;
+  catchAll: boolean;
 }
 
 interface PreviewOptions {
@@ -41,11 +43,13 @@ program
   .option('-p, --port <port>', 'Port to run server on', '3000')
   .option('--host <host>', 'Host to run server on', 'localhost')
   .option('--open', 'Open browser automatically', false)
+  .option('--catch-all', 'Use catch-all dynamic routes', false)
   .action(async (options: DevOptions) => {
     await startDevServer({
       port: parseInt(options.port),
       host: options.host,
       open: options.open,
+      useCatchAllRoutes: options.catchAll,
     });
   });
 
@@ -54,10 +58,12 @@ program
   .description('Build for production')
   .option('--debug', 'Debug mode', false)
   .option('-o, --output <dir>', 'Output directory', 'dist')
+  .option('--catch-all', 'Use catch-all dynamic routes', false)
   .action(async (options: BuildOptions) => {
     const result = await build({
       debug: options.debug,
       outDir: options.output,
+      useCatchAllRoutes: options.catchAll,
     });
 
     if (!result.success) {

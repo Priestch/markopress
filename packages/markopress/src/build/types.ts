@@ -3,6 +3,7 @@
  */
 
 export interface BuildOptions {
+  useCatchAllRoutes?: boolean;
   outDir?: string;
   debug?: boolean;
 }

@@ -67,6 +67,7 @@ export interface MarkdownConfig {
 }
 
 export interface BuildConfig {
+  useCatchAllRoutes?: boolean;
   outDir?: string;
   assetsDir?: string;
 }

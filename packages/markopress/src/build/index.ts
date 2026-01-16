@@ -11,8 +11,10 @@ import { loadConfig } from '../config/loader.js';
 import type { ContentManifest, ContentFile } from '../content/types.js';
 import type { ResolvedConfig } from '../config/types.js';
 import { getDesignSystem, getDarkModeOverride, type DesignSystem } from '@markopress/theme-default/design-systems';
+import { generateContentManifest } from './manifest-generator.js';
 
 export interface BuildOptions {
+  useCatchAllRoutes?: boolean;
   outDir?: string;
   debug?: boolean;
 }
@@ -28,7 +30,7 @@ export interface BuildResult {
  * Build the MarkoPress site for production
  */
 export async function build(options: BuildOptions = {}): Promise<BuildResult> {
-  const { outDir, debug = false } = options;
+  const { outDir, debug = false, useCatchAllRoutes } = options;
   const errors: string[] = [];
 
   try {
@@ -54,7 +56,14 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
     // Step 3: Generate routes for content
     console.log('📝 Generating routes from content...');
-    await generateRoutes(manifest, routesDir, config, debug);
+    const routeMode = useCatchAllRoutes ?? config.build.useCatchAllRoutes;
+    if (routeMode) {
+      await generateCatchAllRoutes(manifest, routesDir, config, debug);
+      console.log('   Using catch-all dynamic routes');
+    } else {
+      await generateRoutes(manifest, routesDir, config, debug);
+      console.log('   Using static routes');
+    }
     console.log('   Routes generated\n');
 
     // Step 3.5: Copy theme CSS to public directory
@@ -1026,4 +1035,87 @@ async function runMarkoRunBuild(
       });
     });
   });
+}
+
+/**
+ * Generate catch-all routes using dynamic routes (NEW APPROACH)
+ * This replaces the old approach of generating individual route files for each content
+ */
+export async function generateCatchAllRoutes(
+  manifest: ContentManifest,
+  routesDir: string,
+  config: ResolvedConfig,
+  debug: boolean
+): Promise<void> {
+  console.log('   Using catch-all dynamic routes approach...');
+
+  // Step 1: Generate content manifest JSON
+  await generateContentManifest(manifest, routesDir, config);
+  if (debug) console.log('   Generated content-manifest.json');
+
+  // Step 2: Generate catch-all route for docs
+  if (manifest.docs.length > 0) {
+    const docsDir = path.join(routesDir, 'docs', '$$slug');
+    await fs.mkdir(docsDir, { recursive: true });
+    
+    // Handler
+    const docsHandler = await loadTemplate('catch-all-handler.js.template', {
+      CONTENT_TYPE: 'docs',
+      MANIFEST_PATH: '../../content-manifest.json',
+    });
+    await fs.writeFile(path.join(docsDir, '+handler.js'), docsHandler);
+    
+    // Page
+    const docsPage = await loadTemplate('catch-all-page.marko.template', {
+      CONTENT_TYPE_CLASS: 'docs',
+    });
+    await fs.writeFile(path.join(docsDir, '+page.marko'), docsPage);
+    
+    if (debug) console.log('   Generated docs catch-all route');
+  }
+
+  // Step 3: Generate catch-all route for blog
+  if (manifest.blog.length > 0) {
+    const blogDir = path.join(routesDir, 'blog', '$$slug');
+    await fs.mkdir(blogDir, { recursive: true });
+    
+    // Handler
+    const blogHandler = await loadTemplate('catch-all-handler.js.template', {
+      CONTENT_TYPE: 'blog',
+      MANIFEST_PATH: '../../content-manifest.json',
+    });
+    await fs.writeFile(path.join(blogDir, '+handler.js'), blogHandler);
+    
+    // Page
+    const blogPage = await loadTemplate('catch-all-page.marko.template', {
+      CONTENT_TYPE_CLASS: 'blog',
+    });
+    await fs.writeFile(path.join(blogDir, '+page.marko'), blogPage);
+    
+    if (debug) console.log('   Generated blog catch-all route');
+  }
+
+  // Step 4: Generate catch-all route for pages
+  if (manifest.pages.length > 0) {
+    const pagesDir = path.join(routesDir, '$$slug');
+    await fs.mkdir(pagesDir, { recursive: true });
+    
+    // Handler
+    const pagesHandler = await loadTemplate('catch-all-handler.js.template', {
+      CONTENT_TYPE: 'pages',
+      MANIFEST_PATH: '../content-manifest.json',
+    });
+    await fs.writeFile(path.join(pagesDir, '+handler.js'), pagesHandler);
+    
+    // Page
+    const pagesPage = await loadTemplate('catch-all-page.marko.template', {
+      CONTENT_TYPE_CLASS: 'page',
+    });
+    await fs.writeFile(path.join(pagesDir, '+page.marko'), pagesPage);
+    
+    if (debug) console.log('   Generated pages catch-all route');
+  }
+
+  // Step 5: Generate root layout that wraps all pages
+  await generateRootLayout(routesDir, config, debug);
 }
