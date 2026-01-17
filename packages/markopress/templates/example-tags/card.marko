@@ -1,0 +1,20 @@
+<!-- Card component -->
+<!-- Supports header, body, footer content slots -->
+
+<div class="card">
+  <if=input.header>
+    <div class="card-header">
+      <input.header/>
+    </div>
+  </if>
+  <if=input.body>
+    <div class="card-body">
+      <input.body/>
+    </div>
+  </if>
+  <if=input.footer>
+    <div class="card-footer">
+      <input.footer/>
+    </div>
+  </if>
+</div>

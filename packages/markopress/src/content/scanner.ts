@@ -6,13 +6,14 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import fastGlob from 'fast-glob';
 import type { ContentType, ContentFile, ContentScannerOptions, ContentManifest } from './types.js';
+import type { MarkdownOptions } from '../markdown/types.js';
 import { parseMarkdown } from '../markdown/index.js';
 
 /**
  * Scan content directories for markdown files
  */
 export async function scanContent(options: ContentScannerOptions): Promise<ContentManifest> {
-  const { dirs, rootDir } = options;
+  const { dirs, rootDir, markdownOptions } = options;
   const manifest: ContentManifest = {
     pages: [],
     docs: [],
@@ -22,19 +23,19 @@ export async function scanContent(options: ContentScannerOptions): Promise<Conte
 
   // Scan each content directory
   if (dirs.pages) {
-    const pages = await scanDirectory(dirs.pages, 'page', rootDir);
+    const pages = await scanDirectory(dirs.pages, 'page', rootDir, markdownOptions);
     manifest.pages.push(...pages);
     manifest.all.push(...pages);
   }
 
   if (dirs.docs) {
-    const docs = await scanDirectory(dirs.docs, 'doc', rootDir);
+    const docs = await scanDirectory(dirs.docs, 'doc', rootDir, markdownOptions);
     manifest.docs.push(...docs);
     manifest.all.push(...docs);
   }
 
   if (dirs.blog) {
-    const blog = await scanDirectory(dirs.blog, 'blog', rootDir);
+    const blog = await scanDirectory(dirs.blog, 'blog', rootDir, markdownOptions);
     manifest.blog.push(...blog);
     manifest.all.push(...blog);
   }
@@ -48,7 +49,8 @@ export async function scanContent(options: ContentScannerOptions): Promise<Conte
 async function scanDirectory(
   dirPath: string,
   type: ContentType,
-  rootDir: string
+  rootDir: string,
+  markdownOptions?: MarkdownOptions
 ): Promise<ContentFile[]> {
   const fullDirPath = path.resolve(rootDir, dirPath);
 
@@ -68,7 +70,10 @@ async function scanDirectory(
   for (const filePath of files) {
     try {
       const content = await fs.readFile(filePath, 'utf-8');
-      const processed = await parseMarkdown(content);
+      const processed = await parseMarkdown(content, markdownOptions, {
+        rootDir,
+        filePath,
+      });
 
       // Skip draft posts
       if (processed.frontmatter.draft) {

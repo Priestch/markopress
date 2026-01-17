@@ -40,7 +40,7 @@ class {
           </svg>
         </button>
 
-        <if(state.openDropdown === item.text)>
+        <if=state.openDropdown === item.text>
           <div class="dropdown-menu">
             <for|subitem| of=item.items>
               <a class="dropdown-item" href=subitem.link class-list={active: isActive(subitem.link)}>
@@ -72,7 +72,7 @@ class {
         </svg>
       </button>
 
-      <if(state.openDropdown === 'lang')>
+      <if=state.openDropdown === 'lang'>
         <div class="dropdown-menu">
           <for|locale| of=input.locales>
             <a class="dropdown-item" href=locale.link class-list={active: locale.active}>

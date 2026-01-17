@@ -1,95 +1,109 @@
-# Testing MarkoPress with Custom Content Directories
+# MarkoPress Test Project
 
-This test project demonstrates how to use MarkoPress with custom content directories.
+Test project for demonstrating and testing the Marko Tags feature in MarkoPress.
 
-## What Was Tested
+## 🚀 Quick Start
 
-✅ **Custom Content Directory Configuration**
-- Using `my-content/` instead of default `content/`
-- Separate directories for pages, docs, and blog
-- All content types detected and routed correctly
+```bash
+# Install dependencies
+pnpm install
 
-## Project Structure
+# Development mode
+npx markopress dev
+
+# Build for production
+npx markopress build
+
+# Preview production build
+npx markopress preview
+```
+
+## 📚 Documentation
+
+See [docs/](./docs/) for complete documentation:
+
+- **[docs/SUMMARY.md](./docs/SUMMARY.md)** - Documentation index and quick start
+- **[docs/README-MARKO-TAGS.md](./docs/README-MARKO-TAGS.md)** - Feature overview
+- **[docs/MARKO_COMPONENTS_GUIDE.md](./docs/MARKO_COMPONENTS_GUIDE.md)** - Component usage guide
+- **[docs/MARKO_V6_TECHNICAL_GUIDE.md](./docs/MARKO_V6_TECHNICAL_GUIDE.md)** - Marko.js v6 technical guide
+- **[docs/LESSONS_LEARNED.md](./docs/LESSONS_LEARNED.md)** - Lessons learned during development
+
+## 🎨 Available Components
+
+### Alert Boxes
+```markdown
+<alert-box kind="note">This is a note</alert-box>
+<alert-box kind="warning">This is a warning</alert-box>
+<alert-box kind="danger">This is danger info</alert-box>
+```
+
+### Buttons
+```markdown
+<button-primary href="/docs">Documentation</button-primary>
+<button-secondary href="/about">About</button-secondary>
+```
+
+### Cards
+```markdown
+<card>
+  <card-header><h3>Title</h3></card-header>
+  <card-body>Content</card-body>
+  <card-footer>Footer</card-footer>
+</card>
+```
+
+### Icons
+```markdown
+<icon name="check" size="24" color="success" />
+<icon name="warning" size="20" spin />
+```
+
+## 📁 Project Structure
 
 ```
 test-project/
-├── markopress.config.js    # Configuration with custom content dirs
-├── package.json
-└── my-content/             # Custom content directory
-    ├── pages/
-    │   └── index.md
-    ├── docs/
-    │   ├── intro.md
-    │   └── custom-dir.md
-    └── blog/
-        └── 2024-01-11-test-post.md
+├── docs/                    # Documentation
+│   ├── SUMMARY.md          # Documentation index
+│   ├── README-MARKO-TAGS.md
+│   ├── MARKO_COMPONENTS_GUIDE.md
+│   ├── MARKO_V6_TECHNICAL_GUIDE.md
+│   ├── LESSONS_LEARNED.md
+│   └── archive/            # Archived implementation docs
+├── tags/                   # Marko components
+│   ├── alert-box.marko
+│   ├── button-primary.marko
+│   ├── button-secondary.marko
+│   ├── card.marko
+│   └── icon.marko
+├── my-content/            # Markdown content
+│   ├── pages/            # Pages
+│   └── docs/             # Documentation
+├── public/               # Static assets
+│   ├── components.css   # Component styles
+│   └── theme.css        # Theme styles
+└── markopress.config.js # Configuration
 ```
 
-## Configuration
+## 🔧 Configuration
 
-To use custom content directories, specify them in `markopress.config.js`:
+Marko Tags feature is configured in `markopress.config.js`:
 
 ```javascript
-import { defineConfig } from 'markopress/config';
-
-export default defineConfig({
-  content: {
-    pages: 'my-content/pages',
-    docs: 'my-content/docs',
-    blog: 'my-content/blog',
+markdown: {
+  markoTags: {
+    enabled: true,
+    tagsDir: 'tags/',
   },
-});
+}
 ```
 
-## Results
+## 📖 More Information
 
-Build output shows content is detected correctly:
+- [MarkoPress Main Project](../)
+- [Full Documentation](./docs/)
+- [Component Examples](http://localhost:3000/component-showcase)
 
-```
-📂 Scanning content directories...
-   Found 1 pages
-   Found 2 docs
-   Found 1 blog posts
+---
 
-Pages routes:
-  / ← my-content/pages/index.md
-Docs routes:
-  /docs/custom-dir ← my-content/docs/custom-dir.md
-  /docs/intro ← my-content/docs/intro.md
-Blog routes:
-  /blog/2024-01-11-test-post ← my-content/blog/2024-01-11-test-post.md
-```
-
-## How to Test
-
-### Build
-
-```bash
-cd test-project
-pnpm install
-pnpm exec markopress build
-```
-
-### Build with Debug
-
-```bash
-pnpm exec markopress build --debug
-```
-
-## Notes
-
-- Config file must be `.js` or `.mjs` (not `.ts`) for now
-- MarkoPress successfully reads configuration
-- Content scanning works with custom directories
-- URL generation is correct
-
-## Current Limitations
-
-The build system scans content but doesn't yet generate actual route files. A full implementation would:
-
-1. Generate Marko route files in `src/routes/`
-2. Create virtual components for markdown content
-3. Apply theme layouts
-4. Build static HTML with @marko/run
-
-This test demonstrates that the **configuration and content scanning** parts work correctly with custom directories.
+**Last Updated:** 2025-01-17
+**Status:** ✅ Feature Complete and Working

@@ -11,6 +11,8 @@ import { createHighlighter } from 'shiki';
 import { setupContainers, setupDetails } from './containers.js';
 import { createEnhancedHighlighter } from './code.js';
 import { preprocessIncludesWithRegions } from './includes.js';
+import { preserveTagsPlugin } from './preserve-tags.js';
+import { globalTagValidator } from './tag-validator.js';
 import type { MarkdownOptions, ProcessedMarkdown, Header, MarkdownEnv } from './types.js';
 
 // Cache highlighter instance
@@ -57,7 +59,7 @@ export async function parseMarkdown(
   });
 
   // Setup markdown-it with Shiki
-  const md = await setupMarkdownIt(options);
+  const md = await setupMarkdownIt(options, env);
 
   // Render to HTML
   const html = md.render(content, env);
@@ -77,7 +79,7 @@ export async function parseMarkdown(
 /**
  * Setup markdown-it with plugins and Shiki highlighting
  */
-async function setupMarkdownIt(options: MarkdownOptions): Promise<MarkdownIt> {
+async function setupMarkdownIt(options: MarkdownOptions, env: MarkdownEnv): Promise<MarkdownIt> {
   const highlighter = await getHighlighterInstance();
 
   // Create enhanced highlighter with line features
@@ -94,7 +96,7 @@ async function setupMarkdownIt(options: MarkdownOptions): Promise<MarkdownIt> {
         return ''; // Use default escaping
       }
       try {
-        // attrs contains the meta string (e.g., "{4}" or "title='file.js'")
+        // attrs contains a meta string (e.g., "{4}" or "title='file.js'")
         return enhancedHighlight(code, lang, attrs);
       } catch (e) {
         // Fallback for unsupported languages
@@ -118,6 +120,21 @@ async function setupMarkdownIt(options: MarkdownOptions): Promise<MarkdownIt> {
 
   // Add collapsible details container
   setupDetails(md);
+
+  // Add preserve Marko tags plugin if enabled
+  if (options.markoTags?.enabled) {
+    md.use(preserveTagsPlugin, {
+      tagsDir: options.markoTags?.tagsDir || 'tags/',
+      onTagDetected: (tagName: string, lineNumber: number) => {
+        // Track tag for validation at end of build
+        globalTagValidator.addDetectedTag(
+          tagName,
+          env.filePath || 'unknown',
+          lineNumber
+        );
+      },
+    });
+  }
 
   return md;
 }
@@ -157,7 +174,7 @@ function buildHeaderTree(
       children: [],
     };
 
-    // Pop from stack until we find the parent level
+    // Pop from stack until we find parent level
     while (stack.length > 0 && stack[stack.length - 1].level >= header.level) {
       stack.pop();
     }

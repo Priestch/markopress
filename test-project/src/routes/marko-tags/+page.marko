@@ -1,0 +1,24 @@
+<div class="container">
+  <h1>${$global.title}</h1>
+  <div class="content">
+    <h1 id="marko-tags---basic-test" tabindex="-1"><a class="header-anchor" href="#marko-tags---basic-test">#</a> Marko Tags - Basic Test</h1>
+<h2 id="alert-component" tabindex="-1"><a class="header-anchor" href="#alert-component">#</a> Alert Component</h2>
+<alert-box type="tip">
+  This is a **tip** alert. The tag should be preserved.
+</alert-box>
+<h2 id="button-component" tabindex="-1"><a class="header-anchor" href="#button-component">#</a> Button Component</h2>
+<button-primary href="/">
+  Click here for home
+</button-primary>
+<h2 id="card-component" tabindex="-1"><a class="header-anchor" href="#card-component">#</a> Card Component</h2>
+<card>
+  <card-header><h3>Card Title</h3></card-header>
+  <card-body>
+    This is card content with **markdown** formatting inside.
+  </card-body>
+</card>
+<h2 id="success-criteria" tabindex="-1"><a class="header-anchor" href="#success-criteria">#</a> Success Criteria</h2>
+<p>If build succeeds and the generated HTML contains <code>&lt;alert-box&gt;</code>, <code>&lt;button-primary&gt;</code>, and <code>&lt;card&gt;</code> tags (preserved, not processed as HTML), the feature works correctly.</p>
+
+  </div>
+</div>

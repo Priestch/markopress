@@ -36,7 +36,7 @@
         <div class="navbar-actions">
           <!-- Dark Mode Toggle -->
           <button class="btn-icon" aria-label="Toggle dark mode" on-click('toggleDarkMode')>
-            <if(state.darkMode)>
+            <if=state.darkMode>
               <!-- Sun Icon -->
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="5"></circle>
@@ -59,7 +59,7 @@
 
           <!-- Mobile Menu Toggle -->
           <button class="btn-icon mobile-menu-toggle" aria-label="Toggle menu" on-click('toggleMobileMenu')>
-            <if(state.mobileMenuOpen)>
+            <if=state.mobileMenuOpen>
               <!-- Close Icon -->
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -78,7 +78,7 @@
       </div>
 
       <!-- Mobile Menu -->
-      <if(state.mobileMenuOpen)>
+      <if=state.mobileMenuOpen>
         <div class="navbar-mobile-menu">
           <a class="nav-link" href="/">Home</a>
           <a class="nav-link" href="/about">About</a>

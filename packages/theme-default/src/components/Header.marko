@@ -7,7 +7,7 @@
   <h1>🚀 ${input.title || 'MarkoPress'}</h1>
   <p>${input.description || 'A general-purpose static site generator using Marko.js v6'}</p>
 
-  <if(input.stats)>
+  <if=input.stats>
     <div class="stats stats-container">
       <for|stat| of=input.stats>
         <div class="stat">

@@ -31,6 +31,10 @@ export default defineConfig({
   },
   markdown: {
     lineNumbers: true,
+    markoTags: {
+      enabled: true,
+      tagsDir: 'tags/',
+    },
   },
   plugins: [
     '@markopress/plugin-content-pages',

@@ -31,6 +31,7 @@ export interface ContentScannerOptions {
     blog?: string;
   };
   rootDir: string;
+  markdownOptions?: import('../markdown/types.js').MarkdownOptions;
 }
 
 /**

@@ -56,7 +56,7 @@ class {
   <if=input.headers && input.headers.length > 0>
     <ul class="toc-list">
       <for|header| of=input.headers>
-        <li class="toc-item toc-level-${header.level}">
+        <li class=["toc-item", "toc-level-" + header.level]>
           <a
             href="#${header.slug}"
             class="toc-link"
@@ -68,7 +68,7 @@ class {
           <if=header.children && header.children.length > 0>
             <ul class="toc-list toc-nested">
               <for|child| of=header.children>
-                <li class="toc-item toc-level-${child.level}">
+                <li class=["toc-item", "toc-level-" + child.level]>
                   <a
                     href="#${child.slug}"
                     class="toc-link"

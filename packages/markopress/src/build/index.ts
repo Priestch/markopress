@@ -12,6 +12,7 @@ import type { ContentManifest, ContentFile } from '../content/types.js';
 import type { ResolvedConfig } from '../config/types.js';
 import { getDesignSystem, getDarkModeOverride, type DesignSystem } from '@markopress/theme-default/design-systems';
 import { generateContentManifest } from './manifest-generator.js';
+import { globalTagValidator, formatValidationError } from '../markdown/tag-validator.js';
 
 export interface BuildOptions {
   useCatchAllRoutes?: boolean;
@@ -44,13 +45,24 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const manifest = await scanContent({
       rootDir: process.cwd(),
       dirs: config.content,
+      markdownOptions: config.markdown,
     });
 
     console.log(`   Found ${manifest.pages.length} pages`);
     console.log(`   Found ${manifest.docs.length} docs`);
     console.log(`   Found ${manifest.blog.length} blog posts\n`);
 
-    // Step 2: Ensure routes directory exists
+    // Step 2: Initialize tag validator if Marko tags enabled
+    if (config.markdown.markoTags?.enabled) {
+      const tagsDir = path.join(process.cwd(), config.markdown.markoTags.tagsDir || 'tags/');
+      console.log('🔍 Scanning tags directory...');
+      await globalTagValidator.loadAvailableTags(tagsDir);
+      console.log(`   Found ${globalTagValidator.getAvailableTagsCount()} tags\n`);
+    } else {
+      globalTagValidator.reset();
+    }
+
+    // Step 3: Ensure routes directory exists
     const routesDir = path.join(process.cwd(), 'src', 'routes');
     await fs.mkdir(routesDir, { recursive: true });
 
@@ -66,6 +78,27 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     }
     console.log('   Routes generated\n');
 
+    // Step 4: Validate Marko tags if enabled
+    if (config.markdown.markoTags?.enabled) {
+      console.log('🔍 Validating Marko tags...');
+      const validation = globalTagValidator.validate();
+
+      if (!validation.success) {
+        const errorMessage = formatValidationError(validation.missingTags);
+        console.error(`\n${errorMessage}\n`);
+        errors.push(errorMessage);
+
+        return {
+          success: false,
+          outDir: '',
+          pages: 0,
+          errors,
+        };
+      }
+
+      console.log('   All tags validated ✓\n');
+    }
+
     // Step 3.5: Copy theme CSS to public directory
     console.log('🎨 Copying theme CSS...');
     await copyThemeCSS(process.cwd(), config, debug);
@@ -73,7 +106,8 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
     // Step 4: Build with @marko/run
     console.log('🔨 Building with @marko/run...');
-    const buildResult = await runMarkoRunBuild(outDir, debug);
+    const resolvedOutDir = outDir || config.build.outDir;
+    const buildResult = await runMarkoRunBuild(resolvedOutDir, debug);
 
     if (!buildResult.success) {
       errors.push(...buildResult.errors);
@@ -84,6 +118,11 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         errors,
       };
     }
+
+    // Step 5: Copy Marko tags directory to output (after build so it doesn't get cleaned)
+    console.log('📦 Copying Marko tags directory...');
+    await copyTagsDirectory(process.cwd(), buildResult.outDir, config, debug);
+    console.log('   Tags directory copied\n');
 
     console.log('\n✅ Build completed successfully!');
     console.log(`   Output: ${buildResult.outDir}`);
@@ -615,6 +654,67 @@ export async function copyThemeCSS(
   if (debug) {
     console.log(`   Copied theme CSS from: ${foundPath}`);
     console.log(`   Output: ${outputPath}`);
+  }
+}
+
+/**
+ * Copy Marko tags directory to output directory for component discovery
+ * This allows Marko runtime to find and render custom components
+ */
+export async function copyTagsDirectory(
+  rootDir: string,
+  outDir: string,
+  config: ResolvedConfig,
+  debug: boolean
+): Promise<void> {
+  const tagsDirConfig = config.markdown?.markoTags?.tagsDir || 'tags';
+  const tagsDir = path.join(rootDir, tagsDirConfig);
+  const distTagsDir = path.join(outDir, 'tags');
+
+  // Check if tags directory exists
+  try {
+    await fs.access(tagsDir);
+  } catch {
+    // Tags directory doesn't exist, skip copying
+    if (debug) {
+      console.log(`   No tags directory found at: ${tagsDir}`);
+    }
+    return;
+  }
+
+  // Create destination directory
+  await fs.mkdir(distTagsDir, { recursive: true });
+
+  // Copy all tag files recursively
+  const files = await fs.readdir(tagsDir, { withFileTypes: true });
+  let copiedCount = 0;
+
+  for (const file of files) {
+    const srcPath = path.join(tagsDir, file.name);
+    const destPath = path.join(distTagsDir, file.name);
+
+    if (file.isDirectory()) {
+      // Recursively copy subdirectories
+      await fs.mkdir(destPath, { recursive: true });
+      const subFiles = await fs.readdir(srcPath, { withFileTypes: true });
+      for (const subFile of subFiles) {
+        const subSrcPath = path.join(srcPath, subFile.name);
+        const subDestPath = path.join(destPath, subFile.name);
+        if (!subFile.isDirectory()) {
+          await fs.copyFile(subSrcPath, subDestPath);
+          copiedCount++;
+        }
+      }
+    } else if (file.isFile()) {
+      // Copy tag files (.marko, .js, .ts, etc.)
+      await fs.copyFile(srcPath, destPath);
+      copiedCount++;
+    }
+  }
+
+  if (debug) {
+    console.log(`   Copied ${copiedCount} tag files from: ${tagsDir}`);
+    console.log(`   Output: ${distTagsDir}`);
   }
 }
 

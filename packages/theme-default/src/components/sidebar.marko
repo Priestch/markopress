@@ -14,17 +14,17 @@ class {
 <nav class="sidebar">
   <for|section| in=(state.sidebar)>
     <div class="sidebar-section">
-      <if(section.text)>
+      <if=section.text>
         <h3 class="sidebar-title">${section.text}</h3>
       </if>
-      <if(section.items)>
+      <if=section.items>
         <ul class="sidebar-links">
           <for|item| in=(section.items)>
             <li class="sidebar-item">
               <a href="${item.link}" class="sidebar-link">
                 ${item.text}
               </a>
-              <if(item.items)>
+              <if=item.items>
                 <ul class="sidebar-links nested">
                   <for|subItem| in=(item.items)>
                     <li class="sidebar-item">

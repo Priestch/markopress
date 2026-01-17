@@ -1,0 +1,28 @@
+<!-- Secondary Button Component -->
+<!-- Creates a subtle secondary action button -->
+<!-- Example: <button-secondary href="/about">Learn More</button-secondary> -->
+
+<a href=input.href||"#" class=["btn", "btn-secondary", input.disabled && "btn-disabled"] aria-disabled=input.disabled>
+  <if=input.icon>
+    <span class="btn-icon">${input.icon}</span>
+  </if>
+  <${input.content}/>
+  <if=input.arrow>
+    <span class="btn-arrow">→</span>
+  </if>
+</a>
+
+<style>
+  .btn-icon {
+    font-size: 1.125em;
+  }
+
+  .btn-arrow {
+    margin-left: 0.5rem;
+    transition: transform 0.2s;
+  }
+
+  a:hover .btn-arrow {
+    transform: translateX(4px);
+  }
+</style>

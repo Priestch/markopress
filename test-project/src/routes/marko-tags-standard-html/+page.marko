@@ -1,0 +1,29 @@
+<div class="container">
+  <h1>${$global.title}</h1>
+  <div class="content">
+    <h1 id="standard-html-should-be-processed" tabindex="-1"><a class="header-anchor" href="#standard-html-should-be-processed">#</a> Standard HTML Should Be Processed</h1>
+<h2 id="div-(standard-html)" tabindex="-1"><a class="header-anchor" href="#div-(standard-html)">#</a> Div (Standard HTML)</h2>
+<div class="container">
+  This is a standard HTML div.
+  It should be processed by markdown-it, NOT preserved as a Marko tag.
+</div>
+<h2 id="button-(standard-html)" tabindex="-1"><a class="header-anchor" href="#button-(standard-html)">#</a> Button (Standard HTML)</h2>
+<button>
+  This is a standard HTML button.
+  It should be processed by markdown-it, NOT preserved.
+</button>
+<h2 id="span-(standard-html)" tabindex="-1"><a class="header-anchor" href="#span-(standard-html)">#</a> Span (Standard HTML)</h2>
+<span>
+  This is a standard HTML span.
+  It should be processed by markdown-it, NOT preserved.
+</span>
+<h2 id="mixed%3A-standard-%2B-marko-tags" tabindex="-1"><a class="header-anchor" href="#mixed%3A-standard-%2B-marko-tags">#</a> Mixed: Standard + Marko Tags</h2>
+<alert-box type="info">
+  This should be preserved.
+</alert-box>
+<div>
+  This should be processed.
+</div>
+
+  </div>
+</div>

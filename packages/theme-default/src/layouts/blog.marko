@@ -30,14 +30,14 @@ class {
               <a href="${post.urlPath}">${post.frontmatter.title}</a>
             </h2>
             <p class="post-meta">
-              <if(post.frontmatter.date)>
+              <if=post.frontmatter.date>
                 <span>${post.frontmatter.date}</span>
               </if>
-              <if(post.frontmatter.author)>
+              <if=post.frontmatter.author>
                 <span> by ${post.frontmatter.author}</span>
               </if>
             </p>
-            <if(post.processed.excerpt)>
+            <if=post.processed.excerpt>
               <p class="post-excerpt">${post.processed.excerpt}</p>
             </if>
           </article>

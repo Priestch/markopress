@@ -8,9 +8,9 @@
   <include(input.content)/>
 
   <!-- Prev/Next Navigation (for docs) -->
-  <if(input.navigation)>
+  <if=input.navigation>
     <div class="doc-nav">
-      <if(input.navigation.prev)>
+      <if=input.navigation.prev>
         <a class="doc-nav-link prev"
            href="#"
            onclick=input.navigation.prev.onClick>
@@ -18,11 +18,11 @@
           <span class="doc-nav-title">${input.navigation.prev.title}</span>
         </a>
       </if>
-      <if(!input.navigation.prev)>
+      <if=!input.navigation.prev>
         <div class="doc-nav-separator"></div>
       </if>
 
-      <if(input.navigation.next)>
+      <if=input.navigation.next>
         <a class="doc-nav-link next"
            href="#"
            onclick=input.navigation.next.onClick>
@@ -30,7 +30,7 @@
           <span class="doc-nav-title">${input.navigation.next.title}</span>
         </a>
       </if>
-      <if(!input.navigation.next)>
+      <if=!input.navigation.next>
         <div class="doc-nav-separator"></div>
       </if>
     </div>

@@ -56,7 +56,7 @@ class {
   <title>${input.title ? `${input.title} | ${input.siteTitle || 'MarkoPress'}` : input.siteTitle || 'MarkoPress'}</title>
 
   <!-- Meta Description -->
-  <if(input.description)>
+  <if=input.description>
     <meta name="description" content=input.description>
   </if>
 
@@ -64,7 +64,7 @@ class {
   <meta property="og:type" content="website">
   <meta property="og:title" content=input.title||input.siteTitle||'MarkoPress'>
   <meta property="og:description" content=input.description||'A modern static site generator'>
-  <if(input.ogImage)>
+  <if=input.ogImage>
     <meta property="og:image" content=input.ogImage>
   </if>
   <if=input.url>
@@ -93,6 +93,9 @@ class {
   <style>
     <include('../styles.css')/>
   </style>
+
+  <!-- Component Styles -->
+  <link rel="stylesheet" href="/components.css">
 </head>
 <body class=${[
   'theme-default',
@@ -135,7 +138,7 @@ class {
 
           <!-- Dark Mode Toggle -->
           <button class="btn-icon" aria-label="Toggle dark mode" on-click('toggleDarkMode')}>
-            <if(state.darkMode)>
+            <if=state.darkMode>
               <!-- Sun Icon -->
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="5"></circle>
@@ -158,7 +161,7 @@ class {
 
           <!-- Mobile Menu Toggle -->
           <button class="btn-icon mobile-menu-toggle" aria-label="Toggle menu" on-click('toggleMobileMenu')>
-            <if(state.mobileMenuOpen)>
+            <if=state.mobileMenuOpen>
               <!-- Close Icon -->
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -177,7 +180,7 @@ class {
       </div>
 
       <!-- Mobile Menu -->
-      <if(state.mobileMenuOpen)>
+      <if=state.mobileMenuOpen>
         <div class="navbar-mobile-menu">
           <include(input.nav||<components.NavBar/>)>
         </div>
@@ -186,7 +189,7 @@ class {
 
     <div class="layout-container">
       <!-- Sidebar (if provided) -->
-      <if(input.sidebar)>
+      <if=input.sidebar>
         <aside class="sidebar" class-list={collapsed: !state.sidebarOpen}>
           <div class="sidebar-container">
             <!-- Collapse Button -->

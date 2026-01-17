@@ -64,6 +64,17 @@ export interface MarkdownConfig {
     light?: string;
     dark?: string;
   };
+
+  /**
+   * Marko tags support
+   */
+  markoTags?: {
+    /** Enable Marko tags in markdown (default: false) */
+    enabled?: boolean;
+
+    /** Directory containing Marko component files (default: 'tags/') */
+    tagsDir?: string;
+  };
 }
 
 export interface BuildConfig {
