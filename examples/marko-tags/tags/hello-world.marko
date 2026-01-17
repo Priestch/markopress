@@ -1,0 +1,42 @@
+<!-- Simple Hello World Component -->
+<!-- Example: <hello-world name="World">This is **markdown**!</hello-world> -->
+
+<div class=["hello-world", input.variant && "hello-" + input.variant]>
+  <div class="hello-content">
+    <h2>Hello, ${input.name || 'World'}!</h2>
+    <${input.content}/>
+  </div>
+</div>
+
+<style>
+  .hello-world {
+    padding: 2rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: 1rem 0;
+  }
+
+  .hello-content h2 {
+    margin: 0 0 1rem 0;
+    font-size: 2rem;
+  }
+
+  .hello-content p {
+    margin: 0;
+  }
+
+  /* Variants */
+  .hello-world.hello-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .hello-world.hello-success {
+    background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+    color: #1a202c;
+  }
+
+  .hello-world.hello-warm {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  }
+</style>

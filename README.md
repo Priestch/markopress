@@ -126,6 +126,61 @@ This is my first blog post!
 
 This creates a route at `/blog/first-post` with RSS feed support.
 
+## 🏷️ Marko Tags in Markdown
+
+Use Marko components directly in your Markdown files for reusable, dynamic content blocks.
+
+```markdown
+<alert-box kind="warning">
+  This is a **warning** alert with `code` support!
+</alert-box>
+```
+
+### Enable Marko Tags
+
+Add to your `markopress.config.ts`:
+
+```typescript
+export default defineConfig({
+  markdown: {
+    markoTags: {
+      enabled: true,
+      tagsDir: 'tags/',  // Directory for your components
+    },
+  },
+});
+```
+
+### Create Components
+
+Create `tags/alert-box.marko`:
+
+```marko
+<div class=["alert", input.kind && "alert-" + input.kind]>
+  <${input.content}/>
+</div>
+
+<style>
+  .alert { padding: 1rem; border-radius: 8px; }
+  .alert-warning { background: #fff3cd; border: 1px solid #ffc107; }
+</style>
+```
+
+### Use in Markdown
+
+```markdown
+<alert-box kind="warning">
+  This is a **warning** alert!
+</alert-box>
+```
+
+**Available Documentation:**
+- [Marko Tags Guide](./docs/guides/marko-tags.md) - Overview and quick start
+- [Component API](./docs/guides/marko-components.md) - Component library reference
+- [Marko.js v6 Syntax](./docs/guides/marko-v6-syntax.md) - Syntax and best practices
+- [Component Support](./docs/guides/marko-components-support.md) - Feature coverage analysis
+- [Lessons Learned](./docs/development/marko-tags-lessons.md) - Common mistakes to avoid
+
 ## ⚙️ Configuration
 
 Create `markopress.config.ts`:
@@ -276,12 +331,24 @@ CMD ["npm", "run", "preview"]
 
 ## 📚 Documentation
 
-- [Getting Started](./docs/getting-started.md)
-- [Configuration Guide](./docs/configuration.md)
+### Core Features
+- [Getting Started](./docs/GETTING_STARTED.md)
+- [Configuration Guide](./docs/CONFIGURATION.md)
+- [Marko Tags Guide](./docs/guides/marko-tags.md) - Use Marko components in Markdown
 - [Theming](./docs/theme.md)
 - [Plugin Development](./docs/plugins.md)
-- [Deployment](./docs/deployment.md)
-- [Migration Guide](./docs/migration.md)
+
+### Advanced Guides
+- [Component API Reference](./docs/guides/marko-components.md) - Marko Tags component library
+- [Marko.js v6 Syntax](./docs/guides/marko-v6-syntax.md) - Syntax and best practices
+- [Component Support Coverage](./docs/guides/marko-components-support.md) - Feature analysis
+- [Development Lessons](./docs/development/marko-tags-lessons.md) - Common mistakes to avoid
+
+### Reference
+- [Deployment](./docs/DEPLOYMENT.md)
+- [Migration Guide](./docs/MIGRATION.md)
+- [Production Features](./docs/PRODUCTION_FEATURES.md)
+- [@marko/run Reference](./docs/marko-run-reference.md)
 
 ## 🆚 Comparison
 
