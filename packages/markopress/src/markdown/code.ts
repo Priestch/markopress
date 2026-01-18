@@ -243,12 +243,25 @@ function enhanceHighlightedCode(
 
   // Extract code lines (between <code> and </code>)
   const codeContent = html.match(/<code[^>]*>([\s\S]*)<\/code>/)?.[1] || '';
-  const codeLines = codeContent.split('\n').filter((l) => l.length > 0);
+  // Split by newlines - don't filter yet as we need to preserve line numbers
+  const codeLines = codeContent.split('\n');
 
   // Build enhanced lines
-  const enhancedLines = codeLines.map((line, idx) => {
+  const enhancedLines = codeLines
+    .map((line, idx) => {
     const lineNum = idx + 1;
     const processed = processedLines[idx] || { classes: [] };
+
+    // Check if line already has a span wrapper (from Shiki)
+    if (line.trim().startsWith('<span')) {
+      // Shiki already wrapped it, just add line number attribute if needed
+      if (meta.lineNumbers) {
+        return line.replace(/^(<span\s+)/, `$1data-line="${lineNum}" `);
+      }
+      return line;
+    }
+
+    // Plain line without span wrapper
     const classes: string[] = ['line'];
 
     // Add highlight class
@@ -262,6 +275,11 @@ function enhanceHighlightedCode(
     // Build line HTML
     const classStr = classes.join(' ');
     return `<span class="${classStr}"${meta.lineNumbers ? ` data-line="${lineNum}"` : ''}>${line}</span>`;
+  })
+  .filter(line => {
+    // Remove empty spans (from empty lines in code blocks)
+    return !line.match(/<span class="line"><\/span>/) &&
+           !line.match(/<span class="line">\s*<\/span>/);
   });
 
   return `<pre class="${newPreClasses}"><code>${enhancedLines.join('\n')}</code></pre>`;

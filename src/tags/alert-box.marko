@@ -1,0 +1,77 @@
+/**
+ * Alert Box Tag
+ *
+ * Usage in markdown:
+ * <alert-box kind="tip">
+ *   This is a **tip** alert with `code` support!
+ * </alert-box>
+ *
+ * Kinds: tip, warning, danger, info, note
+ */
+
+<div class=["alert", "alert-" + (input.kind || 'info')]>
+  <${input.content}/>
+</div>
+
+<style>
+  .alert {
+    padding: 1rem 1.25rem;
+    margin: 1rem 0;
+    border-radius: 8px;
+    border-left: 4px solid;
+    line-height: 1.6;
+  }
+
+  .alert-tip {
+    background-color: #f0f9ff;
+    border-color: #0ea5e9;
+    color: #0369a1;
+  }
+
+  .alert-warning {
+    background-color: #fffbeb;
+    border-color: #f59e0b;
+    color: #92400e;
+  }
+
+  .alert-danger {
+    background-color: #fef2f2;
+    border-color: #ef4444;
+    color: #b91c1c;
+  }
+
+  .alert-info {
+    background-color: #f0fdf4;
+    border-color: #22c55e;
+    color: #15803d;
+  }
+
+  .alert-note {
+    background-color: #f5f3ff;
+    border-color: #8b5cf6;
+    color: #5b21b6;
+  }
+
+  .alert strong {
+    font-weight: 600;
+  }
+
+  .alert code {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+
+  .alert pre {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 1rem;
+    border-radius: 6px;
+    overflow-x: auto;
+  }
+
+  .alert pre code {
+    background: transparent;
+    padding: 0;
+  }
+</style>

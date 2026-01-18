@@ -1,6 +1,6 @@
 <div class="content {{CONTENT_TYPE_CLASS}}">
   <h1>${$global.title}</h1>
-  <div class="content-body" no-parse>
-    <${$global.content}/>
+  <div class="content-body">
+    $!{$global.content}
   </div>
 </div>

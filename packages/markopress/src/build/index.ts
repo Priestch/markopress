@@ -66,7 +66,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const routesDir = path.join(process.cwd(), 'src', 'routes');
     await fs.mkdir(routesDir, { recursive: true });
 
-    // Step 3: Generate routes for content
+    // Step 4: Generate routes for content
     console.log('📝 Generating routes from content...');
     const routeMode = useCatchAllRoutes ?? config.build.useCatchAllRoutes;
     if (routeMode) {
@@ -335,7 +335,7 @@ async function generatePageRoute(
 
   const title = String(page.processed.frontmatter.title || 'Page');
   const description = String(page.processed.frontmatter.description || '');
-  const content = escapeMarkoTemplate(page.processed.html || '');
+  const content = page.processed.html || '';
 
   // Generate the handler file (+handler.js)
   const handlerFile = path.join(path.dirname(routeDir), '+handler.js');
@@ -344,6 +344,7 @@ async function generatePageRoute(
   context.title = ${JSON.stringify(title)};
   context.description = ${JSON.stringify(description)};
   context.navbar = ${JSON.stringify(navbar)};
+  context.content = ${JSON.stringify(content)};
 }
 `;
 
@@ -351,9 +352,7 @@ async function generatePageRoute(
 
   // Generate the Marko template using template file
   const templateFile = routeDir + '.marko';
-  const template = await loadTemplate('page.marko.template', {
-    CONTENT: content,
-  });
+  const template = await loadTemplate('page.marko.template', {});
 
   await fs.writeFile(templateFile, template);
 
@@ -381,7 +380,7 @@ async function generateDocRoute(
 
   const title = String(doc.processed.frontmatter.title || 'Doc');
   const description = String(doc.processed.frontmatter.description || '');
-  const content = escapeMarkoTemplate(doc.processed.html || '');
+  const content = doc.processed.html || '';
 
   // Get sidebar settings from config
   const sidebarConfig = config.theme?.options?.sidebar || {};
@@ -417,16 +416,15 @@ async function generateDocRoute(
   context.description = ${JSON.stringify(description)};
   context.navbar = ${JSON.stringify(navbar)};
   context.sidebar = ${JSON.stringify(currentSidebar)};
+  context.content = ${JSON.stringify(content)};
 }
 `;
 
   await fs.writeFile(handlerFile, handlerCode);
 
-  // Generate Marko template using template file
+  // Generate the Marko template using template file
   const templateFile = routeDir + '.marko';
-  const template = await loadTemplate('doc.marko.template', {
-    CONTENT: content,
-  });
+  const template = await loadTemplate('doc.marko.template', {});
 
   await fs.writeFile(templateFile, template);
 
@@ -455,7 +453,7 @@ async function generateBlogRoute(
   const description = String(post.processed.frontmatter.description || '');
   const date = String(post.processed.frontmatter.date || '');
   const author = String(post.processed.frontmatter.author || '');
-  const content = escapeMarkoTemplate(post.processed.html || '');
+  const content = post.processed.html || '';
 
   // Generate handler file (+handler.js)
   const handlerFile = path.join(path.dirname(routeDir), '+handler.js');
@@ -466,16 +464,15 @@ async function generateBlogRoute(
   context.navbar = ${JSON.stringify(navbar)};
   context.date = ${JSON.stringify(date)};
   context.author = ${JSON.stringify(author)};
+  context.content = ${JSON.stringify(content)};
 }
 `;
 
   await fs.writeFile(handlerFile, handlerCode);
 
-  // Generate Marko template using template file
+  // Generate the Marko template using template file
   const templateFile = routeDir + '.marko';
-  const template = await loadTemplate('blog-post.marko.template', {
-    CONTENT: content,
-  });
+  const template = await loadTemplate('blog-post.marko.template', {});
 
   await fs.writeFile(templateFile, template);
 
@@ -1042,35 +1039,6 @@ function escapeHtml(str: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-}
-
-/**
- * Escape Marko template syntax to prevent code injection
- * Escapes all Marko-specific syntax that could be executed as code
- *
- * @param str - Raw string that may contain Marko template syntax
- * @returns Escaped string safe for embedding in Marko templates
- *
- * Security: Prevents XSS by escaping:
- * - ${} interpolation
- * - <$ dynamic tags
- * - <for> loops
- * - <if> conditionals
- * - <while> loops
- * - <macro> definitions
- */
-export function escapeMarkoTemplate(str: string): string {
-  return str
-    .replace(/\$\{/g, '$\\{')              // Escape ${} interpolation
-    .replace(/<\$/g, '<\\$')               // Escape <$ dynamic tags
-    .replace(/<for\|/g, '<\\for|')         // Escape <for> loops
-    .replace(/<for\(/g, '<\\for(')         // Escape <for()> alternative syntax
-    .replace(/<if=/g, '<\\if=')            // Escape <if> conditionals
-    .replace(/<if\(/g, '<\\if(')           // Escape <if()> alternative syntax
-    .replace(/<else-if=/g, '<\\else-if=')  // Escape <else-if>
-    .replace(/<else>/g, '<\\else>')        // Escape <else>
-    .replace(/<while\(/g, '<\\while(')     // Escape <while> loops
-    .replace(/<macro\|/g, '<\\macro|');    // Escape <macro> definitions
 }
 
 /**

@@ -338,6 +338,14 @@ CMD ["npm", "run", "preview"]
 - [Theming](./docs/theme.md)
 - [Plugin Development](./docs/plugins.md)
 
+### Architecture & Design
+- **[VitePress & Docusaurus Architecture Analysis](./docs/ARCHITECTURE_ANALYSIS.md)** - Comprehensive analysis of how VitePress and Docusaurus work, and how MarkoPress implements similar features with Marko.js v6
+  - Core architecture comparison
+  - Build system implementation
+  - Route generation strategies
+  - Plugin and theme systems
+  - Feature parity roadmap
+
 ### Advanced Guides
 - [Component API Reference](./docs/guides/marko-components.md) - Marko Tags component library
 - [Marko.js v6 Syntax](./docs/guides/marko-v6-syntax.md) - Syntax and best practices

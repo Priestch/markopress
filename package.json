@@ -8,9 +8,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "marko-run",
-    "build": "marko-run build",
-    "preview": "marko-run preview",
+    "dev": "npx markopress dev",
+    "build": "npx markopress build",
+    "preview": "npx markopress preview",
     "start": "node --enable-source-maps ./dist/index.mjs"
   },
   "devDependencies": {

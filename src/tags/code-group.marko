@@ -1,0 +1,110 @@
+/**
+ * Code Group Tag
+ *
+ * Usage in markdown:
+ * <code-group>
+ *   <code-tab label="npm" lang="bash">npm install markopress</code-tab>
+ *   <code-tab label="pnpm" lang="bash">pnpm install markopress</code-tab>
+ *   <code-tab label="yarn" lang="bash">yarn add markopress</code-tab>
+ * </code-group>
+ */
+
+class {
+  onCreate() {
+    this.state = {
+      activeTab: 0
+    };
+  }
+
+  setActiveTab(index) {
+    this.state.activeTab = index;
+  }
+}
+
+<div class="code-group">
+  <div class="code-group-tabs">
+    <for|tab, index of input.tabs || input.renderBody.renderBody|>
+      <button
+        class=["code-tab", { active: state.activeTab === index }]
+        on-click('setActiveTab', index)
+      >
+        ${tab.label || tab.attrs?.label || `Tab ${index + 1}`}
+      </button>
+    </for>
+  </div>
+
+  <div class="code-group-content">
+    <for|tab, index of input.tabs || input.renderBody.renderBody|>
+      <if(state.activeTab === index)>
+        <div class="code-tab-content">
+          <if=input.tabs>
+            <pre><code class=tab.lang||"bash">${tab.code}</code></pre>
+          <else>
+            <tab/>
+          </if>
+        </div>
+      </if>
+    </for>
+  </div>
+</div>
+
+<style>
+  .code-group {
+    margin: 1.5rem 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .code-group-tabs {
+    display: flex;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    overflow-x: auto;
+  }
+
+  .code-tab {
+    padding: 0.75rem 1.25rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .code-tab:hover {
+    color: #111827;
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .code-tab.active {
+    color: #3c8772;
+    border-bottom-color: #3c8772;
+    background: white;
+  }
+
+  .code-group-content {
+    background: #1f2937;
+    overflow-x: auto;
+  }
+
+  .code-tab-content {
+    margin: 0;
+    padding: 1rem;
+  }
+
+  .code-tab-content pre {
+    margin: 0;
+  }
+
+  .code-tab-content code {
+    color: #e5e7eb;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+</style>

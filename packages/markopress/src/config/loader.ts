@@ -31,7 +31,7 @@ const DEFAULT_CONFIG: Omit<ResolvedConfig, 'root'> = {
     options: {},
   },
   markdown: {
-    lineNumbers: true,
+    lineNumbers: false,  // Changed default to false to avoid Marko parser issues
     theme: {
       light: 'github-light',
       dark: 'github-dark',

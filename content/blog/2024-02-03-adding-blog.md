@@ -56,12 +56,10 @@ Edit `markopress.config.ts`:
 
 ```typescript
 import { defineConfig } from 'markopress';
-
 export default defineConfig({
   content: {
     blog: 'content/blog', // Blog directory
   },
-
   plugins: [
     '@markopress/plugin-content-blog',
   ],
@@ -86,29 +84,20 @@ tags: ["announcement", "first-post"]
 categories: ["News"]
 excerpt: "Welcome to my blog! This is my first post using MarkoPress."
 ---
-
 # My First Blog Post
-
 Welcome to my blog! This is my first post using MarkoPress.
-
 ## Why I Started Blogging
-
 I decided to start a blog to:
-
 - Share my knowledge
 - Connect with others
 - Build an online presence
 - Improve my writing
-
 ## What to Expect
-
 I'll be writing about:
-
 - Web development
 - Design
 - Technology
 - Personal growth
-
 Thanks for reading!
 ```
 
@@ -154,7 +143,6 @@ categories: ["Tutorials"]
 excerpt: "Dive deep into MarkoPress advanced features"
 draft: false
 ---
-
 # Content here...
 ```
 
@@ -171,39 +159,24 @@ Create `content/pages/blog.md`:
 title: "Blog"
 description: "Latest posts and tutorials"
 ---
-
 # Blog
-
 Welcome to my blog! Here you'll find tutorials, thoughts, and updates.
-
 ## Featured Posts
-
 ### [Advanced MarkoPress Techniques](/blog/2024-02-03-advanced-techniques)
-
 Learn advanced features and best practices for building production-ready sites.
-
 *February 3, 2024 • 5 min read*
-
 ### [Custom Theme Development](/blog/2024-01-27-custom-themes)
-
 Create stunning custom themes with MarkoPress's powerful theming system.
-
 *January 27, 2024 • 8 min read*
-
 ## Recent Posts
-
 * [Getting Started with MarkoPress](/blog/2024-01-15-getting-started) - January 15, 2024
 * [SEO Best Practices](/blog/2024-01-10-seo) - January 10, 2024
 * [Performance Optimization](/blog/2024-01-05-performance) - January 5, 2024
-
 ## Categories
-
 - [Tutorials](/blog/category/tutorials) - 15 posts
 - [Updates](/blog/category/updates) - 8 posts
 - [Case Studies](/blog/category/case-studies) - 5 posts
-
 ## Tags
-
 #web-development (12) • #design (8) • #tutorial (15) • #performance (6)
 ```
 
@@ -237,7 +210,6 @@ export default defineConfig({
     title: 'My Blog',
     description: 'My awesome blog',
   },
-
   themeConfig: {
     // Feed info
     feed: {
@@ -331,18 +303,14 @@ Create `plugins/reading-time.ts`:
 
 ```typescript
 import type { MarkoPressPlugin, ContentContext, PostData } from 'markopress/plugin';
-
 export default function readingTimePlugin(): MarkoPressPlugin {
   return {
     name: 'reading-time-plugin',
-
     contentLoaded(ctx: ContentContext) {
       const posts = ctx.getPosts();
-
       for (const post of posts) {
         const words = post.content.split(/\s+/).length;
         const minutes = Math.ceil(words / 200); // 200 words per minute
-
         post.frontmatter.readingTime = `${minutes} min read`;
         ctx.addPost(post);
       }
@@ -355,7 +323,6 @@ export default function readingTimePlugin(): MarkoPressPlugin {
 
 ```typescript
 import readingTimePlugin from './plugins/reading-time';
-
 export default defineConfig({
   plugins: [
     readingTimePlugin(),
@@ -393,7 +360,6 @@ class {
       '_blank'
     );
   }
-
   shareToLinkedIn() {
     const url = encodeURIComponent(window.location.href);
     window.open(
@@ -401,13 +367,11 @@ class {
       '_blank'
     );
   }
-
   copyLink() {
     navigator.clipboard.writeText(window.location.href);
     alert('Link copied!');
   }
 }
-
 <div class="share-buttons">
   <button onClick=>shareToTwitter()>
     Share on Twitter
@@ -419,14 +383,12 @@ class {
     Copy Link
   </button>
 </div>
-
 <style>`
   .share-buttons {
     display: flex;
     gap: 0.5rem;
     margin-top: 2rem;
   }
-
   .share-buttons button {
     padding: 0.5rem 1rem;
     background: var(--bg-primary);
@@ -435,7 +397,6 @@ class {
     cursor: pointer;
     transition: all 0.2s;
   }
-
   .share-buttons button:hover {
     border-color: var(--accent-color);
   }
@@ -467,7 +428,6 @@ Add meta tags to post frontmatter:
 title: "Post Title"
 description: "Post description for SEO"
 ---
-
 # Content
 ```
 
@@ -514,14 +474,11 @@ Create `plugins/related-posts.ts`:
 
 ```typescript
 import type { MarkoPressPlugin, PostData } from 'markopress/plugin';
-
 export default function relatedPostsPlugin(): MarkoPressPlugin {
   return {
     name: 'related-posts-plugin',
-
     contentLoaded(ctx) {
       const posts = ctx.getPosts();
-
       for (const post of posts) {
         const postTags = post.tags || [];
         const related = posts
@@ -531,7 +488,6 @@ export default function relatedPostsPlugin(): MarkoPressPlugin {
             return pTags.some(t => postTags.includes(t));
           })
           .slice(0, 3);
-
         post.frontmatter.relatedPosts = related;
         ctx.addPost(post);
       }
@@ -577,22 +533,17 @@ seriesOrder: 1
 export default function seriesPlugin(): MarkoPressPlugin {
   return {
     name: 'series-plugin',
-
     contentLoaded(ctx) {
       const posts = ctx.getPosts();
       const seriesMap = new Map();
-
       for (const post of posts) {
         const series = post.frontmatter.series;
         if (!series) continue;
-
         if (!seriesMap.has(series)) {
           seriesMap.set(series, []);
         }
-
         seriesMap.get(series).push(post);
       }
-
       for (const [series, seriesPosts] of seriesMap) {
         for (const post of seriesPosts) {
           post.frontmatter.seriesPosts = seriesPosts;
@@ -665,13 +616,11 @@ Create `src/tags/Comments.marko`:
 
 ```marko
 <div id="disqus_thread"></div>
-
 <script>
   var disqus_config = function () {
     this.page.url = '${input.url}';
     this.page.identifier = '${input.id}';
   };
-
   (function() {
     var d = document, s = d.createElement('script');
     s.src = 'https://YOUR-DISQUS-SHORTNAME.disqus.com/embed.js';
@@ -679,7 +628,6 @@ Create `src/tags/Comments.marko`:
     (d.head || d.body).appendChild(s);
   })();
 </script>
-
 <noscript>
   Please enable JavaScript to view the comments.
 </noscript>
