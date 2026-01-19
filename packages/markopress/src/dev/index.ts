@@ -29,9 +29,13 @@ export async function startDevServer(options: DevServerOptions = {}) {
   console.log(`✓ Config loaded from ${config.root}`);
 
   // Initialize plugin manager
-  const pluginManager = new PluginManager(config);
-  if (config.plugins.length > 0) {
+  let pluginManager: PluginManager | undefined;
+  if (config.plugins && config.plugins.length > 0) {
+    pluginManager = new PluginManager(config);
     await pluginManager.loadPlugins(config.plugins);
+
+    // Execute loadContent hooks to let plugins load external content
+    await pluginManager.execLoadContentHooks();
   }
 
   // Scan content for initial manifest
@@ -48,10 +52,45 @@ export async function startDevServer(options: DevServerOptions = {}) {
   console.log(`   Found ${manifest.docs.length} docs`);
   console.log(`   Found ${manifest.blog.length} blog posts\n`);
 
+  // Execute contentLoaded hooks to process content
+  if (pluginManager) {
+    await pluginManager.execContentLoadedHooks(manifest);
+  }
+
   // Generate routes
   console.log('📝 Generating routes from content...');
   const routesDir = path.join(config.root, 'src', 'routes');
   const routeMode = options.useCatchAllRoutes ?? config.build.useCatchAllRoutes;
+
+  // Build initial route manifest
+  let routeManifest: Record<string, any> = {};
+  for (const page of manifest.pages) {
+    routeManifest[page.urlPath] = {
+      path: page.urlPath,
+      title: page.processed.frontmatter.title || 'Untitled',
+      ...page.processed.frontmatter
+    };
+  }
+  for (const doc of manifest.docs) {
+    routeManifest[doc.urlPath] = {
+      path: doc.urlPath,
+      title: doc.processed.frontmatter.title || 'Untitled',
+      ...doc.processed.frontmatter
+    };
+  }
+  for (const post of manifest.blog) {
+    routeManifest[post.urlPath] = {
+      path: post.urlPath,
+      title: post.processed.frontmatter.title || 'Untitled',
+      ...post.processed.frontmatter
+    };
+  }
+
+  // Execute extendRoutes hooks
+  if (pluginManager) {
+    routeManifest = await pluginManager.execExtendRoutesHooks(routeManifest);
+  }
+
   if (routeMode) {
     await generateCatchAllRoutes(manifest, routesDir, config, false);
     console.log('   Using catch-all dynamic routes');
@@ -60,6 +99,11 @@ export async function startDevServer(options: DevServerOptions = {}) {
     console.log('   Using static routes');
   }
   console.log('   Routes generated\n');
+
+  // Execute allContentLoaded hooks
+  if (pluginManager) {
+    await pluginManager.execAllContentLoadedHooks(routeManifest);
+  }
 
   // Copy theme CSS
   console.log('🎨 Copying theme CSS...');

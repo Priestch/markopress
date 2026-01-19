@@ -13,6 +13,7 @@ import type { ResolvedConfig } from '../config/types.js';
 import { getDesignSystem, getDarkModeOverride, type DesignSystem } from '@markopress/theme-default/design-systems';
 import { generateContentManifest } from './manifest-generator.js';
 import { globalTagValidator, formatValidationError } from '../markdown/tag-validator.js';
+import { PluginManager } from '../plugin/manager.js';
 
 export interface BuildOptions {
   useCatchAllRoutes?: boolean;
@@ -40,7 +41,23 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     // Step 0: Load configuration
     const config = await loadConfig(process.cwd(), { mode: 'production', command: 'build' });
 
-    // Step 1: Scan content
+    // Step 1: Initialize plugin manager
+    let pluginManager: PluginManager | undefined;
+    if (config.plugins && config.plugins.length > 0) {
+      console.log('🔌 Loading plugins...');
+      pluginManager = new PluginManager(config);
+      await pluginManager.loadPlugins(config.plugins);
+      console.log('');
+    }
+
+    // Step 2: Execute loadContent hooks (NEW)
+    if (pluginManager) {
+      console.log('📦 Loading plugin content...');
+      await pluginManager.execLoadContentHooks();
+      console.log('   Plugin content loaded\n');
+    }
+
+    // Step 3: Scan core content directories
     console.log('📂 Scanning content directories...');
     const manifest = await scanContent({
       rootDir: process.cwd(),
@@ -52,7 +69,14 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     console.log(`   Found ${manifest.docs.length} docs`);
     console.log(`   Found ${manifest.blog.length} blog posts\n`);
 
-    // Step 2: Initialize tag validator if Marko tags enabled
+    // Step 4: Execute contentLoaded hooks (ENHANCED)
+    if (pluginManager) {
+      console.log('🔌 Processing plugin contentLoaded hooks...');
+      await pluginManager.execContentLoadedHooks(manifest);
+      console.log('   Plugin content processed\n');
+    }
+
+    // Step 5: Initialize tag validator if Marko tags enabled
     if (config.markdown.markoTags?.enabled) {
       const tagsDir = path.join(process.cwd(), config.markdown.markoTags.tagsDir || 'tags/');
       console.log('🔍 Scanning tags directory...');
@@ -62,11 +86,19 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       globalTagValidator.reset();
     }
 
-    // Step 3: Ensure routes directory exists
+    // Step 6: Ensure routes directory exists
     const routesDir = path.join(process.cwd(), 'src', 'routes');
     await fs.mkdir(routesDir, { recursive: true });
 
-    // Step 4: Generate routes for content
+    // Step 7: Generate initial route manifest
+    let routeManifest = buildInitialRouteManifest(manifest);
+
+    // Step 8: Execute extendRoutes hooks
+    if (pluginManager) {
+      routeManifest = await pluginManager.execExtendRoutesHooks(routeManifest);
+    }
+
+    // Step 9: Generate routes for content
     console.log('📝 Generating routes from content...');
     const routeMode = useCatchAllRoutes ?? config.build.useCatchAllRoutes;
     if (routeMode) {
@@ -78,7 +110,24 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     }
     console.log('   Routes generated\n');
 
-    // Step 4: Validate Marko tags if enabled
+    // Step 10: Generate plugin routes (NEW)
+    if (pluginManager) {
+      const pluginRoutes = pluginManager.getPluginRoutes();
+      if (pluginRoutes.length > 0) {
+        console.log(`🔌 Generating ${pluginRoutes.length} plugin routes...`);
+        await generatePluginRoutes(pluginRoutes, routesDir, config, debug);
+        console.log('   Plugin routes generated\n');
+      }
+    }
+
+    // Step 11: Execute allContentLoaded hooks (NEW)
+    if (pluginManager) {
+      console.log('🔌 Processing plugin allContentLoaded hooks...');
+      await pluginManager.execAllContentLoadedHooks(routeManifest);
+      console.log('   All content processed\n');
+    }
+
+    // Step 12: Validate Marko tags if enabled
     if (config.markdown.markoTags?.enabled) {
       console.log('🔍 Validating Marko tags...');
       const validation = globalTagValidator.validate();
@@ -99,12 +148,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       console.log('   All tags validated ✓\n');
     }
 
-    // Step 3.5: Copy theme CSS to public directory
+    // Step 13: Copy theme CSS to public directory
     console.log('🎨 Copying theme CSS...');
     await copyThemeCSS(process.cwd(), config, debug);
     console.log('   Theme CSS copied\n');
 
-    // Step 4: Build with @marko/run
+    // Step 14: Build with @marko/run
     console.log('🔨 Building with @marko/run...');
     const resolvedOutDir = outDir || config.build.outDir;
     const buildResult = await runMarkoRunBuild(resolvedOutDir, debug);
@@ -119,7 +168,21 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       };
     }
 
-    // Step 5: Copy Marko tags directory to output (after build so it doesn't get cleaned)
+    // Step 15: Collect build assets (NEW)
+    const assets = await collectBuildAssets(buildResult.outDir);
+
+    // Step 16: Execute postBuild hooks (NEW)
+    if (pluginManager) {
+      console.log('🔌 Processing plugin postBuild hooks...');
+      await pluginManager.execPostBuildHooks(
+        buildResult.outDir,
+        routeManifest,
+        assets
+      );
+      console.log('   Post-build hooks completed\n');
+    }
+
+    // Step 17: Copy Marko tags directory to output (after build so it doesn't get cleaned)
     console.log('📦 Copying Marko tags directory...');
     await copyTagsDirectory(process.cwd(), buildResult.outDir, config, debug);
     console.log('   Tags directory copied\n');
@@ -146,6 +209,101 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       errors,
     };
   }
+}
+
+/**
+ * Build initial route manifest from content
+ */
+function buildInitialRouteManifest(manifest: ContentManifest) {
+  const routes: Record<string, any> = {};
+
+  for (const page of manifest.pages) {
+    routes[page.urlPath] = {
+      path: page.urlPath,
+      meta: {
+        title: page.processed.frontmatter.title,
+        type: 'page',
+      },
+    };
+  }
+
+  for (const doc of manifest.docs) {
+    routes[doc.urlPath] = {
+      path: doc.urlPath,
+      meta: {
+        title: doc.processed.frontmatter.title,
+        type: 'doc',
+      },
+    };
+  }
+
+  for (const post of manifest.blog) {
+    routes[post.urlPath] = {
+      path: post.urlPath,
+      meta: {
+        title: post.processed.frontmatter.title,
+        type: 'blog',
+        date: post.processed.frontmatter.date,
+      },
+    };
+  }
+
+  return routes;
+}
+
+/**
+ * Generate plugin-defined routes
+ */
+async function generatePluginRoutes(
+  routes: any[],
+  routesDir: string,
+  config: ResolvedConfig,
+  debug: boolean
+): Promise<void> {
+  for (const route of routes) {
+    const routePath = route.path.slice(1); // Remove leading slash
+    const dir = path.join(routesDir, routePath, '+page');
+
+    await fs.mkdir(path.dirname(dir), { recursive: true });
+
+    // Generate handler if specified
+    if (route.handler) {
+      const handlerFile = path.join(path.dirname(dir), '+handler.js');
+      await fs.writeFile(handlerFile, route.handler);
+    }
+
+    // Generate page if component specified
+    if (route.component) {
+      const pageFile = dir + '.marko';
+      await fs.writeFile(pageFile, route.component);
+    }
+
+    if (debug) {
+      console.log(`   Generated plugin route: ${route.path}`);
+    }
+  }
+}
+
+/**
+ * Collect build assets from output directory
+ */
+async function collectBuildAssets(outDir: string): Promise<string[]> {
+  const assets: string[] = [];
+
+  try {
+    const files = await fs.readdir(outDir, { recursive: true });
+
+    for (const file of files) {
+      if (typeof file === 'string' && (file.endsWith('.js') || file.endsWith('.css') || file.endsWith('.json'))) {
+        assets.push(file);
+      }
+    }
+  } catch (error) {
+    // If directory doesn't exist or can't be read, return empty array
+    console.warn('Warning: Could not collect build assets:', error);
+  }
+
+  return assets;
 }
 
 /**

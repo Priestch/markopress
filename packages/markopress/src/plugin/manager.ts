@@ -11,11 +11,14 @@ import type {
   BuildContext,
   ContentManifest,
   RouteManifest,
-  PageData,
-  PostData,
+  PluginContent,
+  RouteConfig,
 } from './types.js';
+import type { ContentFile } from '../content/types.js';
 import type { ResolvedConfig } from '../config/index.js';
 import MarkdownIt from 'markdown-it';
+import { AllContentImpl, ContentActionsImpl } from './context.js';
+import { wrapLegacyPlugin } from './compat.js';
 
 export interface PluginLoadResult {
   plugin: MarkoPressPlugin;
@@ -28,6 +31,8 @@ export class PluginManager {
   private config: ResolvedConfig;
   private pluginLoadOrder: string[] = [];
   private loadResults: PluginLoadResult[] = [];
+  private allContent = new AllContentImpl();
+  private contentActions = new ContentActionsImpl();
 
   constructor(config: ResolvedConfig) {
     this.config = config;
@@ -44,9 +49,12 @@ export class PluginManager {
     for (const pluginConfig of orderedConfigs) {
       const result = await this.loadPlugin(pluginConfig);
       if (result) {
-        this.plugins.push(result.plugin);
+        // Wrap plugin for backward compatibility
+        const wrappedPlugin = wrapLegacyPlugin(result.plugin);
+
+        this.plugins.push(wrappedPlugin);
         this.loadResults.push(result);
-        this.pluginLoadOrder.push(result.plugin.name);
+        this.pluginLoadOrder.push(wrappedPlugin.name);
       }
     }
 
@@ -243,66 +251,6 @@ export class PluginManager {
   }
 
   /**
-   * Execute contentLoaded hooks on all plugins
-   */
-  async execContentLoadedHooks(manifest: ContentManifest): Promise<void> {
-    const ctx = this.createContentContext(manifest);
-
-    for (const plugin of this.plugins) {
-      if (plugin.contentLoaded) {
-        try {
-          await plugin.contentLoaded(ctx);
-        } catch (error) {
-          console.error(
-            `Plugin ${plugin.name} contentLoaded hook failed:`,
-            error
-          );
-        }
-      }
-    }
-  }
-
-  /**
-   * Execute beforeBuild hooks on all plugins
-   */
-  async execBeforeBuildHooks(manifest: ContentManifest, routes: RouteManifest): Promise<void> {
-    const ctx = this.createBuildContext(manifest, routes);
-
-    for (const plugin of this.plugins) {
-      if (plugin.beforeBuild) {
-        try {
-          await plugin.beforeBuild(ctx);
-        } catch (error) {
-          console.error(
-            `Plugin ${plugin.name} beforeBuild hook failed:`,
-            error
-          );
-        }
-      }
-    }
-  }
-
-  /**
-   * Execute afterBuild hooks on all plugins
-   */
-  async execAfterBuildHooks(manifest: ContentManifest, routes: RouteManifest): Promise<void> {
-    const ctx = this.createBuildContext(manifest, routes);
-
-    for (const plugin of this.plugins) {
-      if (plugin.afterBuild) {
-        try {
-          await plugin.afterBuild(ctx);
-        } catch (error) {
-          console.error(
-            `Plugin ${plugin.name} afterBuild hook failed:`,
-            error
-          );
-        }
-      }
-    }
-  }
-
-  /**
    * Execute extendRoutes hooks on all plugins
    */
   async execExtendRoutesHooks(routes: RouteManifest): Promise<RouteManifest> {
@@ -322,6 +270,170 @@ export class PluginManager {
     }
 
     return result;
+  }
+
+  /**
+   * Execute loadContent hooks on all plugins
+   * Allows plugins to load content from external sources
+   */
+  async execLoadContentHooks(): Promise<void> {
+    for (const plugin of this.plugins) {
+      if (plugin.loadContent) {
+        try {
+          const content = await plugin.loadContent();
+          this.allContent.addPluginContent(plugin.name, content);
+        } catch (error) {
+          console.error(
+            `Plugin ${plugin.name} loadContent hook failed:`,
+            error
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Execute contentLoaded hooks with enhanced context
+   * Merges manifest into allContent for backward compatibility
+   */
+  async execContentLoadedHooks(manifest?: ContentManifest): Promise<void> {
+    // For backward compatibility, merge manifest into allContent
+    if (manifest) {
+      this.allContent.addPluginContent('core', {
+        pages: manifest.pages as any,
+        docs: manifest.docs as any,
+        blog: manifest.blog as any,
+      });
+    }
+
+    for (const plugin of this.plugins) {
+      if (plugin.contentLoaded) {
+        try {
+          // Get plugin's own content
+          const pluginContent = this.allContent.getContent(plugin.name)[0] as PluginContent || {};
+
+          await plugin.contentLoaded({
+            content: pluginContent,
+            allContent: this.allContent,
+            actions: this.contentActions,
+          } as any);
+        } catch (error) {
+          console.error(
+            `Plugin ${plugin.name} contentLoaded hook failed:`,
+            error
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Execute allContentLoaded hooks on all plugins
+   * Called after all plugins have processed their content
+   */
+  async execAllContentLoadedHooks(routes: RouteManifest): Promise<void> {
+    for (const plugin of this.plugins) {
+      if (plugin.allContentLoaded) {
+        try {
+          await plugin.allContentLoaded({
+            allContent: this.allContent,
+            routes,
+            actions: this.contentActions,
+          });
+        } catch (error) {
+          console.error(
+            `Plugin ${plugin.name} allContentLoaded hook failed:`,
+            error
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Execute postBuild hooks on all plugins
+   * Also supports deprecated afterBuild hook
+   */
+  async execPostBuildHooks(
+    outDir: string,
+    routes: RouteManifest,
+    assets: string[]
+  ): Promise<void> {
+    // Execute new postBuild hooks
+    for (const plugin of this.plugins) {
+      if (plugin.postBuild) {
+        try {
+          await plugin.postBuild({
+            outDir,
+            routes,
+            assets,
+            allContent: this.allContent,
+          });
+        } catch (error) {
+          console.error(
+            `Plugin ${plugin.name} postBuild hook failed:`,
+            error
+          );
+        }
+      }
+    }
+
+    // Support deprecated afterBuild hook
+    for (const plugin of this.plugins) {
+      if (plugin.afterBuild) {
+        try {
+          const buildContext = this.createBuildContext(
+            // Convert AllContent to ContentManifest for compatibility
+            this.allContentToManifest(),
+            routes
+          );
+          await plugin.afterBuild(buildContext);
+        } catch (error) {
+          console.error(
+            `Plugin ${plugin.name} afterBuild hook failed:`,
+            error
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Get plugin-generated routes
+   */
+  getPluginRoutes(): RouteConfig[] {
+    return this.contentActions.getAllRoutes();
+  }
+
+  /**
+   * Get plugin data
+   */
+  getPluginData(): Map<string, unknown> {
+    return this.contentActions.getData();
+  }
+
+  /**
+   * Convert AllContent to ContentManifest for backward compatibility
+   */
+  private allContentToManifest(): ContentManifest {
+    return {
+      pages: this.allContent.getPages() as any,
+      docs: this.allContent.getDocs() as any,
+      blog: this.allContent.getPosts() as any,
+      all: [
+        ...this.allContent.getPages(),
+        ...this.allContent.getDocs(),
+        ...this.allContent.getPosts(),
+      ] as any,
+    };
+  }
+
+  /**
+   * Clear plugin state
+   */
+  clear(): void {
+    this.allContent = new AllContentImpl();
+    this.contentActions = new ContentActionsImpl();
   }
 
   /**
@@ -346,10 +458,10 @@ export class PluginManager {
 
     return {
       ...baseContext,
-      addPage: (page: PageData) => {
+      addPage: (page: ContentFile) => {
         manifest.pages.push(page);
       },
-      addPost: (post: PostData) => {
+      addPost: (post: ContentFile) => {
         manifest.blog.push(post);
       },
       getPages: () => manifest.pages,

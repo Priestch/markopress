@@ -144,7 +144,7 @@ export async function loadConfigFromFile(
 
       console.log(`✓ Loaded config from ${file}`);
       return { file: filePath, config };
-    } catch (error) {
+    } catch (error: any) {
       // Only throw if file exists but failed to load/parse
       if (error && typeof error === 'object' && 'code' in error && error.code !== 'ENOENT') {
         throw new Error(

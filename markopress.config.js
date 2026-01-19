@@ -24,17 +24,18 @@ export default defineConfig({
         { text: 'Docs', link: '/docs/getting-started' },
         { text: 'Blog', link: '/blog' },
       ],
-      sidebar: {
-        '/docs/': [
-          {
-            text: 'Guide',
-            items: [
-              { text: 'Getting Started', link: '/docs/getting-started' },
-              { text: 'Configuration', link: '/docs/configuration' },
-            ],
-          },
-        ],
-      },
+      // sidebar removed temporarily to test plugin system
+      // sidebar: {
+      //   '/docs/': [
+      //     {
+      //       text: 'Guide',
+      //       items: [
+      //         { text: 'Getting Started', link: '/docs/getting-started' },
+      //         { text: 'Configuration', link: '/docs/configuration' },
+      //       ],
+      //     },
+      //   ],
+      // },
       footer: {
         message: 'Released under the MIT License.',
         copyright: 'Copyright © 2024-present MarkoPress',
@@ -52,6 +53,7 @@ export default defineConfig({
     useCatchAllRoutes: true,  // Use dynamic routes with $!{} syntax for HTML rendering
   },
   plugins: [
+    './test-plugin.js',
     '@markopress/plugin-content-pages',
     '@markopress/plugin-content-docs',
     '@markopress/plugin-content-blog',
