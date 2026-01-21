@@ -28,6 +28,7 @@ declare module "@marko/run" {
 			"/docs/interactive-components": { verb: "get"; };
 			"/docs/plugins": { verb: "get"; };
 			"/docs/theming": { verb: "get"; };
+			"/features": { verb: "get"; };
 			"/marko-tags-test": { verb: "get"; };
 			"/portfolio": { verb: "get"; };
 			"/pricing": { verb: "get"; };
@@ -228,6 +229,17 @@ declare module "../src/routes/docs/theming/+handler.js" {
   namespace MarkoRun {
     export { NotHandled, NotMatched, GetPaths, PostPaths, GetablePath, GetableHref, PostablePath, PostableHref, Platform };
     export type Route = Run.Routes["/docs/theming"];
+    export type Context = Run.MultiRouteContext<Route>;
+    export type Handler = Run.HandlerLike<Route>;
+    /** @deprecated use `((context, next) => { ... }) satisfies MarkoRun.Handler` instead */
+    export const route: Run.HandlerTypeFn<Route>;
+  }
+}
+
+declare module "../src/routes/features/+handler.js" {
+  namespace MarkoRun {
+    export { NotHandled, NotMatched, GetPaths, PostPaths, GetablePath, GetableHref, PostablePath, PostableHref, Platform };
+    export type Route = Run.Routes["/features"];
     export type Context = Run.MultiRouteContext<Route>;
     export type Handler = Run.HandlerLike<Route>;
     /** @deprecated use `((context, next) => { ... }) satisfies MarkoRun.Handler` instead */
@@ -488,6 +500,17 @@ declare module "../src/routes/docs/theming/+page.marko" {
   }
 }
 
+declare module "../src/routes/features/+page.marko" {
+  namespace MarkoRun {
+    export { NotHandled, NotMatched, GetPaths, PostPaths, GetablePath, GetableHref, PostablePath, PostableHref, Platform };
+    export type Route = Run.Routes["/features"];
+    export type Context = Run.MultiRouteContext<Route> & Marko.Global;
+    export type Handler = Run.HandlerLike<Route>;
+    /** @deprecated use `((context, next) => { ... }) satisfies MarkoRun.Handler` instead */
+    export const route: Run.HandlerTypeFn<Route>;
+  }
+}
+
 declare module "../src/routes/marko-tags-test/+page.marko" {
   namespace MarkoRun {
     export { NotHandled, NotMatched, GetPaths, PostPaths, GetablePath, GetableHref, PostablePath, PostableHref, Platform };
@@ -547,7 +570,7 @@ declare module "../src/routes/+layout.marko" {
   export interface Input extends Run.LayoutInput<typeof import("../src/routes/+layout.marko")> {}
   namespace MarkoRun {
     export { NotHandled, NotMatched, GetPaths, PostPaths, GetablePath, GetableHref, PostablePath, PostableHref, Platform };
-    export type Route = Run.Routes["/" | "/about" | "/blog/2024-01-11-introducing-markopress" | "/blog/2024-01-15-building-static-site" | "/blog/2024-01-27-customizing-theme" | "/blog/2024-02-03-adding-blog" | "/blog-demo" | "/contact" | "/demo-product" | "/docs/api" | "/docs/configuration" | "/docs/demo-api-markdown" | "/docs/demo-api-routing" | "/docs/demo-guides-content" | "/docs/getting-started" | "/docs/interactive-components" | "/docs/plugins" | "/docs/theming" | "/marko-tags-test" | "/portfolio" | "/pricing" | "/team" | "/test-highlighting"];
+    export type Route = Run.Routes["/" | "/about" | "/blog/2024-01-11-introducing-markopress" | "/blog/2024-01-15-building-static-site" | "/blog/2024-01-27-customizing-theme" | "/blog/2024-02-03-adding-blog" | "/blog-demo" | "/contact" | "/demo-product" | "/docs/api" | "/docs/configuration" | "/docs/demo-api-markdown" | "/docs/demo-api-routing" | "/docs/demo-guides-content" | "/docs/getting-started" | "/docs/interactive-components" | "/docs/plugins" | "/docs/theming" | "/features" | "/marko-tags-test" | "/portfolio" | "/pricing" | "/team" | "/test-highlighting"];
     export type Context = Run.MultiRouteContext<Route> & Marko.Global;
     export type Handler = Run.HandlerLike<Route>;
     /** @deprecated use `((context, next) => { ... }) satisfies MarkoRun.Handler` instead */

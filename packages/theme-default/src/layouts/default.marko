@@ -48,6 +48,8 @@ class {
 <!DOCTYPE html>
 <html lang=$input.lang||"en">
 <head>
+  <theme-head-top/>
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/svg+xml" href=input.favicon||"/logo.svg">
@@ -96,12 +98,15 @@ class {
 
   <!-- Component Styles -->
   <link rel="stylesheet" href="/components.css">
+
+  <theme-head-bottom/>
 </head>
 <body class=${[
   'theme-default',
   state.darkMode ? 'dark' : 'light',
   !state.sidebarOpen ? 'sidebar-closed' : ''
 ].filter(Boolean).join(' ')}>
+  <theme-body-top/>
 
   <!-- Skip to content link (accessibility) -->
   <a href="#content" class="skip-to-content">Skip to main content</a>
@@ -114,112 +119,48 @@ class {
     <header class="navbar">
       <div class="navbar-container">
         <!-- Logo and Site Title -->
-        <a href=input.base||"/" class="navbar-brand">
-          <if=input.logo>
-            <img src=input.logo alt="Logo" class="navbar-logo">
-          </if>
-          <span class="navbar-title">${input.siteTitle || 'MarkoPress'}</span>
-        </a>
+        <theme-navbar-start siteTitle=input.siteTitle logo=input.logo url=input.base||"/"/>
 
         <!-- Desktop Navigation -->
-        <nav class="navbar-nav">
-          <include(input.nav||<components.NavBar/>)>
-        </nav>
+        <theme-navbar-center/>
 
         <!-- Header Actions -->
-        <div class="navbar-actions">
-          <!-- Search Button -->
-          <button class="btn-icon" aria-label="Search" on-click('triggerSearch')>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.35-4.35"></path>
-            </svg>
-          </button>
-
-          <!-- Dark Mode Toggle -->
-          <button class="btn-icon" aria-label="Toggle dark mode" on-click('toggleDarkMode')}>
-            <if=state.darkMode>
-              <!-- Sun Icon -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-              </svg>
-            <else>
-              <!-- Moon Icon -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-              </svg>
-            </if>
-          </button>
-
-          <!-- Mobile Menu Toggle -->
-          <button class="btn-icon mobile-menu-toggle" aria-label="Toggle menu" on-click('toggleMobileMenu')>
-            <if=state.mobileMenuOpen>
-              <!-- Close Icon -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            <else>
-              <!-- Menu Icon -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="3" y1="12" x2="21" y2="12"></line>
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <line x1="3" y1="18" x2="21" y2="18"></line>
-              </svg>
-            </if>
-          </button>
-        </div>
+        <theme-navbar-end darkMode=state.darkMode mobileMenuOpen=state.mobileMenuOpen />
       </div>
 
       <!-- Mobile Menu -->
       <if=state.mobileMenuOpen>
         <div class="navbar-mobile-menu">
-          <include(input.nav||<components.NavBar/>)>
+          <components.NavBar/>
         </div>
       </if>
     </header>
 
     <div class="layout-container">
       <!-- Sidebar (if provided) -->
-      <if=input.sidebar>
-        <aside class="sidebar" class-list={collapsed: !state.sidebarOpen}>
-          <div class="sidebar-container">
-            <!-- Collapse Button -->
-            <button class="sidebar-toggle-btn" on-click('toggleSidebar') aria-label="Toggle sidebar">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
+      <aside class="sidebar" class-list={collapsed: !state.sidebarOpen}>
+        <div class="sidebar-container">
+          <!-- Collapse Button -->
+          <button class="sidebar-toggle-btn" on-click('toggleSidebar') aria-label="Toggle sidebar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
 
-            <!-- Sidebar Content -->
-            <include(input.sidebar)>
-              <components.Sidebar/>
-            </include>
-          </div>
-        </aside>
-      </if>
+          <!-- Sidebar Content -->
+          <theme-sidebar-top/>
+          <components.Sidebar/>
+          <theme-sidebar-bottom/>
+        </div>
+      </aside>
 
       <!-- Main Content Area -->
       <main class="main-content" id="content">
-        <!-- Breadcrumbs (if provided) -->
-        <if=input.breadcrumbs>
-          <nav class="breadcrumbs" aria-label="Breadcrumb">
-            <include(input.breadcrumbs)>
-              <components.Breadcrumbs/>
-            </include>
-          </nav>
-        </if>
+        <theme-page-top/>
+        <theme-doc-top/>
 
         <!-- Page Content -->
-        <include(input.body)/>
+        <${input.content}/>
 
         <!-- Prev/Next Navigation (if provided) -->
         <if=(input.prev || input.next)>
@@ -238,28 +179,31 @@ class {
             </if>
           </div>
         </if>
+
+        <theme-doc-bottom/>
+        <theme-page-bottom/>
       </main>
 
-      <!-- Table of Contents (if provided) -->
-      <if=input.toc>
-        <aside class="toc-aside">
-          <div class="toc-container">
-            <h2 class="toc-title">On This Page</h2>
-            <include(input.toc)>
-              <components.TOC/>
-            </include>
-          </div>
-        </aside>
-      </if>
+      <!-- Table of Contents -->
+      <aside class="toc-aside">
+        <div class="toc-container">
+          <theme-aside-top/>
+          <h2 class="toc-title">On This Page</h2>
+          <components.TOC/>
+          <theme-aside-bottom/>
+        </div>
+      </aside>
     </div>
 
     <!-- Footer -->
     <footer class="footer">
-      <include(input.footer||<components.Footer/>)>
+      <components.Footer/>
     </footer>
   </div>
 
   <!-- Client Scripts -->
   <script src="/theme.js"></script>
+
+  <theme-body-bottom/>
 </body>
 </html>

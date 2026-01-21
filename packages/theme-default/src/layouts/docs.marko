@@ -15,31 +15,51 @@ class {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <theme-head-top/>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${state.title}</title>
   <if=state.description>
     <meta name="description" content="${state.description}">
   </if>
+  <theme-head-bottom/>
 </head>
 <body>
+  <theme-body-top/>
+
   <div class="docs-layout">
-    <@header/>
+    <!-- Header/Navbar -->
+    <header class="navbar">
+      <theme-navbar-start siteTitle=input.siteTitle logo=input.logo url=input.base||"/"/>
+      <theme-navbar-center/>
+      <theme-navbar-end/>
+    </header>
+
     <div class="docs-container">
       <aside class="sidebar">
-        <@sidebar/>
+        <theme-sidebar-top/>
+        <components.Sidebar/>
+        <theme-sidebar-bottom/>
       </aside>
       <main class="docs-content">
+        <theme-doc-top/>
         <article class="docs-article">
           <h1>${state.title}</h1>
           <${input.renderBody()} />
         </article>
+        <theme-doc-bottom/>
+        <theme-doc-footer-before/>
+        <theme-doc-footer-after/>
       </main>
       <aside class="toc">
-        <@toc headers=state.headers/>
+        <theme-aside-top/>
+        <components.TOC/>
+        <theme-aside-bottom/>
       </aside>
     </div>
-    <@footer/>
+    <components.Footer/>
   </div>
+
+  <theme-body-bottom/>
 </body>
 </html>

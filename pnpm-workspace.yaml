@@ -20,9 +20,9 @@ catalogs:
     # These will be available as workspace: references
     markopress: "workspace:*"
     "@markopress/theme-default": "workspace:*"
-    "@markopress/plugin-content-pages": "workspace:*"
-    "@markopress/plugin-content-docs": "workspace:*"
-    "@markopress/plugin-content-blog": "workspace:*"
+    "@markopress/plugin-feature-blog-index": "workspace:*"
+    "@markopress/plugin-feature-sidenav": "workspace:*"
+    "@markopress/plugin-feature-toc": "workspace:*"
 
 # Workspace settings
 # See: https://pnpm.io/npmrc.html

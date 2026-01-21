@@ -6,9 +6,10 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { scanContent } from '../content/scanner.js';
+import { scanContent, scanContentModules } from '../content/scanner.js';
 import { loadConfig } from '../config/loader.js';
 import type { ContentManifest, ContentFile } from '../content/types.js';
+import type { ContentModule } from '../content/module.js';
 import type { ResolvedConfig } from '../config/types.js';
 import { getDesignSystem, getDarkModeOverride, type DesignSystem } from '@markopress/theme-default/design-systems';
 import { generateContentManifest } from './manifest-generator.js';
@@ -50,26 +51,38 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       console.log('');
     }
 
-    // Step 2: Execute loadContent hooks (NEW)
+    // Step 2: Execute loadContent hooks (for backward compatibility)
     if (pluginManager) {
       console.log('📦 Loading plugin content...');
       await pluginManager.execLoadContentHooks();
       console.log('   Plugin content loaded\n');
     }
 
-    // Step 3: Scan core content directories
-    console.log('📂 Scanning content directories...');
-    const manifest = await scanContent({
+    // Step 3: Scan content modules (NEW APPROACH)
+    console.log('📂 Scanning content modules...');
+    const modules = await scanContentModules({
       rootDir: process.cwd(),
       dirs: config.content,
       markdownOptions: config.markdown,
     });
 
-    console.log(`   Found ${manifest.pages.length} pages`);
-    console.log(`   Found ${manifest.docs.length} docs`);
-    console.log(`   Found ${manifest.blog.length} blog posts\n`);
+    // Log module information
+    for (const module of modules) {
+      console.log(`   Found ${module.id} module: ${module.files.length} files`);
+    }
+    console.log('');
 
-    // Step 4: Execute contentLoaded hooks (ENHANCED)
+    // Step 4: Execute enhanceModules hooks (NEW)
+    if (pluginManager) {
+      console.log('🔌 Processing plugin enhanceModules hooks...');
+      await pluginManager.execEnhanceModulesHooks(modules);
+      console.log('   Modules enhanced\n');
+    }
+
+    // Step 5: Generate manifest from modules for backward compatibility
+    const manifest = modulesToManifest(modules);
+
+    // Step 6: Execute contentLoaded hooks (for backward compatibility)
     if (pluginManager) {
       console.log('🔌 Processing plugin contentLoaded hooks...');
       await pluginManager.execContentLoadedHooks(manifest);
@@ -96,26 +109,40 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     // Step 8: Execute extendRoutes hooks
     if (pluginManager) {
       routeManifest = await pluginManager.execExtendRoutesHooks(routeManifest);
+      console.log('🔌 Extended routes manifest:', Object.keys(routeManifest).length);
     }
 
     // Step 9: Generate routes for content
     console.log('📝 Generating routes from content...');
     const routeMode = useCatchAllRoutes ?? config.build.useCatchAllRoutes;
     if (routeMode) {
-      await generateCatchAllRoutes(manifest, routesDir, config, debug);
+      await generateCatchAllRoutes(manifest, routesDir, config, modules, debug);
       console.log('   Using catch-all dynamic routes');
     } else {
-      await generateRoutes(manifest, routesDir, config, debug);
+      await generateRoutes(manifest, routesDir, config, modules, debug);
       console.log('   Using static routes');
     }
     console.log('   Routes generated\n');
 
-    // Step 10: Generate plugin routes (NEW)
+    // Step 10: Convert routeManifest entries with handler/component to plugin routes
+    // This allows plugins to add custom routes via extendRoutes hook
+    const manifestRoutes: any[] = [];
+    for (const [path, route] of Object.entries(routeManifest)) {
+      if ((route as any).handler || (route as any).component) {
+        manifestRoutes.push({ path, ...(route as any) });
+        console.log(`   Found plugin route: ${path}`);
+      }
+    }
+
+    console.log(`🔌 Total manifest routes: ${Object.keys(routeManifest).length}, Plugin routes: ${manifestRoutes.length}`);
+
+    // Step 11: Generate plugin routes
     if (pluginManager) {
       const pluginRoutes = pluginManager.getPluginRoutes();
-      if (pluginRoutes.length > 0) {
-        console.log(`🔌 Generating ${pluginRoutes.length} plugin routes...`);
-        await generatePluginRoutes(pluginRoutes, routesDir, config, debug);
+      const allPluginRoutes = [...pluginRoutes, ...manifestRoutes];
+      if (allPluginRoutes.length > 0) {
+        console.log(`🔌 Generating ${allPluginRoutes.length} plugin routes...`);
+        await generatePluginRoutes(allPluginRoutes, routesDir, config, debug);
         console.log('   Plugin routes generated\n');
       }
     }
@@ -209,6 +236,39 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       errors,
     };
   }
+}
+
+/**
+ * Convert content modules to manifest for backward compatibility
+ */
+export function modulesToManifest(modules: ContentModule[]): ContentManifest {
+  const manifest: ContentManifest = {
+    pages: [],
+    docs: [],
+    blog: [],
+    all: [],
+  };
+
+  for (const module of modules) {
+    // Map module type to content type
+    const contentType = module.id === 'pages' ? 'page' :
+                       module.id === 'docs' ? 'doc' : 'blog';
+
+    // Add files to appropriate manifest collection
+    for (const file of module.files) {
+      manifest.all.push(file);
+
+      if (module.id === 'pages') {
+        manifest.pages.push(file);
+      } else if (module.id === 'docs') {
+        manifest.docs.push(file);
+      } else if (module.id === 'blog') {
+        manifest.blog.push(file);
+      }
+    }
+  }
+
+  return manifest;
 }
 
 /**
@@ -313,6 +373,7 @@ export async function generateRoutes(
   manifest: ContentManifest,
   routesDir: string,
   config: ResolvedConfig,
+  modules: ContentModule[],
   debug: boolean
 ): Promise<void> {
   // Clean up old generated routes safely
@@ -321,17 +382,17 @@ export async function generateRoutes(
 
   // Generate static page routes
   for (const page of manifest.pages) {
-    await generatePageRoute(page, routesDir, config, debug);
+    await generatePageRoute(page, routesDir, config, modules, debug);
   }
 
   // Generate individual doc routes (not dynamic)
   for (const doc of manifest.docs) {
-    await generateDocRoute(doc, routesDir, config, manifest, debug);
+    await generateDocRoute(doc, routesDir, config, modules, debug);
   }
 
   // Generate individual blog routes (not dynamic)
   for (const post of manifest.blog) {
-    await generateBlogRoute(post, routesDir, config, debug);
+    await generateBlogRoute(post, routesDir, config, modules, debug);
   }
 
   // Generate root layout that wraps all pages with <${input.content}/>
@@ -482,6 +543,7 @@ async function generatePageRoute(
   page: ContentFile,
   routesDir: string,
   config: ResolvedConfig,
+  modules: ContentModule[],
   debug: boolean
 ): Promise<void> {
   // For root path, use +page.marko. For others, use directory/+page.marko
@@ -498,11 +560,13 @@ async function generatePageRoute(
   // Generate the handler file (+handler.js)
   const handlerFile = path.join(path.dirname(routeDir), '+handler.js');
   const navbar = config.theme?.options?.navbar || [];
+  const head = config.site?.head || [];
   const handlerCode = `export async function GET(context, next) {
   context.title = ${JSON.stringify(title)};
   context.description = ${JSON.stringify(description)};
   context.navbar = ${JSON.stringify(navbar)};
   context.content = ${JSON.stringify(content)};
+  context.head = ${JSON.stringify(head)};
 }
 `;
 
@@ -526,7 +590,7 @@ async function generateDocRoute(
   doc: ContentFile,
   routesDir: string,
   config: ResolvedConfig,
-  manifest: ContentManifest,
+  modules: ContentModule[],
   debug: boolean
 ): Promise<void> {
   // Preserve full path structure after /docs/
@@ -540,41 +604,44 @@ async function generateDocRoute(
   const description = String(doc.processed.frontmatter.description || '');
   const content = doc.processed.html || '';
 
-  // Get sidebar settings from config
-  const sidebarConfig = config.theme?.options?.sidebar || {};
+  // Get sidebar from module enhancement or config
+  let currentSidebar: Array<{ text: string; link: string; items?: Array<{ text: string; link: string }> }> = [];
 
-  // Find sidebar items for this route
-  let currentSidebar: Array<{ text: string; link: string }> = [];
-  for (const [prefix, items] of Object.entries(sidebarConfig)) {
-    if (doc.urlPath.startsWith(prefix)) {
-      const sidebarItems = items;
+  // First, try to get sidebar from docs module enhancement
+  const docsModule = modules.find(m => m.id === 'docs');
+  const moduleSidebar = docsModule?.getEnhancement<Array<{ text: string; link: string; items?: any }>>('sidebar');
 
-      // Check if autoGenerate is true
-      if (typeof sidebarItems === 'object' && 'autoGenerate' in sidebarItems && sidebarItems.autoGenerate === true) {
-        // Auto-generate sidebar from all docs
-        currentSidebar = manifest.docs
-          .filter((d) => d.urlPath.startsWith(prefix))
-          .map((d) => ({
-            text: String(d.processed.frontmatter.title || d.urlPath),
-            link: d.urlPath,
-          }));
-      } else if (Array.isArray(sidebarItems)) {
-        // Use provided sidebar items
-        currentSidebar = sidebarItems;
+  if (moduleSidebar) {
+    currentSidebar = moduleSidebar;
+  } else {
+    // Fallback to config-based sidebar
+    const sidebarConfig = config.theme?.options?.sidebar || {};
+    for (const [prefix, items] of Object.entries(sidebarConfig)) {
+      if (doc.urlPath.startsWith(prefix)) {
+        const sidebarItems = items as any;
+        if (Array.isArray(sidebarItems)) {
+          currentSidebar = sidebarItems;
+        }
+        break;
       }
-      break;
     }
   }
 
-  // Generate handler file (+handler.js) with sidebar data
+  // Get TOC from module enhancement
+  const toc = docsModule?.getEnhancement<Map<string, any>>('toc')?.get(doc.urlPath);
+
+  // Generate handler file (+handler.js) with sidebar and TOC data
   const handlerFile = path.join(path.dirname(routeDir), '+handler.js');
   const navbar = config.theme?.options?.navbar || [];
+  const head = config.site?.head || [];
   const handlerCode = `export async function GET(context, next) {
   context.title = ${JSON.stringify(title)};
   context.description = ${JSON.stringify(description)};
   context.navbar = ${JSON.stringify(navbar)};
   context.sidebar = ${JSON.stringify(currentSidebar)};
+  context.toc = ${JSON.stringify(toc || [])};
   context.content = ${JSON.stringify(content)};
+  context.head = ${JSON.stringify(head)};
 }
 `;
 
@@ -598,6 +665,7 @@ async function generateBlogRoute(
   post: ContentFile,
   routesDir: string,
   config: ResolvedConfig,
+  modules: ContentModule[],
   debug: boolean
 ): Promise<void> {
   // Preserve full path structure after /blog/
@@ -616,6 +684,7 @@ async function generateBlogRoute(
   // Generate handler file (+handler.js)
   const handlerFile = path.join(path.dirname(routeDir), '+handler.js');
   const navbar = config.theme?.options?.navbar || [];
+  const head = config.site?.head || [];
   const handlerCode = `export async function GET(context, next) {
   context.title = ${JSON.stringify(title)};
   context.description = ${JSON.stringify(description)};
@@ -623,6 +692,7 @@ async function generateBlogRoute(
   context.date = ${JSON.stringify(date)};
   context.author = ${JSON.stringify(author)};
   context.content = ${JSON.stringify(content)};
+  context.head = ${JSON.stringify(head)};
 }
 `;
 
@@ -747,11 +817,10 @@ export async function copyThemeCSS(
   config: ResolvedConfig,
   debug: boolean
 ): Promise<void> {
-  const publicDir = path.join(rootDir, 'public');
-  await fs.mkdir(publicDir, { recursive: true });
+  // Create the _markopress/theme directory in public
+  const themeDir = path.join(rootDir, 'public', '_markopress', 'theme');
+  await fs.mkdir(themeDir, { recursive: true });
 
-  // For now, copy the styles-base.css from the theme package
-  // In the future, this will generate CSS variables from design system tokens
   const themeName = config.theme?.name || '@markopress/theme-default';
 
   // Security: Validate theme name to prevent path traversal
@@ -762,14 +831,18 @@ export async function copyThemeCSS(
     throw new Error(`Security: ${errorMessage}`);
   }
 
-  // Try multiple locations for the theme CSS
+  // Get the style from theme options
+  const style = (config.theme?.options?.style as 'default' | 'vitepress' | 'docusaurus') || 'default';
+  const cssFileName = `theme-${style}.css`;
+
+  // Try multiple locations for the pre-generated theme CSS
   const possiblePaths = [
     // pnpm workspace: root node_modules
-    path.join(rootDir, '..', 'node_modules', themeName, 'src', 'styles-base.css'),
+    path.join(rootDir, '..', 'node_modules', themeName, 'public', cssFileName),
     // Local node_modules
-    path.join(rootDir, 'node_modules', themeName, 'src', 'styles-base.css'),
+    path.join(rootDir, 'node_modules', themeName, 'public', cssFileName),
     // Direct packages path (for monorepo)
-    path.join(rootDir, '..', 'packages', 'theme-default', 'src', 'styles-base.css'),
+    path.join(rootDir, '..', 'packages', 'theme-default', 'public', cssFileName),
   ];
 
   let themeCSS: string | null = null;
@@ -788,26 +861,19 @@ export async function copyThemeCSS(
 
   if (!themeCSS) {
     // Fallback: create a minimal CSS file
-    console.warn('   Warning: Could not find theme CSS, using minimal fallback');
-    const fallbackCSS = `/* Minimal fallback CSS */\nbody { font-family: system-ui, sans-serif; margin: 0; padding: 0; }`;
-    const outputPath = path.join(publicDir, 'theme.css');
+    console.warn(`   Warning: Could not find ${cssFileName}, using minimal fallback`);
+    const fallbackCSS = `/* Minimal fallback CSS for style: ${style} */\nbody { font-family: system-ui, sans-serif; margin: 0; padding: 0; }`;
+    const outputPath = path.join(themeDir, cssFileName);
     await fs.writeFile(outputPath, fallbackCSS);
     return;
   }
 
-  // Generate design system CSS variables (placeholder for now)
-  const designSystemName = config.theme?.designSystem || 'vitepress';
-  const cssVariables = generateDesignSystemVariables(designSystemName);
-
-  // Combine variables and theme CSS
-  const finalCSS = `${cssVariables}\n\n${themeCSS}`;
-
-  // Write to public/theme.css
-  const outputPath = path.join(publicDir, 'theme.css');
-  await fs.writeFile(outputPath, finalCSS);
+  // Write the CSS file
+  const outputPath = path.join(themeDir, cssFileName);
+  await fs.writeFile(outputPath, themeCSS);
 
   if (debug) {
-    console.log(`   Copied theme CSS from: ${foundPath}`);
+    console.log(`   Copied ${cssFileName} from: ${foundPath}`);
     console.log(`   Output: ${outputPath}`);
   }
 }
@@ -1271,6 +1337,7 @@ export async function generateCatchAllRoutes(
   manifest: ContentManifest,
   routesDir: string,
   config: ResolvedConfig,
+  modules: ContentModule[],
   debug: boolean
 ): Promise<void> {
   console.log('   Using catch-all dynamic routes approach...');

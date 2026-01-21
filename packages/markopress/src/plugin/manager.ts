@@ -15,6 +15,7 @@ import type {
   RouteConfig,
 } from './types.js';
 import type { ContentFile } from '../content/types.js';
+import type { ContentModule } from '../content/module.js';
 import type { ResolvedConfig } from '../config/index.js';
 import MarkdownIt from 'markdown-it';
 import { AllContentImpl, ContentActionsImpl } from './context.js';
@@ -175,7 +176,10 @@ export class PluginManager {
       if (typeof pluginConfig === 'string') {
         // Load from package name
         const module = await import(pluginConfig);
-        plugin = module.default;
+        // Check if default export is a function (plugin factory)
+        plugin = typeof module.default === 'function'
+          ? await module.default()
+          : module.default;
       } else if (Array.isArray(pluginConfig)) {
         // Load with options
         const [name, options] = pluginConfig;
@@ -285,6 +289,33 @@ export class PluginManager {
         } catch (error) {
           console.error(
             `Plugin ${plugin.name} loadContent hook failed:`,
+            error
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Execute enhanceModules hooks on all plugins
+   * Allows plugins to enhance content modules with metadata
+   */
+  async execEnhanceModulesHooks(modules: ContentModule[]): Promise<void> {
+    for (const plugin of this.plugins) {
+      if (plugin.enhanceModules) {
+        try {
+          // Filter modules based on plugin's modules declaration
+          let modulesToEnhance = modules;
+          if (plugin.modules && plugin.modules.length > 0) {
+            modulesToEnhance = modules.filter(m =>
+              plugin.modules!.includes(m.id)
+            );
+          }
+
+          await plugin.enhanceModules(modulesToEnhance);
+        } catch (error) {
+          console.error(
+            `Plugin ${plugin.name} enhanceModules hook failed:`,
             error
           );
         }

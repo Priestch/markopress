@@ -20,15 +20,18 @@
     }
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch"
+    "build": "npm run build:css && tsc",
+    "build:css": "tsx src/build/generate-all.ts",
+    "dev": "tsc --watch",
+    "dev:css": "tsx watch src/build/generate-all.ts"
   },
   "marko": {
     "src": "src"
   },
   "files": [
     "src",
-    "dist"
+    "dist",
+    "public"
   ],
   "keywords": [
     "markopress",
@@ -38,6 +41,7 @@
   "author": "MarkoPress",
   "license": "MIT",
   "devDependencies": {
+    "tsx": "^4.7.0",
     "typescript": "^5.3.0"
   }
 }

@@ -47,6 +47,8 @@ export interface SidebarItem {
  * Theme options for default theme
  */
 export interface ThemeOptions {
+  /** Visual style: 'default' (plain), 'vitepress' (indigo, compact), or 'docusaurus' (blue, spacious) */
+  style?: 'default' | 'vitepress' | 'docusaurus';
   navbar?: NavItem[];
   sidebar?: SidebarConfig;
   [key: string]: unknown;

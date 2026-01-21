@@ -7,6 +7,8 @@ import fs from 'node:fs/promises';
 import fastGlob from 'fast-glob';
 import type { ContentType, ContentFile, ContentScannerOptions, ContentManifest } from './types.js';
 import type { MarkdownOptions } from '../markdown/types.js';
+import type { ContentModule, ModuleMetadata } from './module.js';
+import { createContentModule } from './module.js';
 import { parseMarkdown } from '../markdown/index.js';
 
 /**
@@ -41,6 +43,44 @@ export async function scanContent(options: ContentScannerOptions): Promise<Conte
   }
 
   return manifest;
+}
+
+/**
+ * Scan content modules for MarkoPress
+ *
+ * New module-based scanning approach. Each configured content directory
+ * becomes a module that plugins can enhance.
+ */
+export async function scanContentModules(options: ContentScannerOptions): Promise<ContentModule[]> {
+  const { dirs, rootDir, markdownOptions } = options;
+  const modules: ContentModule[] = [];
+
+  // Scan each configured content directory as a separate module
+  for (const [key, dirPath] of Object.entries(dirs)) {
+    if (!dirPath) continue;
+
+    const type: ContentType = key === 'pages' ? 'page' : key === 'docs' ? 'doc' : 'blog';
+    const files = await scanDirectory(dirPath, type, rootDir, markdownOptions);
+
+    // Create module metadata
+    const metadata: ModuleMetadata = {
+      title: key.charAt(0).toUpperCase() + key.slice(1), // Capitalize first letter
+      description: `${key} content`,
+    };
+
+    // Create the module
+    const module = createContentModule(
+      key,
+      dirPath,
+      'collection',
+      files,
+      metadata
+    );
+
+    modules.push(module);
+  }
+
+  return modules;
 }
 
 /**

@@ -7,6 +7,7 @@ import type { ResolvedConfig } from '../config/index.js';
 import type { ProcessedMarkdown } from '../markdown/index.js';
 import type { ContentFile } from '../content/types.js';
 import type { ContentManifest as SystemContentManifest } from '../content/types.js';
+import type { ContentModule } from '../content/module.js';
 
 /**
  * Route configuration for plugin-generated routes
@@ -133,6 +134,20 @@ export interface MarkoPressPlugin {
 
   // Plugin dependencies (optional array of plugin names that must load before this plugin)
   dependencies?: string[];
+
+  // === NEW: Module enhancement hook ===
+  /**
+   * Declare which modules this plugin works with
+   * If specified, plugin will only receive these modules in enhanceModules
+   */
+  modules?: string[];
+
+  /**
+   * Enhance content modules with metadata and features
+   * Called after content scanning, before route generation
+   * Multiple plugins can enhance the same module (composability)
+   */
+  enhanceModules?(modules: ContentModule[]): Promise<void> | void;
 
   // === NEW: Content loading hook ===
   /**

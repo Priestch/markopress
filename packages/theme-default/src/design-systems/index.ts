@@ -6,17 +6,20 @@
 export { vitepress, vitepressDark } from './vitepress.js';
 export { docusaurus, docusaurusDark } from './docusaurus.js';
 export { rspress, rspressDark } from './rspress.js';
+export { defaultPreset, defaultDark } from './default.js';
 export type { DesignSystem, ColorTokens, TypographyTokens, SpacingTokens, EffectTokens, LayoutTokens, ComponentTokens } from './types.js';
 
 import { vitepress, vitepressDark } from './vitepress.js';
 import { docusaurus, docusaurusDark } from './docusaurus.js';
 import { rspress, rspressDark } from './rspress.js';
+import { defaultPreset, defaultDark } from './default.js';
 import type { DesignSystem } from './types.js';
 
 /**
  * All available design systems
  */
 export const designSystems = {
+  default: defaultPreset,
   vitepress,
   docusaurus,
   rspress,
@@ -26,6 +29,7 @@ export const designSystems = {
  * Dark mode overrides for each design system
  */
 export const darkModeOverrides = {
+  default: defaultDark,
   vitepress: vitepressDark,
   docusaurus: docusaurusDark,
   rspress: rspressDark,

@@ -494,8 +494,12 @@ a:hover {
   transition: all var(--transition-fast, 150ms);
   font-size: var(--sidebar-item-font-size, var(--font-size-sm, 0.875rem));
   font-weight: var(--sidebar-item-font-weight, 400);
-  line-height: var(--sidebar-item-height, 1.4);
-  height: var(--sidebar-item-height, auto);
+  line-height: 1.4;
+  height: auto;
+  min-height: var(--sidebar-item-height, 36px);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
 }
 
 .sidebar-link:hover {

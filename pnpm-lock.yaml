@@ -17,10 +17,10 @@ importers:
     devDependencies:
       '@marko/run':
         specifier: ^0.9.3
-        version: 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)
+        version: 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0)
       '@marko/run-adapter-static':
         specifier: ^2.0.4
-        version: 2.0.4(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130))
+        version: 2.0.4(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0))
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.28
@@ -69,7 +69,7 @@ importers:
     devDependencies:
       '@marko/run':
         specifier: ^0.9.4
-        version: 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)
+        version: 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0)
       '@types/markdown-it':
         specifier: ^14.0.0
         version: 14.1.2
@@ -84,12 +84,18 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^7.3.1
-        version: 7.3.1(@types/node@20.19.28)
+        version: 7.3.1(@types/node@20.19.28)(tsx@4.21.0)
       vitest:
         specifier: ^4.0.17
-        version: 4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17)
+        version: 4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17)(tsx@4.21.0)
 
-  packages/plugin-content-blog:
+  packages/plugin-feature-blog-index:
+    dependencies:
+      markopress:
+        specifier: workspace:*
+        version: link:../markopress
+
+  packages/plugin-feature-sidenav:
     dependencies:
       markopress:
         specifier: workspace:*
@@ -99,17 +105,7 @@ importers:
         specifier: ^5.3.0
         version: 5.9.3
 
-  packages/plugin-content-docs:
-    dependencies:
-      markopress:
-        specifier: workspace:*
-        version: link:../markopress
-    devDependencies:
-      typescript:
-        specifier: ^5.3.0
-        version: 5.9.3
-
-  packages/plugin-content-pages:
+  packages/plugin-feature-toc:
     dependencies:
       markopress:
         specifier: workspace:*
@@ -121,6 +117,9 @@ importers:
 
   packages/theme-default:
     devDependencies:
+      tsx:
+        specifier: ^4.7.0
+        version: 4.21.0
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
@@ -1125,6 +1124,9 @@ packages:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
     engines: {node: '>=6.9.0'}
 
+  get-tsconfig@4.13.0:
+    resolution: {integrity: sha512-1VKTZJCwBrvbd+Wn3AOgQP/2Av+TfTCOlE4AcRJE72W1ksZXbAx8PPBR9RzgTeSPzlPMHrbANMH3LbltH73wxQ==}
+
   glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
     engines: {node: '>= 6'}
@@ -1464,6 +1466,9 @@ packages:
     resolution: {integrity: sha512-qYg9KP24dD5qka9J47d0aVky0N+b4fTU89LN9iDnjB5waksiC49rvMB0PrUJQGoTmH50XPiqOvAjDfaijGxYZw==}
     engines: {node: '>=8'}
 
+  resolve-pkg-maps@1.0.0:
+    resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
+
   resolve.exports@2.0.3:
     resolution: {integrity: sha512-OcXjMsGdhL4XnbShKpAcSqPMzQoYkYyhbEaeSko47MjRP9NfEQMhZkXL1DoFlt9LWQn4YttrdnV6X2OiyzBi+A==}
     engines: {node: '>=10'}
@@ -1638,6 +1643,11 @@ packages:
 
   trim-lines@3.0.1:
     resolution: {integrity: sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg==}
+
+  tsx@4.21.0:
+    resolution: {integrity: sha512-5C1sg4USs1lfG0GFb2RLXsdpXqBSEhAaA/0kPL01wxzpMqLILNxIxIOKiILz+cdg/pLnOUxFYOR5yhHU666wbw==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
 
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
@@ -2126,9 +2136,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@marko/run-adapter-static@2.0.4(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130))':
+  '@marko/run-adapter-static@2.0.4(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0))':
     dependencies:
-      '@marko/run': 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)
+      '@marko/run': 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0)
       compression: 1.8.1(supports-color@10.2.2)
       htmlparser2: 10.0.0
       sirv: 1.0.19
@@ -2136,14 +2146,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@marko/run-explorer@2.0.2(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130))':
+  '@marko/run-explorer@2.0.2(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0))':
     dependencies:
-      '@marko/run': 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)
+      '@marko/run': 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0)
 
-  '@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)':
+  '@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0)':
     dependencies:
-      '@marko/run-explorer': 2.0.2(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130))
-      '@marko/vite': 5.4.2(@marko/compiler@5.39.47)(vite@7.3.1(@types/node@20.19.28))
+      '@marko/run-explorer': 2.0.2(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0))
+      '@marko/vite': 5.4.2(@marko/compiler@5.39.47)(vite@7.3.1(@types/node@20.19.28)(tsx@4.21.0))
       browserslist: 4.28.1
       cli-table3: 0.6.5
       compression: 1.8.1(supports-color@10.2.2)
@@ -2159,7 +2169,7 @@ snapshots:
       sade: 1.8.1
       serve-static: 1.16.3(supports-color@10.2.2)
       supports-color: 10.2.2
-      vite: 7.3.1(@types/node@20.19.28)
+      vite: 7.3.1(@types/node@20.19.28)(tsx@4.21.0)
       warp10: 2.1.0
     transitivePeerDependencies:
       - '@marko/compiler'
@@ -2176,7 +2186,7 @@ snapshots:
       - tsx
       - yaml
 
-  '@marko/vite@5.4.2(@marko/compiler@5.39.47)(vite@7.3.1(@types/node@20.19.28))':
+  '@marko/vite@5.4.2(@marko/compiler@5.39.47)(vite@7.3.1(@types/node@20.19.28)(tsx@4.21.0))':
     dependencies:
       '@chialab/cjs-to-esm': 0.19.0
       '@marko/compiler': 5.39.47
@@ -2188,7 +2198,7 @@ snapshots:
       relative-import-path: 1.0.0
       resolve: 1.22.11
       resolve.exports: 2.0.3
-      vite: 7.3.1(@types/node@20.19.28)
+      vite: 7.3.1(@types/node@20.19.28)(tsx@4.21.0)
 
   '@napi-rs/magic-string-android-arm-eabi@0.3.4':
     optional: true
@@ -2442,13 +2452,13 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.0.3
 
-  '@vitest/mocker@4.0.17(vite@7.3.1(@types/node@20.19.28))':
+  '@vitest/mocker@4.0.17(vite@7.3.1(@types/node@20.19.28)(tsx@4.21.0))':
     dependencies:
       '@vitest/spy': 4.0.17
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 7.3.1(@types/node@20.19.28)
+      vite: 7.3.1(@types/node@20.19.28)(tsx@4.21.0)
 
   '@vitest/pretty-format@4.0.17':
     dependencies:
@@ -2476,7 +2486,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vitest: 4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17)
+      vitest: 4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17)(tsx@4.21.0)
 
   '@vitest/utils@4.0.17':
     dependencies:
@@ -2759,6 +2769,10 @@ snapshots:
   function-bind@1.1.2: {}
 
   gensync@1.0.0-beta.2: {}
+
+  get-tsconfig@4.13.0:
+    dependencies:
+      resolve-pkg-maps: 1.0.0
 
   glob-parent@5.1.2:
     dependencies:
@@ -3081,6 +3095,8 @@ snapshots:
 
   resolve-from@5.0.0: {}
 
+  resolve-pkg-maps@1.0.0: {}
+
   resolve.exports@2.0.3: {}
 
   resolve@1.22.11:
@@ -3283,6 +3299,13 @@ snapshots:
 
   trim-lines@3.0.1: {}
 
+  tsx@4.21.0:
+    dependencies:
+      esbuild: 0.27.2
+      get-tsconfig: 4.13.0
+    optionalDependencies:
+      fsevents: 2.3.3
+
   typescript@5.9.3: {}
 
   uc.micro@2.1.0: {}
@@ -3332,7 +3355,7 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite@7.3.1(@types/node@20.19.28):
+  vite@7.3.1(@types/node@20.19.28)(tsx@4.21.0):
     dependencies:
       esbuild: 0.27.2
       fdir: 6.5.0(picomatch@4.0.3)
@@ -3343,11 +3366,12 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.19.28
       fsevents: 2.3.3
+      tsx: 4.21.0
 
-  vitest@4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17):
+  vitest@4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17)(tsx@4.21.0):
     dependencies:
       '@vitest/expect': 4.0.17
-      '@vitest/mocker': 4.0.17(vite@7.3.1(@types/node@20.19.28))
+      '@vitest/mocker': 4.0.17(vite@7.3.1(@types/node@20.19.28)(tsx@4.21.0))
       '@vitest/pretty-format': 4.0.17
       '@vitest/runner': 4.0.17
       '@vitest/snapshot': 4.0.17
@@ -3364,7 +3388,7 @@ snapshots:
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vite: 7.3.1(@types/node@20.19.28)
+      vite: 7.3.1(@types/node@20.19.28)(tsx@4.21.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 20.19.28

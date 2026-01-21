@@ -11,6 +11,7 @@ import type {
   UserConfig,
   ResolvedConfig,
   ConfigEnv,
+  HeadTag,
 } from './types.js';
 
 const DEFAULT_CONFIG: Omit<ResolvedConfig, 'root'> = {
@@ -174,6 +175,18 @@ export function resolveConfig(
 
   // Plugins need special handling - don't merge, just replace
   const plugins = userConfig.plugins || DEFAULT_CONFIG.plugins;
+
+  // Add theme CSS based on style option
+  const style = (theme.options?.style as 'default' | 'vitepress' | 'docusaurus') || 'default';
+  const themeCssPath = `/_markopress/theme/theme-${style}.css`;
+
+  // Inject theme CSS link into head
+  const themeCssHeadTag: HeadTag = ['link', {
+    rel: 'stylesheet',
+    href: themeCssPath,
+  }];
+
+  site.head = [...(site.head || []), themeCssHeadTag];
 
   return {
     root,

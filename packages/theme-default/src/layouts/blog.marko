@@ -14,14 +14,25 @@ class {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <theme-head-top/>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${state.title}</title>
+  <theme-head-bottom/>
 </head>
 <body>
+  <theme-body-top/>
+
   <div class="blog-layout">
-    <@header/>
+    <!-- Header/Navbar -->
+    <header class="navbar">
+      <theme-navbar-start siteTitle=input.siteTitle logo=input.logo url=input.base||"/"/>
+      <theme-navbar-center/>
+      <theme-navbar-end/>
+    </header>
+
     <main class="blog-content">
+      <theme-page-top/>
       <h1>${state.title}</h1>
       <div class="posts-list">
         <for|post| in=(state.posts)>
@@ -43,8 +54,12 @@ class {
           </article>
         </for>
       </div>
+      <theme-page-bottom/>
     </main>
-    <@footer/>
+
+    <components.Footer/>
   </div>
+
+  <theme-body-bottom/>
 </body>
 </html>

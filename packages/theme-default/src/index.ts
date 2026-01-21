@@ -7,6 +7,7 @@ export interface ThemeConfig {
   name?: string;
   description?: string;
   logo?: string;
+  style?: 'default' | 'vitepress' | 'docusaurus';
   navbar?: NavbarItem[];
   sidebar?: SidebarConfig;
   footer?: FooterConfig;
@@ -67,6 +68,7 @@ export interface ThemeFeatures {
 export const defaultConfig: ThemeConfig = {
   name: 'MarkoPress',
   description: 'A general-purpose static site generator using Marko.js v6',
+  style: 'default',
   navbar: [
     { text: 'Home', link: '/' },
     { text: 'Docs', link: '/docs/getting-started' },

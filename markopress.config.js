@@ -18,6 +18,7 @@ export default defineConfig({
   theme: {
     name: '@markopress/theme-default',
     options: {
+      style: 'docusaurus', // or 'docusaurus' or 'default'
       navbar: [
         { text: 'Home', link: '/' },
         { text: 'About', link: '/about' },
@@ -45,7 +46,7 @@ export default defineConfig({
   markdown: {
     lineNumbers: false,  // Disable to avoid Shiki HTML parsing issues
     markoTags: {
-      enabled: true,
+      enabled: false,  // Temporarily disabled for blog index testing
       tagsDir: 'tags/',
     },
   },
@@ -53,9 +54,9 @@ export default defineConfig({
     useCatchAllRoutes: true,  // Use dynamic routes with $!{} syntax for HTML rendering
   },
   plugins: [
-    './test-plugin.js',
-    '@markopress/plugin-content-pages',
-    '@markopress/plugin-content-docs',
-    '@markopress/plugin-content-blog',
+    '@markopress/plugin-feature-blog-index',
+    '@markopress/plugin-feature-sidenav',
+    '@markopress/plugin-feature-toc',
+    // Search and RSS coming later
   ],
 });

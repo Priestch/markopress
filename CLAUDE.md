@@ -6,6 +6,47 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MarkoPress is a **general-purpose static site generator** built on Marko.js v6, designed as a drop-in alternative to VitePress and Docusaurus with full content compatibility. It uses **@marko/run** as the build tool and is organized as a **pnpm workspace monorepo**.
 
+## Marko.js 6 Reference Documentation
+
+Complete Marko.js 6 documentation is available in `docs/marko6/`. **Read these files when working with Marko components** to understand proper syntax and patterns:
+
+- **`docs/marko6/language-reference.md`** - Core language syntax, template variables (`input`, `$global`, `$signal`), attributes, tag variables, dynamic tags
+- **`docs/marko6/custom-tags.md`** - Component discovery system, tag resolution priority, file structure patterns
+- **`docs/marko6/reactivity.md`** - Compile-time reactivity system, state management, update scheduling
+- **`docs/marko6/core-tags.md`** - Control flow (`<if>`, `<for>`), state (`<let>`, `<const>`, `<return>`), lifecycle, styling tags
+- **`docs/marko6/native-tags.md`** - HTML element enhancements, event handlers, change handlers, two-way binding (`:=`)
+- **`docs/marko6/typescript.md`** - TypeScript integration, input typing, generic components, built-in types
+- **`docs/marko6/template-api.md`** - Server-side `render()` and client-side `mount()` APIs, `$global` properties
+- **`docs/marko6/styling.md`** - CSS approaches, CSS Modules (`<style/styles>`), preprocessors (`.scss`, `.less`)
+- **`docs/marko6/concise-syntax.md`** - **NEVER USE** - Concise syntax to avoid (indentation-based without angle brackets)
+- **`docs/marko6/marko5-interop.md`** - **NEVER USE** - Marko 5 syntax to avoid (`class {}`, `style {}`, `$ scriptlet`)
+
+### Critical Marko.js 6 Patterns
+
+**Attribute Binding:**
+- ✅ Dynamic: `<meta content=$global.description>` (no quotes)
+- ❌ Wrong: `<meta content="${$global.description}">` (renders as literal string)
+
+**Layout Rendering:**
+- ✅ Routes: `<${input.content}/>` (for @marko/run layouts)
+- ❌ Wrong: `<${input.renderBody}/>` (for component composition only)
+
+**State Management:**
+- `<let/count=0>` - Mutable state
+- `<const/doubled=count*2>` - Derived values
+- Two-way binding: `<input value:=message>`
+
+**Event Handlers:**
+- Method shorthand: `<button onClick() { alert("clicked") }>Click</button>`
+
+**Always Use:**
+- HTML mode with angle brackets `<div></div>`
+- Tags API syntax (Marko 6)
+
+**Never Use:**
+- Concise syntax (indentation-based)
+- Marko 5 Class API syntax
+
 ## Architecture
 
 ### Monorepo Structure

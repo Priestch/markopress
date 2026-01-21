@@ -4,6 +4,7 @@
  */
 
 import type { DesignSystem, ColorTokens, TypographyTokens, SpacingTokens, EffectTokens, LayoutTokens } from '../design-systems/types.js';
+import { getDarkModeOverride as getDarkOverride, type DesignSystemName } from '../design-systems/index.js';
 
 /**
  * Generate CSS variables from design system
@@ -227,10 +228,7 @@ export function generateThemeCSS(designSystem: DesignSystem): string {
 
 /**
  * Get dark mode override for a design system
- * (This would import from the design-systems/index in actual implementation)
  */
-function getDarkModeOverride(name: string): any {
-  // TODO: Import from design-systems/index
-  // For now, return null to skip dark mode
-  return null;
+function getDarkModeOverride(name: string): Partial<DesignSystem> | null {
+  return getDarkOverride(name as DesignSystemName) || null;
 }

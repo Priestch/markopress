@@ -6,9 +6,11 @@
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { loadConfig } from '../config/index.js';
-import { scanContent } from '../content/scanner.js';
+import { scanContentModules } from '../content/scanner.js';
+import type { ContentModule } from '../content/module.js';
 import { PluginManager } from '../plugin/manager.js';
 import { generateRoutes, copyThemeCSS, generateCatchAllRoutes } from '../build/index.js';
+import { modulesToManifest } from '../build/index.js';
 
 interface DevServerOptions {
   port?: number;
@@ -38,19 +40,33 @@ export async function startDevServer(options: DevServerOptions = {}) {
     await pluginManager.execLoadContentHooks();
   }
 
-  // Scan content for initial manifest
-  console.log('📂 Scanning content directories...');
-  const manifest = await scanContent({
+  // Scan content modules
+  console.log('📂 Scanning content modules...');
+  const modules = await scanContentModules({
     rootDir: config.root,
     dirs: {
       pages: config.content.pages,
       docs: config.content.docs,
       blog: config.content.blog,
     },
+    markdownOptions: config.markdown,
   });
-  console.log(`   Found ${manifest.pages.length} pages`);
-  console.log(`   Found ${manifest.docs.length} docs`);
-  console.log(`   Found ${manifest.blog.length} blog posts\n`);
+
+  // Log module information
+  for (const module of modules) {
+    console.log(`   Found ${module.id} module: ${module.files.length} files`);
+  }
+  console.log('');
+
+  // Execute enhanceModules hooks
+  if (pluginManager) {
+    console.log('🔌 Processing plugin enhanceModules hooks...');
+    await pluginManager.execEnhanceModulesHooks(modules);
+    console.log('   Modules enhanced\n');
+  }
+
+  // Generate manifest from modules for backward compatibility
+  const manifest = modulesToManifest(modules);
 
   // Execute contentLoaded hooks to process content
   if (pluginManager) {
@@ -92,10 +108,10 @@ export async function startDevServer(options: DevServerOptions = {}) {
   }
 
   if (routeMode) {
-    await generateCatchAllRoutes(manifest, routesDir, config, false);
+    await generateCatchAllRoutes(manifest, routesDir, config, modules, false);
     console.log('   Using catch-all dynamic routes');
   } else {
-    await generateRoutes(manifest, routesDir, config, false);
+    await generateRoutes(manifest, routesDir, config, modules, false);
     console.log('   Using static routes');
   }
   console.log('   Routes generated\n');

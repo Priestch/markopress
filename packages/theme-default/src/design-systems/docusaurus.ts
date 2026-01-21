@@ -200,7 +200,7 @@ export const docusaurus: DesignSystem = {
       itemFontWeight: 400,
       activeBackground: 'rgba(30, 128, 196, 0.12)',
       activeBorder: 'none',
-      hoverBackground: 'rgba(168, 168, 168, 0.1)',
+      hoverBackground: 'rgba(168, 168, 168, 0.1',
       categoryPadding: '16px 16px 8px',
       categoryFontSize: '13px',
       categoryFontWeight: 700,

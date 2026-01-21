@@ -217,7 +217,7 @@ export const vitepress: DesignSystem = {
     code: {
       fontSize: '0.875em',
       lineHeight: 1.7,
-      background: 'rgba(142, 150, 170, 0.14)',
+      background: 'rgba(142, 150, 170, 0.14',
       color: '#3451b2',
       borderRadius: '4px',
       padding: '2px 6px',
