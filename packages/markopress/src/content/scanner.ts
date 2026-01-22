@@ -25,19 +25,19 @@ export async function scanContent(options: ContentScannerOptions): Promise<Conte
 
   // Scan each content directory
   if (dirs.pages) {
-    const pages = await scanDirectory(dirs.pages, 'page', rootDir, markdownOptions);
+    const pages = await scanDirectory(dirs.pages, rootDir, markdownOptions, 'pages', 'page');
     manifest.pages.push(...pages);
     manifest.all.push(...pages);
   }
 
   if (dirs.docs) {
-    const docs = await scanDirectory(dirs.docs, 'doc', rootDir, markdownOptions);
+    const docs = await scanDirectory(dirs.docs, rootDir, markdownOptions, 'docs', 'doc');
     manifest.docs.push(...docs);
     manifest.all.push(...docs);
   }
 
   if (dirs.blog) {
-    const blog = await scanDirectory(dirs.blog, 'blog', rootDir, markdownOptions);
+    const blog = await scanDirectory(dirs.blog, rootDir, markdownOptions, 'blog', 'blog');
     manifest.blog.push(...blog);
     manifest.all.push(...blog);
   }
@@ -59,8 +59,7 @@ export async function scanContentModules(options: ContentScannerOptions): Promis
   for (const [key, dirPath] of Object.entries(dirs)) {
     if (!dirPath) continue;
 
-    const type: ContentType = key === 'pages' ? 'page' : key === 'docs' ? 'doc' : 'blog';
-    const files = await scanDirectory(dirPath, type, rootDir, markdownOptions);
+    const files = await scanDirectory(dirPath, rootDir, markdownOptions, key);
 
     // Create module metadata
     const metadata: ModuleMetadata = {
@@ -88,9 +87,10 @@ export async function scanContentModules(options: ContentScannerOptions): Promis
  */
 async function scanDirectory(
   dirPath: string,
-  type: ContentType,
   rootDir: string,
-  markdownOptions?: MarkdownOptions
+  markdownOptions?: MarkdownOptions,
+  moduleId?: string,
+  type?: ContentType
 ): Promise<ContentFile[]> {
   const fullDirPath = path.resolve(rootDir, dirPath);
 
@@ -121,7 +121,7 @@ async function scanDirectory(
       }
 
       const relativePath = path.relative(rootDir, filePath);
-      const urlPath = getUrlPath(relativePath, dirPath, type);
+      const urlPath = getUrlPath(relativePath, dirPath, moduleId);
 
       contentFiles.push({
         id: generateId(relativePath),
@@ -142,7 +142,7 @@ async function scanDirectory(
 /**
  * Generate URL path from file path
  */
-function getUrlPath(relativePath: string, contentDir: string, type: ContentType): string {
+function getUrlPath(relativePath: string, contentDir: string, moduleId?: string): string {
   // Remove content directory prefix
   let urlPath = relativePath.replace(contentDir, '');
 
@@ -159,11 +159,10 @@ function getUrlPath(relativePath: string, contentDir: string, type: ContentType)
     urlPath = '/' + urlPath;
   }
 
-  // Add prefix based on type
-  if (type === 'doc' && !urlPath.startsWith('/docs')) {
-    urlPath = '/docs' + urlPath;
-  } else if (type === 'blog' && !urlPath.startsWith('/blog')) {
-    urlPath = '/blog' + urlPath;
+  // Add module ID prefix if provided
+  // Special case: 'pages' module gets no prefix (root-level routes)
+  if (moduleId && moduleId !== 'pages' && !urlPath.startsWith(`/${moduleId}`)) {
+    urlPath = `/${moduleId}${urlPath}`;
   }
 
   return urlPath;

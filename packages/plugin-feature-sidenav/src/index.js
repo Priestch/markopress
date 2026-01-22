@@ -8,19 +8,19 @@
  * Create sidenav plugin
  */
 export default function sidenavPlugin(options = {}) {
-  const { autoGenerate = true, items } = options;
+  const { autoGenerate = true, items, module = 'docs' } = options;
 
   return {
     name: '@markopress/plugin-feature-sidenav',
-    modules: ['docs'],
+    modules: [module],
 
     async enhanceModules(modules) {
-      const docsModule = modules.find(m => m.id === 'docs');
-      if (!docsModule) return;
+      const targetModule = modules.find(m => m.id === module);
+      if (!targetModule) return;
 
       // Use manual items if provided, otherwise auto-generate
-      const sidebar = items || (autoGenerate ? buildSidebarFromFiles(docsModule.files) : []);
-      docsModule.enhance('sidebar', sidebar);
+      const sidebar = items || (autoGenerate ? buildSidebarFromFiles(targetModule.files) : []);
+      targetModule.enhance('sidebar', sidebar);
     },
   };
 }
@@ -65,11 +65,14 @@ function buildSidebarFromFiles(files) {
   const groups = new Map();
 
   for (const file of files) {
-    // Get the path after /docs/
-    const docsPath = file.urlPath.replace(/^\/docs\//, '');
+    // Get the path after the module prefix
+    const pathMatch = file.urlPath.match(/^\/[^/]+\/(.*)/);
+    if (!pathMatch) continue;
+
+    const contentPath = pathMatch[1];
 
     // Extract directory (first segment)
-    const dirParts = docsPath.split('/');
+    const dirParts = contentPath.split('/');
     const dir = dirParts.length > 1 ? dirParts[0] : '';
 
     if (dir) {
@@ -85,8 +88,10 @@ function buildSidebarFromFiles(files) {
 
   // First, add root-level files (no directory)
   const rootFiles = files.filter(f => {
-    const docsPath = f.urlPath.replace(/^\/docs\//, '');
-    return !docsPath.includes('/');
+    const pathMatch = f.urlPath.match(/^\/[^/]+\/(.*)/);
+    if (!pathMatch) return false;
+    const contentPath = pathMatch[1];
+    return !contentPath.includes('/');
   });
 
   for (const file of rootFiles) {

@@ -18,12 +18,13 @@ const SiteConfigSchema = z.object({
 
 /**
  * Content configuration schema
+ * Allows arbitrary module names (e.g., pages, guides, docs, blog, tutorials, etc.)
  */
 const ContentConfigSchema = z.object({
   pages: z.string().optional(),
   docs: z.string().optional(),
   blog: z.string().optional(),
-});
+}).passthrough(); // Allow additional properties (like 'guides', 'tutorials', etc.)
 
 /**
  * Navigation item schema
@@ -90,15 +91,21 @@ const MarkdownConfigSchema = z.object({
  * Build configuration schema
  */
 const BuildConfigSchema = z.object({
+  useCatchAllRoutes: z.boolean().optional(),
   outDir: z.string().optional(),
   assetsDir: z.string().optional(),
-});
+  sourcemap: z.boolean().optional(),
+  minify: z.boolean().optional(),
+  clean: z.boolean().optional(),
+}).passthrough();
 
 /**
  * Plugin configuration schema
+ * Supports: string | [string, options] | { name, options }
  */
 const PluginConfigSchema = z.union([
   z.string(),
+  z.tuple([z.string(), z.record(z.string(), z.unknown()).optional()]),
   z.object({
     name: z.string().min(1, { message: 'Plugin name is required' }),
     options: z.record(z.string(), z.unknown()).optional(),

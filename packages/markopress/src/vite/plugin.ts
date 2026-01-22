@@ -35,7 +35,7 @@ export function markoPressVitePlugin(options: MarkoPressVitePluginOptions): Plug
       }
 
       // Check if file is in content directories
-      const contentDirs = Object.values(config.content);
+      const contentDirs = Object.values(config.content).filter((dir): dir is string => typeof dir === 'string');
       const isInContent = contentDirs.some((dir) => id.includes(dir));
 
       if (!isInContent) {

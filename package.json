@@ -5,12 +5,16 @@
   "type": "module",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "website"
   ],
   "scripts": {
-    "dev": "npx markopress dev",
-    "build": "npx markopress build",
-    "preview": "npx markopress preview",
+    "dev": "npm run docs:dev --workspace=website",
+    "build": "npm run docs:build --workspace=website",
+    "preview": "npm run docs:preview --workspace=website",
+    "docs:dev": "pnpm --filter @markopress/website dev",
+    "docs:build": "pnpm --filter @markopress/website build",
+    "docs:preview": "pnpm --filter @markopress/website preview",
     "start": "node --enable-source-maps ./dist/index.mjs"
   },
   "devDependencies": {

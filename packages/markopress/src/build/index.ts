@@ -240,6 +240,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
 /**
  * Convert content modules to manifest for backward compatibility
+ * Maps generic modules to the old manifest structure (pages, docs, blog)
  */
 export function modulesToManifest(modules: ContentModule[]): ContentManifest {
   const manifest: ContentManifest = {
@@ -250,20 +251,21 @@ export function modulesToManifest(modules: ContentModule[]): ContentManifest {
   };
 
   for (const module of modules) {
-    // Map module type to content type
-    const contentType = module.id === 'pages' ? 'page' :
-                       module.id === 'docs' ? 'doc' : 'blog';
-
-    // Add files to appropriate manifest collection
+    // Add all files to the 'all' collection
     for (const file of module.files) {
       manifest.all.push(file);
 
+      // Map module ID to legacy manifest collections:
+      // - 'pages' module -> pages collection
+      // - 'blog' module -> blog collection
+      // - Everything else (guides, docs, etc.) -> docs collection
       if (module.id === 'pages') {
         manifest.pages.push(file);
-      } else if (module.id === 'docs') {
-        manifest.docs.push(file);
       } else if (module.id === 'blog') {
         manifest.blog.push(file);
+      } else {
+        // All other modules (docs, guides, etc.) go to docs collection
+        manifest.docs.push(file);
       }
     }
   }
@@ -585,6 +587,7 @@ async function generatePageRoute(
 
 /**
  * Generate a single documentation route
+ * Works with any module (docs, guides, tutorials, etc.)
  */
 async function generateDocRoute(
   doc: ContentFile,
@@ -593,8 +596,8 @@ async function generateDocRoute(
   modules: ContentModule[],
   debug: boolean
 ): Promise<void> {
-  // Preserve full path structure after /docs/
-  // e.g., "/docs/api/build" -> "docs/api/build"
+  // Preserve full path structure
+  // e.g., "/guides/getting-started" -> "guides/getting-started"
   const routePath = doc.urlPath.slice(1); // Remove leading slash
   const routeDir = path.join(routesDir, routePath, '+page');
 
@@ -604,12 +607,17 @@ async function generateDocRoute(
   const description = String(doc.processed.frontmatter.description || '');
   const content = doc.processed.html || '';
 
+  // Determine module ID from urlPath
+  // e.g., "/guides/getting-started" -> "guides"
+  const pathParts = doc.urlPath.split('/').filter(Boolean);
+  const moduleId = pathParts[0] || 'docs';
+
   // Get sidebar from module enhancement or config
   let currentSidebar: Array<{ text: string; link: string; items?: Array<{ text: string; link: string }> }> = [];
 
-  // First, try to get sidebar from docs module enhancement
-  const docsModule = modules.find(m => m.id === 'docs');
-  const moduleSidebar = docsModule?.getEnhancement<Array<{ text: string; link: string; items?: any }>>('sidebar');
+  // Try to get sidebar from the module that contains this file
+  const targetModule = modules.find(m => m.id === moduleId);
+  const moduleSidebar = targetModule?.getEnhancement<Array<{ text: string; link: string; items?: any }>>('sidebar');
 
   if (moduleSidebar) {
     currentSidebar = moduleSidebar;
@@ -628,7 +636,7 @@ async function generateDocRoute(
   }
 
   // Get TOC from module enhancement
-  const toc = docsModule?.getEnhancement<Map<string, any>>('toc')?.get(doc.urlPath);
+  const toc = targetModule?.getEnhancement<Map<string, any>>('toc')?.get(doc.urlPath);
 
   // Generate handler file (+handler.js) with sidebar and TOC data
   const handlerFile = path.join(path.dirname(routeDir), '+handler.js');
@@ -1330,8 +1338,8 @@ async function runMarkoRunBuild(
 }
 
 /**
- * Generate catch-all routes using dynamic routes (NEW APPROACH)
- * This replaces the old approach of generating individual route files for each content
+ * Generate catch-all routes using dynamic routes
+ * Supports generic modules (not just hardcoded docs/blog/pages)
  */
 export async function generateCatchAllRoutes(
   manifest: ContentManifest,
@@ -1346,67 +1354,79 @@ export async function generateCatchAllRoutes(
   await generateContentManifest(manifest, routesDir, config);
   if (debug) console.log('   Generated content-manifest.json');
 
-  // Step 2: Generate catch-all route for docs
-  if (manifest.docs.length > 0) {
-    const docsDir = path.join(routesDir, 'docs', '$$slug');
-    await fs.mkdir(docsDir, { recursive: true });
-    
+  // Step 2: Generate catch-all route for each non-pages module
+  // Group docs files by their module ID (extracted from urlPath)
+  const docModules = new Map<string, ContentFile[]>();
+  for (const doc of manifest.docs) {
+    const pathParts = doc.urlPath.split('/').filter(Boolean);
+    const moduleId = pathParts[0] || 'docs';
+    if (!docModules.has(moduleId)) {
+      docModules.set(moduleId, []);
+    }
+    docModules.get(moduleId)!.push(doc);
+  }
+
+  // Generate catch-all routes for each doc module
+  for (const [moduleId, docs] of docModules) {
+    const moduleDir = path.join(routesDir, moduleId, '$$slug');
+    await fs.mkdir(moduleDir, { recursive: true });
+
     // Handler
-    const docsHandler = await loadTemplate('catch-all-handler.js.template', {
-      CONTENT_TYPE: 'docs',
+    const handlerTemplate = await loadTemplate('catch-all-handler.js.template', {
+      CONTENT_TYPE: moduleId,
       MANIFEST_PATH: '../../content-manifest.json',
     });
-    await fs.writeFile(path.join(docsDir, '+handler.js'), docsHandler);
-    
+    await fs.writeFile(path.join(moduleDir, '+handler.js'), handlerTemplate);
+
     // Page
-    const docsPage = await loadTemplate('catch-all-page.marko.template', {
-      CONTENT_TYPE_CLASS: 'docs',
+    const pageTemplate = await loadTemplate('catch-all-page.marko.template', {
+      CONTENT_TYPE_CLASS: moduleId,
     });
-    await fs.writeFile(path.join(docsDir, '+page.marko'), docsPage);
-    
-    if (debug) console.log('   Generated docs catch-all route');
+    await fs.writeFile(path.join(moduleDir, '+page.marko'), pageTemplate);
+
+    if (debug) console.log(`   Generated ${moduleId} catch-all route (${docs.length} files)`);
   }
 
   // Step 3: Generate catch-all route for blog
   if (manifest.blog.length > 0) {
     const blogDir = path.join(routesDir, 'blog', '$$slug');
     await fs.mkdir(blogDir, { recursive: true });
-    
+
     // Handler
     const blogHandler = await loadTemplate('catch-all-handler.js.template', {
       CONTENT_TYPE: 'blog',
       MANIFEST_PATH: '../../content-manifest.json',
     });
     await fs.writeFile(path.join(blogDir, '+handler.js'), blogHandler);
-    
+
     // Page
     const blogPage = await loadTemplate('catch-all-page.marko.template', {
       CONTENT_TYPE_CLASS: 'blog',
     });
     await fs.writeFile(path.join(blogDir, '+page.marko'), blogPage);
-    
-    if (debug) console.log('   Generated blog catch-all route');
+
+    if (debug) console.log(`   Generated blog catch-all route (${manifest.blog.length} files)`);
   }
 
-  // Step 4: Generate catch-all route for pages
+  // Step 4: Generate catch-all route for pages (root-level, no module prefix)
   if (manifest.pages.length > 0) {
     const pagesDir = path.join(routesDir, '$$slug');
     await fs.mkdir(pagesDir, { recursive: true });
-    
+
     // Handler
     const pagesHandler = await loadTemplate('catch-all-handler.js.template', {
       CONTENT_TYPE: 'pages',
       MANIFEST_PATH: '../content-manifest.json',
     });
     await fs.writeFile(path.join(pagesDir, '+handler.js'), pagesHandler);
-    
+
     // Page
     const pagesPage = await loadTemplate('catch-all-page.marko.template', {
       CONTENT_TYPE_CLASS: 'page',
     });
     await fs.writeFile(path.join(pagesDir, '+page.marko'), pagesPage);
-    
-    if (debug) console.log('   Generated pages catch-all route');
+
+    if (debug) console.log(`   Generated pages catch-all route (${manifest.pages.length} files)`);
   }
 
   // Step 5: Generate root layout that wraps all pages

@@ -20,8 +20,10 @@ export {
   getSlotPath,
 } from './theme/index.js';
 
-// CLI and build exports (for compilation)
+// Build exports (for programmatic use)
 export * from './build/index.js';
 export * from './preview/index.js';
 export * from './dev/index.js';
-export * from './cli/index.js';
+
+// Note: CLI is NOT exported from main entry to avoid executing program.parse()
+// Import CLI directly from './cli/index.js' if needed

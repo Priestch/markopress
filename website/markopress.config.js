@@ -1,4 +1,4 @@
-import { defineConfig } from './packages/markopress/dist/config/index.js';
+import { defineConfig } from 'markopress';
 
 export default defineConfig({
   site: {

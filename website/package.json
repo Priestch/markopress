@@ -1,0 +1,25 @@
+{
+  "name": "@markopress/website",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Official MarkoPress website",
+  "type": "module",
+  "scripts": {
+    "docs:dev": "markopress dev",
+    "docs:build": "markopress build",
+    "docs:preview": "markopress preview",
+    "dev": "markopress dev",
+    "build": "markopress build",
+    "preview": "markopress preview"
+  },
+  "dependencies": {
+    "markopress": "workspace:*",
+    "@markopress/theme-default": "workspace:*",
+    "@markopress/plugin-feature-blog-index": "workspace:*",
+    "@markopress/plugin-feature-sidenav": "workspace:*",
+    "@markopress/plugin-feature-toc": "workspace:*"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -16,7 +16,7 @@ export interface ContentFile {
   id: string;
   filePath: string;
   relativePath: string;
-  type: ContentType;
+  type?: ContentType;
   urlPath: string;
   processed: ProcessedMarkdown;
 }

@@ -1,0 +1,33 @@
+/**
+ * Video Tag
+ *
+ * Usage in markdown:
+ * <video src="/path/to/video.mp4" poster="/path/to/poster.jpg" />
+ *
+ * Attributes:
+ * - src: Video URL (required)
+ * - poster: Poster image URL (optional)
+ * - width: Video width (optional, default: 100%)
+ * - height: Video height (optional)
+ * - controls: Show controls (optional, default: true)
+ */
+
+<video
+  src=input.src
+  poster=input.poster
+  width=input.width||"100%"
+  height=input.height
+  controls=input.controls!==false
+  class="custom-video"
+  preload="metadata"
+/>
+
+<style>
+  .custom-video {
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 1.5rem 0;
+    background: #000;
+  }
+</style>

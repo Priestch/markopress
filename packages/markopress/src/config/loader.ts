@@ -24,7 +24,7 @@ const DEFAULT_CONFIG: Omit<ResolvedConfig, 'root'> = {
   },
   content: {
     pages: 'content/pages',
-    docs: 'content/docs',
+    // No default 'docs' - users should use generic module names
     blog: 'content/blog',
   },
   theme: {
@@ -76,8 +76,9 @@ function isObject(value: any): value is Record<string, any> {
 
 /**
  * Validate configuration using Zod schema
+ * @returns Validated configuration or errors
  */
-function validateConfig(config: UserConfig): { valid: boolean; errors: string[] } {
+function validateConfig(config: UserConfig): { valid: boolean; errors: string[]; data?: UserConfig } {
   const result = validateConfigSafe(config);
 
   if (!result.success) {
@@ -90,6 +91,7 @@ function validateConfig(config: UserConfig): { valid: boolean; errors: string[] 
   return {
     valid: true,
     errors: [],
+    data: result.data as UserConfig, // Cast to UserConfig to handle Zod's passthrough index signature
   };
 }
 
@@ -137,6 +139,7 @@ export async function loadConfigFromFile(
 
       // Validate the loaded config
       const validation = validateConfig(config);
+
       if (!validation.valid) {
         throw new Error(
           `Invalid configuration in ${file}:\n${validation.errors.map((e) => `  - ${e}`).join('\n')}`
@@ -144,7 +147,7 @@ export async function loadConfigFromFile(
       }
 
       console.log(`✓ Loaded config from ${file}`);
-      return { file: filePath, config };
+      return { file: filePath, config: validation.data! };
     } catch (error: any) {
       // Only throw if file exists but failed to load/parse
       if (error && typeof error === 'object' && 'code' in error && error.code !== 'ENOENT') {
@@ -166,12 +169,15 @@ export function resolveConfig(
   userConfig: UserConfig,
   root: string
 ): ResolvedConfig {
-  // Use deep merge for nested configurations
+  // For content and build, use user config directly if provided, otherwise use defaults
+  // This allows arbitrary module names (not just pages/docs/blog) and custom build options
+  const content = userConfig.content ? { ...userConfig.content } : DEFAULT_CONFIG.content;
+  const build = userConfig.build ? { ...userConfig.build } : DEFAULT_CONFIG.build;
+
+  // Use deep merge for other nested configurations
   const site = deepMerge(DEFAULT_CONFIG.site, userConfig.site || {});
-  const content = deepMerge(DEFAULT_CONFIG.content, userConfig.content || {});
   const theme = deepMerge(DEFAULT_CONFIG.theme, userConfig.theme || {});
   const markdown = deepMerge(DEFAULT_CONFIG.markdown, userConfig.markdown || {});
-  const build = deepMerge(DEFAULT_CONFIG.build, userConfig.build || {});
 
   // Plugins need special handling - don't merge, just replace
   const plugins = userConfig.plugins || DEFAULT_CONFIG.plugins;

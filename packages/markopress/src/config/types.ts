@@ -14,10 +14,16 @@ export type HeadTag =
   | [string, Record<string, string>]
   | [string, Record<string, string>, string];
 
+/**
+ * Content module configuration
+ * Can have any number of named modules (e.g., pages, guides, docs, blog, tutorials, etc.)
+ */
 export interface ContentConfig {
-  pages?: string;
-  docs?: string;
-  blog?: string;
+  pages?: string;  // Special: pages module gets no URL prefix (root-level routes)
+  docs?: string;   // Optional: legacy 'docs' module name
+  blog?: string;   // Special: blog module with date-based sorting
+  // Any other module names are supported (e.g., guides, tutorials, etc.)
+  [key: string]: string | undefined;
 }
 
 /**
@@ -103,8 +109,8 @@ export interface UserConfig extends MarkoPressConfig {}
 
 export interface ResolvedConfig extends Required<MarkoPressConfig> {
   root: string;
-  content: Required<ContentConfig>;
-  build: Required<BuildConfig>;
+  content: ContentConfig;  // All properties are optional, allows any module name
+  build: BuildConfig;  // All properties are optional, allows custom build options
 }
 
 export type ConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>;

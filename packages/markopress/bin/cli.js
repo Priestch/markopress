@@ -6,16 +6,11 @@ import { existsSync } from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Try to find and import the CLI from multiple possible locations
-const possiblePaths = [
-  resolve(__dirname, '../dist/cli/index.js'),
-  resolve(__dirname, '../dist/index.mjs'),
-  resolve(__dirname, '../cli/index.js'),
-];
-
-for (const cliPath of possiblePaths) {
-  if (existsSync(cliPath)) {
-    await import(cliPath);
-    break;
-  }
+// Import the CLI directly from dist/cli/index.js
+const cliPath = resolve(__dirname, '../dist/cli/index.js');
+if (existsSync(cliPath)) {
+  await import(cliPath);
+} else {
+  console.error('Error: CLI not found. Please run `pnpm build` first.');
+  process.exit(1);
 }

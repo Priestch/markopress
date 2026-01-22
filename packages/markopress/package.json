@@ -9,13 +9,34 @@
     "markopress": "./bin/cli.js"
   },
   "exports": {
-    ".": "./dist/index.js",
-    "./config": "./dist/config/index.js",
-    "./markdown": "./dist/markdown/index.js",
-    "./content": "./dist/content/index.js",
-    "./plugin": "./dist/plugin/index.js",
-    "./theme": "./dist/theme/index.js",
-    "./vite": "./dist/vite/index.js"
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./config": {
+      "import": "./dist/config/index.js",
+      "types": "./dist/config/index.d.ts"
+    },
+    "./markdown": {
+      "import": "./dist/markdown/index.js",
+      "types": "./dist/markdown/index.d.ts"
+    },
+    "./content": {
+      "import": "./dist/content/index.js",
+      "types": "./dist/content/index.d.ts"
+    },
+    "./plugin": {
+      "import": "./dist/plugin/index.js",
+      "types": "./dist/plugin/index.d.ts"
+    },
+    "./theme": {
+      "import": "./dist/theme/index.js",
+      "types": "./dist/theme/index.d.ts"
+    },
+    "./vite": {
+      "import": "./dist/vite/index.js",
+      "types": "./dist/vite/index.d.ts"
+    }
   },
   "scripts": {
     "build": "pnpm exec tsc --outDir dist --rootDir src --module Node16 --target ESNext --moduleResolution node16 --esModuleInterop --skipLibCheck --strict --declaration --declarationMap --sourceMap src/**/*.ts",

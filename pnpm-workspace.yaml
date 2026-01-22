@@ -3,6 +3,8 @@
 packages:
   # Core packages
   - 'packages/*'
+  # Website package
+  - 'website'
 
 # Enable workspace protocol
 # This allows packages to reference each other using workspace: prefix
@@ -23,6 +25,7 @@ catalogs:
     "@markopress/plugin-feature-blog-index": "workspace:*"
     "@markopress/plugin-feature-sidenav": "workspace:*"
     "@markopress/plugin-feature-toc": "workspace:*"
+    "@markopress/website": "workspace:*"
 
 # Workspace settings
 # See: https://pnpm.io/npmrc.html

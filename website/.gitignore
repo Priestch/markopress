@@ -1,0 +1,23 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+.src/
+
+# MarkoPress generated
+src/routes
+
+# Public assets copied during build
+public/_markopress/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
