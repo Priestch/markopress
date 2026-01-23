@@ -1,0 +1,280 @@
+/*!
+ * Search Component
+ * Search placeholder with keyboard shortcut (Ctrl+K / Cmd+K) and modal overlay
+ * Functional search to be implemented later
+ */
+
+class {
+  onCreate() {
+    this.state = {
+      isOpen: false,
+    };
+  }
+
+  onMount() {
+    if (typeof window === 'undefined') return;
+
+    // Set up keyboard shortcut (Ctrl+K / Cmd+K)
+    this.handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        this.open();
+      }
+      if (e.key === 'Escape' && this.state.isOpen) {
+        this.close();
+      }
+    };
+
+    document.addEventListener('keydown', this.handleKeyDown);
+  }
+
+  onDestroy() {
+    if (this.handleKeyDown) {
+      document.removeEventListener('keydown', this.handleKeyDown);
+    }
+    this.enableScroll();
+  }
+
+  open() {
+    this.state.isOpen = true;
+    this.disableScroll();
+  }
+
+  close() {
+    this.state.isOpen = false;
+    this.enableScroll();
+  }
+
+  disableScroll() {
+    if (typeof window !== 'undefined' && document.body) {
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  enableScroll() {
+    if (typeof window !== 'undefined' && document.body) {
+      document.body.style.overflow = '';
+    }
+  }
+}
+
+<button
+  class="search-trigger"
+  aria-label="Search"
+  on-click('open')>
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="11" cy="11" r="8"></circle>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+  </svg>
+  <span class="search-label">Search</span>
+  <kbd class="search-shortcut">
+    <if=(typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform))>
+      ⌘K
+    <else>
+      Ctrl K
+    </if>
+  </kbd>
+</button>
+
+<if=state.isOpen>
+  <div class="search-modal" on-click('close')>
+    <div class="search-modal-content" on-click('stop')>
+      <div class="search-input-wrapper">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search documentation..."
+          disabled
+        />
+        <kbd class="search-shortcut-small">ESC</kbd>
+      </div>
+      <div class="search-placeholder">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="search-placeholder-icon">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <p class="search-placeholder-text">Search is coming soon!</p>
+        <p class="search-placeholder-hint">Press <kbd>ESC</kbd> to close</p>
+      </div>
+    </div>
+  </div>
+</if>
+
+<style>
+  .search-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--border-default);
+    background: var(--bg-alt);
+    color: var(--text-2);
+    font-size: var(--font-size-sm);
+    border-radius: var(--radius-md, 8px);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .search-trigger:hover {
+    border-color: var(--color-primary-2, #3a5ccc);
+    background: var(--bg-soft);
+    color: var(--text-1);
+  }
+
+  .search-trigger:focus-visible {
+    outline: 2px solid var(--color-primary-2, #3a5ccc);
+    outline-offset: 2px;
+  }
+
+  .search-label {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .search-label {
+      display: inline;
+    }
+  }
+
+  .search-shortcut,
+  .search-shortcut-small {
+    padding: 2px 6px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    background: var(--bg-default);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm, 4px);
+    color: var(--text-3);
+  }
+
+  .search-shortcut {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .search-shortcut {
+      display: inline-block;
+    }
+  }
+
+  /* Search Modal */
+  .search-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: calc(var(--navbar-height, 64px) + var(--space-xl));
+    z-index: 100;
+    animation: fade-in 0.2s ease-out;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .search-modal-content {
+    width: 90%;
+    max-width: 640px;
+    background: var(--bg-default);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: var(--shadow-5);
+    overflow: hidden;
+    animation: slide-down 0.2s ease-out;
+  }
+
+  @keyframes slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .search-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .search-icon {
+    flex-shrink: 0;
+    color: var(--text-3);
+  }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: var(--font-size-base);
+    color: var(--text-1);
+    outline: none;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-3);
+  }
+
+  .search-input:disabled {
+    cursor: not-allowed;
+  }
+
+  .search-shortcut-small {
+    flex-shrink: 0;
+  }
+
+  .search-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3xl);
+    text-align: center;
+  }
+
+  .search-placeholder-icon {
+    margin-bottom: var(--space-md);
+    color: var(--text-3);
+    opacity: 0.5;
+  }
+
+  .search-placeholder-text {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-1);
+    margin-bottom: var(--space-sm);
+  }
+
+  .search-placeholder-hint {
+    font-size: var(--font-size-sm);
+    color: var(--text-3);
+  }
+
+  .search-placeholder-hint kbd {
+    padding: 2px 6px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    background: var(--bg-alt);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm, 4px);
+  }
+</style>

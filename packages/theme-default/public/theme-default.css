@@ -1,16 +1,16 @@
 /*
  * default Design System
- * Version: 1.0.0
- * MarkoPress default theme (plain style)
+ * Version: 2.0.0
+ * MarkoPress default theme (VitePress-inspired with Indigo brand color)
  * Auto-generated from design tokens
  */
 
 :root,
 html {
-  --color-primary-1: #2563eb;
-  --color-primary-2: #3b82f6;
-  --color-primary-3: #60a5fa;
-  --color-primary-soft: rgba(59, 130, 246, 0.1);
+  --color-primary-1: #3451b2;
+  --color-primary-2: #3a5ccc;
+  --color-primary-3: #5672cd;
+  --color-primary-soft: rgba(100, 108, 255, 0.14);
   --color-success-1: #059669;
   --color-success-2: #10b981;
   --color-success-3: #34d399;
@@ -69,14 +69,14 @@ html {
   --spacing-2xl: 3rem;
   --spacing-3xl: 4rem;
   --spacing-4xl: 6rem;
-  --shadow-1: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-2: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-3: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --shadow-4: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  --shadow-5: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-2: 0 3px 12px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.07);
+  --shadow-3: 0 12px 32px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08);
+  --shadow-4: 0 20px 50px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.08);
+  --shadow-5: 0 25px 70px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
   --transition-base: 250ms ease-in-out;
   --transition-fast: 150ms ease-in-out;
   --transition-slow: 350ms ease-in-out;
@@ -94,10 +94,10 @@ html {
 
 :root.dark,
 html.dark {
-  --color-primary-1: #60a5fa;
-  --color-primary-2: #3b82f6;
-  --color-primary-3: #2563eb;
-  --color-primary-soft: rgba(96, 165, 250, 0.15);
+  --color-primary-1: #a8b1ff;
+  --color-primary-2: #3a5ccc;
+  --color-primary-3: #3451b2;
+  --color-primary-soft: rgba(100, 108, 255, 0.16);
   --color-success-1: #34d399;
   --color-success-2: #10b981;
   --color-success-3: #059669;
@@ -118,10 +118,10 @@ html.dark {
   --color-gray-2: #1f2937;
   --color-gray-3: #111827;
   --color-gray-soft: rgba(107, 114, 128, 0.15);
-  --bg-default: #111827;
+  --bg-default: #1b1b1f;
   --bg-alt: #1f2937;
-  --bg-elevated: #374151;
-  --bg-soft: #1f2937;
+  --bg-elevated: #2d2d30;
+  --bg-soft: #252529;
   --text-1: #f9fafb;
   --text-2: #d1d5db;
   --text-3: #9ca3af;
@@ -156,14 +156,14 @@ html.dark {
   --spacing-2xl: 3rem;
   --spacing-3xl: 4rem;
   --spacing-4xl: 6rem;
-  --shadow-1: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-2: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  --shadow-3: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  --shadow-4: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-  --shadow-5: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-2: 0 3px 12px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.07);
+  --shadow-3: 0 12px 32px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08);
+  --shadow-4: 0 20px 50px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.08);
+  --shadow-5: 0 25px 70px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
   --transition-base: 250ms ease-in-out;
   --transition-fast: 150ms ease-in-out;
   --transition-slow: 350ms ease-in-out;

@@ -8,16 +8,16 @@ import type { DesignSystem } from './types.js';
 
 export const defaultPreset: DesignSystem = {
   name: 'default',
-  version: '1.0.0',
-  description: 'MarkoPress default theme (plain style)',
+  version: '2.0.0',
+  description: 'MarkoPress default theme (VitePress-inspired with Indigo brand color)',
 
   colors: {
-    // Primary brand color (Blue)
+    // Primary brand color (Indigo)
     primary: {
-      '1': '#2563eb',  // Dark blue for dark mode text
-      '2': '#3b82f6',  // Primary blue
-      '3': '#60a5fa',  // Light blue
-      soft: 'rgba(59, 130, 246, 0.1)',
+      '1': '#3451b2',  // Dark indigo for dark mode text / active states
+      '2': '#3a5ccc',  // Primary indigo (brand color)
+      '3': '#5672cd',  // Light indigo
+      soft: 'rgba(100, 108, 255, 0.14)',
     },
 
     // Success (Green)
@@ -138,17 +138,17 @@ export const defaultPreset: DesignSystem = {
 
   effects: {
     shadows: {
-      '1': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-      '2': '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-      '3': '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-      '4': '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-      '5': '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+      '1': '0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06)',
+      '2': '0 3px 12px rgba(0, 0, 0, 0.07), 0 1px 4px rgba(0, 0, 0, 0.07)',
+      '3': '0 12px 32px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.08)',
+      '4': '0 20px 50px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.08)',
+      '5': '0 25px 70px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1)',
     },
 
     borderRadius: {
-      sm: '0.25rem',
-      md: '0.375rem',
-      lg: '0.5rem',
+      sm: '4px',
+      md: '8px',
+      lg: '12px',
       full: '9999px',
     },
 
@@ -191,24 +191,26 @@ export const defaultPreset: DesignSystem = {
       padding: '1.5rem',
       background: '#f9fafb',
       border: '#e5e7eb',
+      activeBorder: '2px solid #3451b2',     // NEW: Active state indicator
+      activeBackground: 'rgba(100, 108, 255, 0.1)',  // Updated to Indigo
     },
 
     content: {
-      maxWidth: '960px',
-      padding: '2rem 1.5rem',
-      fontSize: '1rem',
-      lineHeight: 1.5,
+      maxWidth: '720px',     // VitePress-proven optimal reading width
+      padding: '32px 24px',
+      fontSize: '16px',
+      lineHeight: 1.7,       // Improved readability
     },
 
     code: {
       fontSize: '0.875em',
-      lineHeight: 1.5,
+      lineHeight: 1.7,       // Improved readability
       background: '#f3f4f6',
-      color: '#3b82f6',
-      borderRadius: '0.25rem',
+      color: '#3a5ccc',     // Updated to Indigo
+      borderRadius: '4px',
       padding: '0.25rem 0.5rem',
-      blockPadding: '1rem',
-      blockBorderRadius: '0.5rem',
+      blockPadding: '20px 24px',
+      blockBorderRadius: '8px',
     },
 
     heading: {
@@ -233,12 +235,12 @@ export const defaultPreset: DesignSystem = {
  */
 export const defaultDark: Partial<DesignSystem> = {
   colors: {
-    // Primary brand color (Blue - dark mode)
+    // Primary brand color (Indigo - dark mode)
     primary: {
-      '1': '#60a5fa',
-      '2': '#3b82f6',
-      '3': '#2563eb',
-      soft: 'rgba(96, 165, 250, 0.15)',
+      '1': '#a8b1ff',  // Light indigo for dark mode text
+      '2': '#3a5ccc',  // Primary indigo
+      '3': '#3451b2',  // Dark indigo
+      soft: 'rgba(100, 108, 255, 0.16)',  // Increased opacity
     },
 
     success: {
@@ -277,12 +279,12 @@ export const defaultDark: Partial<DesignSystem> = {
       soft: 'rgba(107, 114, 128, 0.15)',
     },
 
-    // Background colors (Dark mode)
+    // Background colors (Dark mode - VitePress-inspired)
     bg: {
-      default: '#111827',
+      default: '#1b1b1f',  // VitePress default dark
       alt: '#1f2937',
-      elevated: '#374151',
-      soft: '#1f2937',
+      elevated: '#2d2d30',
+      soft: '#252529',
     },
 
     // Text colors (Dark mode)
@@ -311,17 +313,19 @@ export const defaultDark: Partial<DesignSystem> = {
 
   components: {
     navbar: {
-      background: '#1f2937',
-      border: '#374151',
+      background: '#1b1b1f',
+      border: '#2d2d30',
     },
 
     sidebar: {
-      background: '#111827',
+      background: '#1b1b1f',
+      activeBorder: '2px solid #a8b1ff',
+      activeBackground: 'rgba(100, 108, 255, 0.16)',
     },
 
     code: {
       background: '#1f2937',
-      color: '#60a5fa',
+      color: '#a8b1ff',  // Light indigo for dark mode
     },
   },
 };

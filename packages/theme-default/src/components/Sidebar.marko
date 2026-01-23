@@ -7,7 +7,28 @@ class {
   onCreate() {
     this.state = {
       openGroups: new Set((input.initialOpenGroups || [])),
+      isOpen: input.isOpen || false,
     };
+  }
+
+  onMount() {
+    // Set up keyboard navigation (ESC to close sidebar)
+    if (typeof window !== 'undefined') {
+      this.handleKeyDown = (e) => {
+        if (e.key === 'Escape' && this.state.isOpen) {
+          this.close();
+        }
+      };
+      document.addEventListener('keydown', this.handleKeyDown);
+    }
+  }
+
+  onDestroy() {
+    if (typeof window !== 'undefined' && this.handleKeyDown) {
+      document.removeEventListener('keydown', this.handleKeyDown);
+    }
+    // Remove scroll lock
+    this.enableScroll();
   }
 
   toggleGroup(groupId) {
@@ -29,9 +50,37 @@ class {
     }
     return false;
   }
+
+  open() {
+    this.state.isOpen = true;
+    this.disableScroll();
+  }
+
+  close() {
+    this.state.isOpen = false;
+    this.enableScroll();
+  }
+
+  disableScroll() {
+    if (typeof window !== 'undefined' && window.document.body) {
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  enableScroll() {
+    if (typeof window !== 'undefined' && window.document.body) {
+      document.body.style.overflow = '';
+    }
+  }
 }
 
-<div class="sidebar-content">
+<div
+  class="sidebar-content"
+  role="navigation"
+  aria-label="Sidebar navigation"
+  class-list={{
+    'is-open': state.isOpen
+  }}>
   <!-- Sidebar Sections -->
   <for|section| of=(input.sections || [])>
     <div class="sidebar-section">
@@ -176,10 +225,10 @@ class {
   }
 
   .sidebar-link.active {
-    color: var(--color-primary-1, #3b82f6);
-    background: var(--sidebar-active-background, rgba(59, 130, 246, 0.1));
+    color: var(--color-primary-1, #3a5ccc);
+    background: var(--sidebar-active-background, rgba(100, 108, 255, 0.14));
     font-weight: var(--sidebar-item-font-weight, 500);
-    border-left: var(--sidebar-active-border, none);
+    border-left: var(--sidebar-active-border, 2px solid #3451b2);
   }
 
   .sidebar-icon {

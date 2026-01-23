@@ -26,9 +26,9 @@ body {
   transition: background-color var(--transition-base), color var(--transition-base);
 }
 
-/* Focus visible for accessibility */
+/* Focus visible for accessibility - Updated to use primary-2 (Indigo) */
 *:focus-visible {
-  outline: 2px solid var(--color-primary-3);
+  outline: 2px solid var(--color-primary-2, #3a5ccc);
   outline-offset: 2px;
 }
 
@@ -41,6 +41,19 @@ a {
 
 a:hover {
   color: var(--color-primary-1);
+}
+
+/* External link indicator */
+a[href*='://']::after {
+  content: '↗';
+  margin-left: 4px;
+  font-size: 0.8em;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
+}
+
+a[href*='://']:hover::after {
+  opacity: 1;
 }
 
 /* Skip to content (accessibility) */
@@ -344,6 +357,13 @@ a:hover {
   margin: 0 auto;
 }
 
+/* H2 dividers (VitePress-inspired) */
+.main-content h2 {
+  margin: 48px 0 16px;
+  border-top: 1px solid var(--border-divider);
+  padding-top: 24px;
+}
+
 /* Breadcrumbs */
 .breadcrumbs {
   display: flex;
@@ -548,6 +568,27 @@ pre {
   line-height: var(--leading-relaxed);
   overflow-x: auto;
   border-radius: var(--radius-lg);
+}
+
+/* Code block copy button placeholder */
+pre::after {
+  content: 'Copy';
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--text-2);
+  background: var(--bg-default);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  transition: opacity 0.25s;
+  pointer-events: none;
+}
+
+pre:hover::after {
+  opacity: 1;
 }
 
 pre.line-numbers {
