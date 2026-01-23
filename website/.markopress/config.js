@@ -1,4 +1,4 @@
-import { defineConfig } from './packages/markopress/dist/config/index.js';
+import { defineConfig } from 'markopress';
 
 export default defineConfig({
   site: {
@@ -47,7 +47,7 @@ export default defineConfig({
     lineNumbers: false,  // Disable to avoid Shiki HTML parsing issues
     markoTags: {
       enabled: false,  // Temporarily disabled for blog index testing
-      tagsDir: 'tags/',
+      tagsDir: '.markopress/tags',
     },
   },
   build: {

@@ -91,7 +91,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
     // Step 5: Initialize tag validator if Marko tags enabled
     if (config.markdown.markoTags?.enabled) {
-      const tagsDir = path.join(process.cwd(), config.markdown.markoTags.tagsDir || 'tags/');
+      const tagsDir = path.join(process.cwd(), config.markdown.markoTags.tagsDir || 'src/.markopress/tags');
       console.log('🔍 Scanning tags directory...');
       await globalTagValidator.loadAvailableTags(tagsDir);
       console.log(`   Found ${globalTagValidator.getAvailableTagsCount()} tags\n`);
@@ -100,6 +100,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     }
 
     // Step 6: Ensure routes directory exists
+    // Note: Routes must be in src/routes/ for @marko/run compatibility
     const routesDir = path.join(process.cwd(), 'src', 'routes');
     await fs.mkdir(routesDir, { recursive: true });
 
@@ -896,7 +897,7 @@ export async function copyTagsDirectory(
   config: ResolvedConfig,
   debug: boolean
 ): Promise<void> {
-  const tagsDirConfig = config.markdown?.markoTags?.tagsDir || 'tags';
+  const tagsDirConfig = config.markdown?.markoTags?.tagsDir || 'src/.markopress/tags';
   const tagsDir = path.join(rootDir, tagsDirConfig);
   const distTagsDir = path.join(outDir, 'tags');
 

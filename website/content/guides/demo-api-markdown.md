@@ -2,8 +2,8 @@
 title: "API Reference: Markdown"
 description: "Complete guide to markdown syntax and extensions in MarkoPress"
 order: 11
-prev: /docs/demo-api-routing
-next: /docs/demo-guides-content
+prev: /guides/demo-api-routing
+next: /guides/demo-guides-content
 ---
 
 # API Reference: Markdown
@@ -76,7 +76,7 @@ This is another paragraph separated by a blank line.
 [Link text](https://example.com)
 [Link with title](https://example.com "Link title")
 
-[Relative link](/docs/getting-started)
+[Relative link](/guides/getting-started)
 [Link to section](#headings)
 ```
 
@@ -85,7 +85,7 @@ This is another paragraph separated by a blank line.
 [Link text](https://example.com)
 [Link with title](https://example.com "Link title")
 
-[Relative link](/docs/getting-started)
+[Relative link](/guides/getting-started)
 [Link to section](#headings)
 
 ### Images
@@ -562,7 +562,7 @@ Generates:
 Link to other pages:
 
 ```markdown
-[Getting Started](/docs/getting-started)
+[Getting Started](/guides/getting-started)
 [About Page](/about)
 ```
 
@@ -805,6 +805,6 @@ Ensure proper alignment:
 
 ## Next Steps
 
-- 📖 [Content Organization](/docs/demo-guides-content)
-- 🎨 [Theming](/docs/theming)
-- 🔌 [Plugins](/docs/plugins)
+- 📖 [Content Organization](/guides/demo-guides-content)
+- 🎨 [Theming](/guides/theming)
+- 🔌 [Plugins](/guides/plugins)

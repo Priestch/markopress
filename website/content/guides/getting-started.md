@@ -44,6 +44,6 @@ npm run dev
 
 ## Next Steps
 
-- Learn about [configuration](/docs/configuration)
-- Explore [themes](/docs/theming)
-- Build [plugins](/docs/plugins)
+- Learn about [configuration](/guides/configuration)
+- Explore [themes](/guides/theming)
+- Build [plugins](/guides/plugins)

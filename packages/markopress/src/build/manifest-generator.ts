@@ -19,7 +19,7 @@ export interface ContentLookupEntry {
   frontmatter: Record<string, unknown>;
 }
 
-export interface ContentLookupManifest {
+export interface ContentLookupManifest extends Record<string, any> {
   docs: Record<string, ContentLookupEntry>;
   blog: Record<string, ContentLookupEntry>;
   pages: Record<string, ContentLookupEntry>;
@@ -43,10 +43,33 @@ export async function generateContentManifest(
     navbar: config.theme?.options?.navbar || [],
   };
 
-  // Process docs - use relative path after /docs/ as slug
+  // Group docs by their module ID (extracted from urlPath)
+  // e.g., "/guides/getting-started" -> module "guides", slug "getting-started"
+  // e.g., "/docs/installation" -> module "docs", slug "installation"
+  const docModules = new Map<string, ContentFile[]>();
   for (const doc of manifest.docs) {
-    const slug = getSlug(doc.urlPath, '/docs');
-    lookup.docs[slug] = createLookupEntry(doc);
+    const pathParts = doc.urlPath.split('/').filter(Boolean);
+    const moduleId = pathParts[0] || 'docs';
+    if (!docModules.has(moduleId)) {
+      docModules.set(moduleId, []);
+    }
+    docModules.get(moduleId)!.push(doc);
+  }
+
+  // Process each doc module dynamically
+  for (const [moduleId, docs] of docModules) {
+    // Initialize the module's collection if it doesn't exist
+    if (!lookup[moduleId]) {
+      lookup[moduleId] = {} as Record<string, ContentLookupEntry>;
+    }
+
+    const prefix = `/${moduleId}`;
+    const moduleLookup = lookup[moduleId] as Record<string, ContentLookupEntry>;
+
+    for (const doc of docs) {
+      const slug = getSlug(doc.urlPath, prefix);
+      moduleLookup[slug] = createLookupEntry(doc);
+    }
   }
 
   // Process blog - use relative path after /blog/ as slug

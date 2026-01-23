@@ -145,9 +145,10 @@ markopress init [dir]    # Create new site
 
 ## Configuration
 
-Configuration is loaded from two locations (checked in order):
-1. `.markopress/config.ts` (checked first)
-2. `markopress.config.ts` (fallback)
+Configuration is loaded from `src/.markopress/` directory with the following priority:
+1. `src/.markopress/config.ts`
+2. `src/.markopress/config.js`
+3. `src/.markopress/config.mjs`
 
 ```typescript
 import { defineConfig } from 'markopress';
@@ -175,7 +176,11 @@ export default defineConfig({
     options?: Record<string, unknown>;
   },
   markdown: {
-    lineNumbers?: boolean;   // Default: true
+    lineNumbers?: boolean;   // Default: false
+    markoTags?: {
+      enabled?: boolean;     // Default: false
+      tagsDir?: string;      // Default: 'src/.markopress/tags'
+    };
     theme?: {
       light?: string;        // Default: 'github-light'
       dark?: string;         // Default: 'github-dark'
@@ -190,6 +195,23 @@ export default defineConfig({
   plugins?: (string | PluginConfig)[];
 });
 ```
+
+## src/.markopress/ Directory Structure
+
+MarkoPress uses the `src/.markopress/` directory to centralize framework configuration:
+
+```
+src/.markopress/
+├── config.{ts,js,mjs}    # Configuration file (required)
+└── tags/                 # Custom Marko tags (optional)
+
+src/routes/               # Generated routes (auto-created, do not edit)
+```
+
+- **config.{ts,js,mjs}** - Main configuration file
+- **tags/** - Custom Marko components for use in markdown (when `markoTags.enabled: true`)
+
+**Note**: Routes are generated in `src/routes/` (not `src/.markopress/routes/`) due to @marko/run conventions. Do not manually edit files in `src/routes/` as they will be overwritten.
 
 ## Content Organization
 
@@ -220,6 +242,7 @@ MarkoPress supports GitHub Flavored Markdown plus:
 - **Emoji** via markdown-it-emoji
 - **Task lists**: `- [ ]` and `- [x]`
 - **Tables** with standard GitHub syntax
+- **Custom Marko tags** (optional) - Use Marko components in markdown by placing `.marko` files in `src/.markopress/tags/` and setting `markdown.markoTags.enabled: true`
 
 ## Theming
 

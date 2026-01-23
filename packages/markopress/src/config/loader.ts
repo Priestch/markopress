@@ -102,14 +102,11 @@ export async function loadConfigFromFile(
   root: string,
   env: ConfigEnv
 ): Promise<{ file: string; config: UserConfig } | null> {
-  // Check .markopress/config.ts first (higher priority)
+  // Check .markopress/config.* for configuration (at root level)
   const configFiles = [
     '.markopress/config.ts',
     '.markopress/config.js',
     '.markopress/config.mjs',
-    'markopress.config.ts',
-    'markopress.config.js',
-    'markopress.config.mjs',
   ];
 
   for (const file of configFiles) {

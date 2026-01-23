@@ -96,7 +96,7 @@ interface ContentConfig {
   // Pages directory (→ /route)
   pages?: string; // Default: 'content/pages'
 
-  // Docs directory (→ /docs/route)
+  // Docs directory (→ /guides/route)
   docs?: string; // Default: 'content/docs'
 
   // Blog directory (→ /blog/route)
@@ -225,20 +225,20 @@ export default defineConfig({
       { text: 'GitHub', link: 'https://github.com/user/repo', target: '_blank' },
     ],
     sidebar: {
-      '/docs/': [
+      '/guides/': [
         {
           text: 'Getting Started',
           items: [
-            { text: 'Introduction', link: '/docs/intro' },
-            { text: 'Installation', link: '/docs/install' },
+            { text: 'Introduction', link: '/guides/intro' },
+            { text: 'Installation', link: '/guides/install' },
           ],
         },
         {
           text: 'Advanced',
           collapsed: true,
           items: [
-            { text: 'Theming', link: '/docs/theming' },
-            { text: 'Plugins', link: '/docs/plugins' },
+            { text: 'Theming', link: '/guides/theming' },
+            { text: 'Plugins', link: '/guides/plugins' },
           ],
         },
       ],
@@ -868,12 +868,12 @@ export default defineConfig({
       { text: 'Blog', link: '/blog' },
     ],
     sidebar: {
-      '/docs/': [
+      '/guides/': [
         {
           text: 'Guide',
           items: [
-            { text: 'Intro', link: '/docs/intro' },
-            { text: 'Config', link: '/docs/config' },
+            { text: 'Intro', link: '/guides/intro' },
+            { text: 'Config', link: '/guides/config' },
           ],
         },
       ],
@@ -951,4 +951,4 @@ export default function myPlugin(): MarkoPressPlugin {
 
 - 🎨 Learn about [Theming](./theming.md)
 - 🔌 Build [Plugins](./plugins.md)
-- 🚀 Deploy your [Site](../docs/deployment.md)
+- 🚀 Deploy your [Site](../guides/deployment.md)

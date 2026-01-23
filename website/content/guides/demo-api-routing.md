@@ -2,8 +2,8 @@
 title: "API Reference: Routing"
 description: "Complete guide to MarkoPress routing system and custom routes"
 order: 10
-prev: /docs/configuration
-next: /docs/demo-api-markdown
+prev: /guides/configuration
+next: /guides/demo-api-markdown
 ---
 
 # API Reference: Routing
@@ -27,8 +27,8 @@ content/
 │   ├── about.md          → /about
 │   └── contact.md        → /contact
 ├── docs/
-│   ├── intro.md          → /docs/intro
-│   └── guide.md          → /docs/guide
+│   ├── intro.md          → /guides/intro
+│   └── guide.md          → /guides/guide
 └── blog/
     └── 2024-01-15-post.md → /blog/2024-01-15-post
 ```
@@ -83,7 +83,7 @@ title: "Documentation"
 Welcome to the docs!
 ```
 
-**Result:** `/docs` route (when placed in `content/docs/index.md`)
+**Result:** `/docs` route (when placed in `content/guides/index.md`)
 
 ### Dynamic Routes
 
@@ -596,6 +596,6 @@ return new Response('Server error', { status: 500 });
 
 ## Next Steps
 
-- 📝 Learn about [Markdown](/docs/demo-api-markdown)
-- 📖 [Content Organization](/docs/demo-guides-content)
-- 🔌 Build [Plugins](/docs/plugins)
+- 📝 Learn about [Markdown](/guides/demo-api-markdown)
+- 📖 [Content Organization](/guides/demo-guides-content)
+- 🔌 Build [Plugins](/guides/plugins)

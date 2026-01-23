@@ -80,7 +80,7 @@ export interface MarkdownConfig {
     /** Enable Marko tags in markdown (default: false) */
     enabled?: boolean;
 
-    /** Directory containing Marko component files (default: 'tags/') */
+    /** Directory containing Marko component files (default: '.markopress/tags') */
     tagsDir?: string;
   };
 }

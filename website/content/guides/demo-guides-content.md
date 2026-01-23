@@ -2,8 +2,8 @@
 title: "Guide: Content Organization"
 description: "Best practices for organizing and structuring your MarkoPress content"
 order: 12
-prev: /docs/demo-api-markdown
-next: /docs/theming
+prev: /guides/demo-api-markdown
+next: /guides/theming
 ---
 
 # Guide: Content Organization
@@ -30,7 +30,7 @@ your-site/
 │   └── theme/              # Theme overrides
 ├── content/
 │   ├── pages/              # General pages → /route
-│   ├── docs/               # Documentation → /docs/route
+│   ├── docs/               # Documentation → /guides/route
 │   └── blog/               # Blog posts → /blog/route
 ├── public/                 # Static assets
 ├── src/
@@ -44,7 +44,7 @@ your-site/
 Each directory serves a specific purpose:
 
 **`content/pages/`** - General pages (About, Contact, Home)
-**`content/docs/`** - Documentation (Guides, API Reference, Tutorials)
+**`content/guides/`** - Documentation (Guides, API Reference, Tutorials)
 **`content/blog/`** - Blog posts (News, Tutorials, Updates)
 
 ## Naming Conventions
@@ -76,10 +76,10 @@ content/blog/
 Use `index.md` for directory roots:
 
 ```
-content/docs/
+content/guides/
 ├── index.md              # → /docs
 ├── guide/
-│   └── index.md          # → /docs/guide
+│   └── index.md          # → /guides/guide
 ```
 
 ## Content Type Guidelines
@@ -113,32 +113,32 @@ content/pages/
 
 **Purpose:** Guides, API docs, tutorials
 
-**Location:** `content/docs/`
+**Location:** `content/guides/`
 
-**URL Pattern:** `/docs/{path}`
+**URL Pattern:** `/guides/{path}`
 
 **Example:**
 
 ```
-content/docs/
+content/guides/
 ├── index.md                      # → /docs
-├── getting-started.md            # → /docs/getting-started
-├── installation.md               # → /docs/installation
-├── configuration.md              # → /docs/configuration
+├── getting-started.md            # → /guides/getting-started
+├── installation.md               # → /guides/installation
+├── configuration.md              # → /guides/configuration
 ├── api/
-│   ├── index.md                  # → /docs/api
-│   ├── routing.md                # → /docs/api/routing
-│   └── markdown.md               # → /docs/api/markdown
+│   ├── index.md                  # → /guides/api
+│   ├── routing.md                # → /guides/api/routing
+│   └── markdown.md               # → /guides/api/markdown
 └── guides/
-    ├── theming.md                # → /docs/guides/theming
-    └── plugins.md                # → /docs/guides/plugins
+    ├── theming.md                # → /guides/guides/theming
+    └── plugins.md                # → /guides/guides/plugins
 ```
 
 **Organization Patterns:**
 
 **By User Journey:**
 ```
-content/docs/
+content/guides/
 ├── getting-started/
 ├── basic-concepts/
 ├── advanced-features/
@@ -147,7 +147,7 @@ content/docs/
 
 **By Feature:**
 ```
-content/docs/
+content/guides/
 ├── installation/
 ├── configuration/
 ├── components/
@@ -156,7 +156,7 @@ content/docs/
 
 **By Audience:**
 ```
-content/docs/
+content/guides/
 ├── users/
 ├── developers/
 └── administrators/
@@ -229,8 +229,8 @@ excerpt: "Brief summary"
 title: "Page Title"
 description: "Page description"
 order: 1                      # For sidebar ordering
-prev: /docs/previous-page      # Previous page link
-next: /docs/next-page          # Next page link
+prev: /guides/previous-page      # Previous page link
+next: /guides/next-page          # Next page link
 ---
 ```
 
@@ -256,22 +256,22 @@ Organize docs into logical groups:
 
 ```typescript
 sidebar: {
-  '/docs/': [
+  '/guides/': [
     {
       text: 'Getting Started',
       items: [
-        { text: 'Introduction', link: '/docs/intro' },
-        { text: 'Installation', link: '/docs/install' },
-        { text: 'Quick Start', link: '/docs/quick-start' },
+        { text: 'Introduction', link: '/guides/intro' },
+        { text: 'Installation', link: '/guides/install' },
+        { text: 'Quick Start', link: '/guides/quick-start' },
       ],
     },
     {
       text: 'Core Concepts',
       collapsed: true,  // Collapsed by default
       items: [
-        { text: 'Architecture', link: '/docs/architecture' },
-        { text: 'Routing', link: '/docs/routing' },
-        { text: 'Rendering', link: '/docs/rendering' },
+        { text: 'Architecture', link: '/guides/architecture' },
+        { text: 'Routing', link: '/guides/routing' },
+        { text: 'Rendering', link: '/guides/rendering' },
       ],
     },
   ],
@@ -349,9 +349,9 @@ tags: ["performance", "optimization", "vite"]
 Link to related content:
 
 ```markdown
-See [Installation](/docs/installation) for setup instructions.
+See [Installation](/guides/installation) for setup instructions.
 
-Learn more in the [Theming Guide](/docs/theming).
+Learn more in the [Theming Guide](/guides/theming).
 ```
 
 ### Related Content Sections
@@ -361,9 +361,9 @@ Add related content at the end:
 ```markdown
 ## Related Content
 
-- [Getting Started](/docs/getting-started)
-- [Configuration](/docs/configuration)
-- [Deployment](/docs/deployment)
+- [Getting Started](/guides/getting-started)
+- [Configuration](/guides/configuration)
+- [Deployment](/guides/deployment)
 ```
 
 ### See Also Blocks
@@ -371,8 +371,8 @@ Add related content at the end:
 ```markdown
 > **See Also**
 >
-> - [API Reference](/docs/api)
-> - [Examples](/docs/examples)
+> - [API Reference](/guides/api)
+> - [Examples](/guides/examples)
 ```
 
 ## Media Organization
@@ -414,7 +414,7 @@ Use descriptive names:
 
 ```bash
 # Copy docs
-cp -r docs/* content/docs/
+cp -r docs/* content/guides/
 
 # Copy blog
 cp -r blog/* content/blog/
@@ -424,7 +424,7 @@ cp -r blog/* content/blog/
 
 ```bash
 # Copy docs
-cp -r docs/* content/docs/
+cp -r docs/* content/guides/
 
 # Copy blog (from blog/ to content/blog/)
 cp -r blog/* content/blog/
@@ -440,7 +440,7 @@ cp -r static/* public/
 **Structure:**
 
 ```
-content/docs/
+content/guides/
 ├── index.md
 ├── getting-started/
 │   ├── index.md
@@ -472,13 +472,13 @@ content/docs/
 
 ```typescript
 sidebar: {
-  '/docs/': [
-    { text: 'Getting Started', link: '/docs/getting-started' },
-    { text: 'Concepts', link: '/docs/concepts' },
-    { text: 'Guides', link: '/docs/guides' },
-    { text: 'API', link: '/docs/api' },
-    { text: 'Reference', link: '/docs/reference' },
-    { text: 'Resources', link: '/docs/resources' },
+  '/guides/': [
+    { text: 'Getting Started', link: '/guides/getting-started' },
+    { text: 'Concepts', link: '/guides/concepts' },
+    { text: 'Guides', link: '/guides/guides' },
+    { text: 'API', link: '/guides/api' },
+    { text: 'Reference', link: '/guides/reference' },
+    { text: 'Resources', link: '/guides/resources' },
   ],
 }
 ```
@@ -544,7 +544,7 @@ nextReview: 2024-07-15
 Version your API docs:
 
 ```
-content/docs/
+content/guides/
 ├── api/
 │   ├── v1/
 │   │   ├── endpoints.md
@@ -673,6 +673,6 @@ export default function validateFrontmatter() {
 
 ## Next Steps
 
-- 🎨 Learn about [Theming](/docs/theming)
-- 🔌 Build [Plugins](/docs/plugins)
-- 📖 Read [API Reference](/docs/api)
+- 🎨 Learn about [Theming](/guides/theming)
+- 🔌 Build [Plugins](/guides/plugins)
+- 📖 Read [API Reference](/guides/api)

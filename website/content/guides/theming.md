@@ -738,12 +738,12 @@ export default defineConfig({
 
     // Sidebar
     sidebar: {
-      '/docs/': [
+      '/guides/': [
         {
           text: 'Getting Started',
           items: [
-            { text: 'Introduction', link: '/docs/intro' },
-            { text: 'Installation', link: '/docs/install' },
+            { text: 'Introduction', link: '/guides/intro' },
+            { text: 'Installation', link: '/guides/install' },
           ],
         },
       ],
@@ -883,4 +883,4 @@ Ensure proper contrast and keyboard navigation:
 
 - 🔌 Learn about [Plugin Development](./plugins.md)
 - 📖 Read [API Reference](./api.md)
-- 🚀 Deploy your [Site](../docs/deployment.md)
+- 🚀 Deploy your [Site](../guides/deployment.md)

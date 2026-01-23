@@ -2,8 +2,8 @@
 title: Configuration
 description: Learn how to configure MarkoPress
 order: 2
-prev: /docs/getting-started
-next: /docs/theming
+prev: /guides/getting-started
+next: /guides/theming
 ---
 
 # Configuration
@@ -33,7 +33,7 @@ export default defineConfig({
 export default defineConfig({
   content: {
     pages: 'content/pages',    // → /route
-    docs: 'content/docs',       // → /docs/*
+    docs: 'content/docs',       // → /guides/*
     blog: 'content/blog',       // → /blog/*
   },
 });
@@ -47,16 +47,16 @@ export default defineConfig({
     name: '@markopress/theme-default',
     options: {
       navbar: [
-        { text: 'Guide', link: '/docs/guide' },
+        { text: 'Guide', link: '/guides/guide' },
         { text: 'Blog', link: '/blog' },
       ],
       sidebar: {
-        '/docs/': [
+        '/guides/': [
           {
             text: 'Getting Started',
             items: [
-              { text: 'Introduction', link: '/docs/guide/introduction' },
-              { text: 'Installation', link: '/docs/guide/installation' },
+              { text: 'Introduction', link: '/guides/guide/introduction' },
+              { text: 'Installation', link: '/guides/guide/installation' },
             ],
           },
         ],

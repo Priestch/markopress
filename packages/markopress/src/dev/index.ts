@@ -3,6 +3,7 @@
  * Development server with automatic route generation
  */
 
+import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { loadConfig } from '../config/index.js';
@@ -44,11 +45,7 @@ export async function startDevServer(options: DevServerOptions = {}) {
   console.log('📂 Scanning content modules...');
   const modules = await scanContentModules({
     rootDir: config.root,
-    dirs: {
-      pages: config.content.pages,
-      docs: config.content.docs,
-      blog: config.content.blog,
-    },
+    dirs: config.content,
     markdownOptions: config.markdown,
   });
 
@@ -77,6 +74,9 @@ export async function startDevServer(options: DevServerOptions = {}) {
   console.log('📝 Generating routes from content...');
   const routesDir = path.join(config.root, 'src', 'routes');
   const routeMode = options.useCatchAllRoutes ?? config.build.useCatchAllRoutes;
+
+  // Ensure routes directory exists
+  await fs.mkdir(routesDir, { recursive: true });
 
   // Build initial route manifest
   let routeManifest: Record<string, any> = {};

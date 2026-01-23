@@ -904,4 +904,4 @@ See the official plugins for reference:
 
 - 📖 Read [API Reference](./api.md)
 - 🎨 Learn about [Theming](./theming.md)
-- 🚀 Deploy your [Site](../docs/deployment.md)
+- 🚀 Deploy your [Site](../guides/deployment.md)
