@@ -127,33 +127,89 @@ async function scanDirectory(
 
   const contentFiles: ContentFile[] = [];
 
-  for (const filePath of files) {
-    try {
-      const content = await fs.readFile(filePath, 'utf-8');
-      const processed = await parseMarkdown(content, markdownOptions, {
-        rootDir,
-        filePath,
-      });
+  // If no shared context, use sequential processing (backward compatibility)
+  if (!sharedContext) {
+    for (const filePath of files) {
+      try {
+        const content = await fs.readFile(filePath, 'utf-8');
+        const processed = await parseMarkdown(content, markdownOptions, {
+          rootDir,
+          filePath,
+        });
 
-      // Skip draft posts
-      if (processed.frontmatter.draft) {
-        continue;
+        // Skip draft posts
+        if (processed.frontmatter.draft) {
+          continue;
+        }
+
+        const relativePath = path.relative(rootDir, filePath);
+        const urlPath = getUrlPath(relativePath, dirPath, moduleId);
+
+        contentFiles.push({
+          id: generateId(relativePath),
+          filePath,
+          relativePath,
+          type,
+          moduleId: moduleId || 'unknown',
+          urlPath,
+          processed,
+        });
+      } catch (error) {
+        console.error(`Failed to scan file: ${filePath}`, error);
       }
+    }
+  } else {
+    // Parallel processing with shared context
+    const results = await Promise.allSettled(
+      files.map((filePath) =>
+        sharedContext.limit(async () => {
+          const content = await fs.readFile(filePath, 'utf-8');
 
-      const relativePath = path.relative(rootDir, filePath);
-      const urlPath = getUrlPath(relativePath, dirPath, moduleId);
+          // Lazy-load MarkdownIt once across all files
+          if (!sharedContext.md) {
+            if (!sharedContext.mdPromise) {
+              sharedContext.mdPromise = import('../markdown/index.js').then(
+                (m) => m.getMarkdownIt(markdownOptions, { rootDir, filePath })
+              );
+            }
+            sharedContext.md = await sharedContext.mdPromise;
+          }
 
-      contentFiles.push({
-        id: generateId(relativePath),
-        filePath,
-        relativePath,
-        type,
-        moduleId: moduleId || 'unknown',
-        urlPath,
-        processed,
-      });
-    } catch (error) {
-      console.error(`Failed to scan file: ${filePath}`, error);
+          const processed = await parseMarkdown(
+            content,
+            markdownOptions,
+            { rootDir, filePath },
+            sharedContext.md
+          );
+
+          // Skip draft posts
+          if (processed.frontmatter.draft) {
+            return null;
+          }
+
+          const relativePath = path.relative(rootDir, filePath);
+          const urlPath = getUrlPath(relativePath, dirPath, moduleId);
+
+          return {
+            id: generateId(relativePath),
+            filePath,
+            relativePath,
+            type,
+            moduleId: moduleId || 'unknown',
+            urlPath,
+            processed,
+          } as ContentFile | null;
+        })
+      )
+    );
+
+    // Collect successful results
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value) {
+        contentFiles.push(result.value);
+      } else if (result.status === 'rejected') {
+        console.error(`File processing failed:`, result.reason);
+      }
     }
   }
 
