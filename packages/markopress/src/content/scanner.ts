@@ -5,11 +5,30 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import fastGlob from 'fast-glob';
+import type MarkdownIt from 'markdown-it';
+import pLimit from 'p-limit';
+
+/**
+ * Concurrency limiter type (p-limit returns this)
+ */
+type Limit = <T>(fn: () => Promise<T>) => Promise<T>;
 import type { ContentType, ContentFile, ContentScannerOptions, ContentManifest } from './types.js';
 import type { MarkdownOptions } from '../markdown/types.js';
 import type { ContentModule, ModuleMetadata } from './module.js';
 import { createContentModule } from './module.js';
 import { parseMarkdown } from '../markdown/index.js';
+
+/**
+ * Shared context for parallel content scanning
+ */
+export interface ScanContext {
+  /** Concurrency limiter shared across all directories */
+  limit: Limit;
+  /** Shared MarkdownIt instance (lazy-loaded) */
+  md: MarkdownIt | null;
+  /** Promise for MarkdownIt creation (prevents race conditions) */
+  mdPromise?: Promise<MarkdownIt>;
+}
 
 /**
  * Scan content directories for markdown files
@@ -48,7 +67,10 @@ function getFileType(moduleId: string): 'page' | 'doc' | 'blog' | 'custom' {
  * New module-based scanning approach. Each configured content directory
  * becomes a module that plugins can enhance.
  */
-export async function scanContentModules(options: ContentScannerOptions): Promise<ContentModule[]> {
+export async function scanContentModules(
+  options: ContentScannerOptions,
+  sharedContext?: ScanContext
+): Promise<ContentModule[]> {
   const { dirs, rootDir, markdownOptions } = options;
   const modules: ContentModule[] = [];
 
@@ -56,7 +78,7 @@ export async function scanContentModules(options: ContentScannerOptions): Promis
   for (const [key, dirPath] of Object.entries(dirs)) {
     if (!dirPath) continue;
 
-    const files = await scanDirectory(dirPath, rootDir, markdownOptions, key);
+    const files = await scanDirectory(dirPath, rootDir, markdownOptions, key, undefined, sharedContext);
 
     // Create module metadata
     const metadata: ModuleMetadata = {
@@ -87,7 +109,8 @@ async function scanDirectory(
   rootDir: string,
   markdownOptions?: MarkdownOptions,
   moduleId?: string,
-  type?: 'page' | 'doc' | 'blog' | 'custom'
+  type?: 'page' | 'doc' | 'blog' | 'custom',
+  sharedContext?: ScanContext
 ): Promise<ContentFile[]> {
   const fullDirPath = path.resolve(rootDir, dirPath);
 
