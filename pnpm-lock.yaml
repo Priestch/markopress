@@ -24,6 +24,9 @@ importers:
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.28
+      husky:
+        specifier: ^9.0.0
+        version: 9.1.7
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
@@ -1188,6 +1191,11 @@ packages:
   human-format@1.2.1:
     resolution: {integrity: sha512-o5Ldz62VWR5lYUZ8aVQaLKiN37NsHnmk3xjMoUjza3mGkk8MvMofgZT0T6HKSCKSJIir+AWk9Dx8KhxvZAUgCg==}
     engines: {node: '>=4'}
+
+  husky@9.1.7:
+    resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   inherits@2.0.4:
     resolution: {integrity: sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==}
@@ -2856,6 +2864,8 @@ snapshots:
       toidentifier: 1.0.1
 
   human-format@1.2.1: {}
+
+  husky@9.1.7: {}
 
   inherits@2.0.4: {}
 

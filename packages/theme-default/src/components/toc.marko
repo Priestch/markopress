@@ -5,54 +5,13 @@
 
 <let/activeSlug=null/>
 
-<script>
-  const isActive = (slug) => {
-    return activeSlug === slug;
-  };
-</script>
-
-<nav class="toc-nav">
-  <h2 class="toc-title">On This Page</h2>
-
-  <if=input.headers && input.headers.length > 0>
-    <ul class="toc-list">
-      <for|header| of=input.headers>
-        <li class="toc-item toc-level-${header.level}">
-          <a
-            href="#${header.slug}"
-            class="toc-link active-${isActive(header.slug)}">
-            ${header.title}
-          </a>
-
-          <!-- Nested children -->
-          <if=header.children && header.children.length > 0>
-            <ul class="toc-list toc-nested">
-              <for|child| of=header.children>
-                <li class="toc-item toc-level-${child.level}">
-                  <a
-                    href="#${child.slug}"
-                    class="toc-link active-${isActive(child.slug)}">
-                    ${child.title}
-                  </a>
-                </li>
-              </for>
-            </ul>
-          </if>
-        </li>
-      </for>
-    </ul>
-  <else>
-    <p class="toc-empty">No headers found</p>
-  </else>
-</nav>
-
-<style>
-  .toc-nav {
+<style/styles>
+  .nav {
     display: flex;
     flex-direction: column;
   }
 
-  .toc-title {
+  .title {
     font-size: var(--text-sm);
     font-weight: var(--font-semibold);
     margin-bottom: var(--space-md);
@@ -61,7 +20,7 @@
     letter-spacing: 0.05em;
   }
 
-  .toc-list {
+  .list {
     list-style: none;
     padding: 0;
     margin: 0;
@@ -70,17 +29,17 @@
     gap: var(--space-xs);
   }
 
-  .toc-nested {
+  .nested {
     padding-left: var(--space-lg);
     margin-top: var(--space-xs);
   }
 
-  .toc-item {
+  .item {
     display: flex;
     flex-direction: column;
   }
 
-  .toc-link {
+  .link {
     display: block;
     padding: var(--space-xs) var(--space-sm);
     font-size: var(--text-sm);
@@ -91,25 +50,64 @@
     line-height: 1.4;
   }
 
-  .toc-link:hover {
+  .link:hover {
     color: var(--text-primary);
     border-left-color: var(--border-color);
   }
 
-  .toc-link.active-true {
+  .link.active {
     color: var(--accent-primary);
     border-left-color: var(--accent-primary);
     font-weight: var(--font-medium);
   }
 
-  .toc-level-3 .toc-link,
-  .toc-level-4 .toc-link {
+  .level3 .link,
+  .level4 .link {
     font-size: 0.8rem;
   }
 
-  .toc-empty {
+  .empty {
     font-size: var(--text-sm);
     color: var(--text-tertiary);
     font-style: italic;
   }
 </style>
+
+<nav class=styles.nav>
+  <h2 class=styles.title>On This Page</h2>
+
+  <if=input.headers && input.headers.length > 0>
+    <ul class=styles.list>
+      <for|header| of=input.headers>
+        <let/headerClass=styles.item + (header.level === 3 ? ' ' + styles.level3 : '') + (header.level === 4 ? ' ' + styles.level4 : '')/>
+        <let/headerLinkClass=styles.link + (activeSlug === header.slug ? ' ' + styles.active : '')/>
+        <li class=headerClass>
+          <a
+            href="#${header.slug}"
+            class=headerLinkClass>
+            ${header.title}
+          </a>
+
+          <!-- Nested children -->
+          <if=header.children && header.children.length > 0>
+            <ul class=styles.list + ' ' + styles.nested>
+              <for|child| of=header.children>
+                <let/childClass=styles.item + (child.level === 3 ? ' ' + styles.level3 : '') + (child.level === 4 ? ' ' + styles.level4 : '')/>
+                <let/childLinkClass=styles.link + (activeSlug === child.slug ? ' ' + styles.active : '')/>
+                <li class=childClass>
+                  <a
+                    href="#${child.slug}"
+                    class=childLinkClass>
+                    ${child.title}
+                  </a>
+                </li>
+              </for>
+            </ul>
+          </if>
+        </li>
+      </for>
+    </ul>
+  <else>
+    <p class=styles.empty>No headers found</p>
+  </else>
+</nav>

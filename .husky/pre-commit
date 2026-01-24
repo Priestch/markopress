@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# Enforce kebab-case naming for .marko files
+MARKO_FILES=$(git diff --cached --name-only --diff-filter=ACR | grep -E '\.marko$' || true)
+
+if [ -z "$MARKO_FILES" ]; then
+  exit 0
+fi
+
+BAD_FILES=""
+for FILE in $MARKO_FILES; do
+  BASENAME=$(basename "$FILE")
+  if echo "$BASENAME" | sed 's/\.marko$//' | grep -q '[A-Z]'; then
+    BAD_FILES="$BAD_FILES  $FILE\n"
+  fi
+done
+
+if [ -n "$BAD_FILES" ]; then
+  echo "❌ Marko files must use kebab-case (lowercase with hyphens)"
+  echo ""
+  echo "The following files violate the naming convention:"
+  echo -e "$BAD_FILES"
+  echo ""
+  echo "Examples of correct names:"
+  echo "  ✅ my-component.marko"
+  echo "  ✅ doc-footer.marko"
+  echo "  ✅ reading-progress.marko"
+  echo ""
+  echo "Examples of incorrect names:"
+  echo "  ❌ MyComponent.marko"
+  echo "  ❌ DocFooter.marko"
+  echo "  ❌ readingProgress.marko"
+  echo ""
+  echo "Please rename the files and try again."
+  exit 1
+fi
