@@ -2,6 +2,7 @@
  * Sidenav Plugin for MarkoPress
  *
  * Generates sidebar navigation from content structure
+ * Now supports dynamic module targeting
  */
 
 import type { MarkoPressPlugin } from 'markopress/plugin';
@@ -9,6 +10,13 @@ import type { ContentModule } from 'markopress/content';
 import type { ContentFile } from 'markopress/content';
 
 export interface SidenavOptions {
+  /**
+   * Target module(s) to generate sidebar for
+   * Can be a single module ID (e.g., 'docs', 'guides') or an array of IDs
+   * Default: ['docs'] for backward compatibility
+   */
+  module?: string | string[];
+
   /**
    * Auto-generate sidebar from file structure
    * @default true
@@ -30,39 +38,43 @@ export interface SidenavItem {
 
 /**
  * Create sidenav plugin
+ * Supports dynamic module targeting via the `module` option
  */
 export default function sidenavPlugin(options: SidenavOptions = {}): MarkoPressPlugin {
-  const { autoGenerate = true, items } = options;
+  const { autoGenerate = true, items, module: targetModule = 'docs' } = options;
+
+  // Normalize module option to array
+  const targetModules = Array.isArray(targetModule) ? targetModule : [targetModule];
 
   return {
     name: '@markopress/plugin-feature-sidenav',
-    modules: ['docs'],
+    modules: targetModules,
 
     async enhanceModules(modules: ContentModule[]) {
-      const docsModule = modules.find(m => m.id === 'docs');
-      if (!docsModule) return;
-
-      // Use manual items if provided, otherwise auto-generate
-      const sidebar = items || (autoGenerate ? buildSidebarFromFiles(docsModule.files) : []);
-      docsModule.enhance('sidebar', sidebar);
+      for (const mod of modules) {
+        // Use manual items if provided, otherwise auto-generate
+        const sidebar = items || (autoGenerate ? buildSidebarFromFiles(mod.files, mod.id) : []);
+        mod.enhance('sidebar', sidebar);
+      }
     },
   };
 }
 
 /**
- * Build sidebar from docs files
+ * Build sidebar from content files
  * Groups by directory structure and uses frontmatter for ordering
+ * Works with any module ID
  */
-function buildSidebarFromFiles(files: ContentFile[]): SidenavItem[] {
+function buildSidebarFromFiles(files: ContentFile[], moduleId: string): SidenavItem[] {
   // Group files by directory
   const groups = new Map<string, ContentFile[]>();
 
   for (const file of files) {
-    // Get the path after /docs/
-    const docsPath = file.urlPath.replace(/^\/docs\//, '');
+    // Get the path after /{moduleId}/
+    const modulePath = file.urlPath.replace(new RegExp(`^/${moduleId}/`), '');
 
     // Extract directory (first segment)
-    const dirParts = docsPath.split('/');
+    const dirParts = modulePath.split('/');
     const dir = dirParts.length > 1 ? dirParts[0] : '';
 
     if (dir) {
@@ -78,8 +90,8 @@ function buildSidebarFromFiles(files: ContentFile[]): SidenavItem[] {
 
   // First, add root-level files (no directory)
   const rootFiles = files.filter(f => {
-    const docsPath = f.urlPath.replace(/^\/docs\//, '');
-    return !docsPath.includes('/');
+    const modulePath = f.urlPath.replace(new RegExp(`^/${moduleId}/`), '');
+    return !modulePath.includes('/');
   });
 
   for (const file of rootFiles) {

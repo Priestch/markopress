@@ -23,13 +23,16 @@ export interface RouteConfig {
 
 /**
  * Content loaded by a plugin
+ * Supports dynamic module-based content
  */
-export interface PluginContent {
+export type PluginContent = {
+  // Backward compatibility collections
   pages?: ContentFile[];
   docs?: ContentFile[];
   blog?: ContentFile[];
-  [key: string]: unknown; // Allow custom content types
-}
+  // Dynamic module collections - any module ID can be used
+  [moduleId: string]: ContentFile[] | undefined;
+};
 
 /**
  * All content from all plugins

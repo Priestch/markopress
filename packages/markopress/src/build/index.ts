@@ -222,12 +222,20 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
     console.log('\n✅ Build completed successfully!');
     console.log(`   Output: ${buildResult.outDir}`);
-    console.log(`   Pages: ${manifest.pages.length + manifest.docs.length + manifest.blog.length}`);
+
+    // Calculate total pages from all modules
+    let totalPages = 0;
+    for (const [key, files] of Object.entries(manifest)) {
+      if (Array.isArray(files)) {
+        totalPages += files.length;
+      }
+    }
+    console.log(`   Pages: ${totalPages}`);
 
     return {
       success: true,
       outDir: buildResult.outDir,
-      pages: manifest.pages.length + manifest.docs.length + manifest.blog.length,
+      pages: totalPages,
       errors,
     };
   } catch (error) {
@@ -245,75 +253,73 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 }
 
 /**
- * Convert content modules to manifest for backward compatibility
- * Maps generic modules to the old manifest structure (pages, docs, blog)
+ * Convert content modules to dynamic manifest
+ * Each module becomes a top-level key in the manifest
+ * Also provides backward-compatible pages/docs/blog collections
  */
 export function modulesToManifest(modules: ContentModule[]): ContentManifest {
   const manifest: ContentManifest = {
-    pages: [],
-    docs: [],
-    blog: [],
     all: [],
   };
 
+  // Backward compatibility collections
+  const pages: ContentFile[] = [];
+  const docs: ContentFile[] = [];
+  const blog: ContentFile[] = [];
+
   for (const module of modules) {
+    // Add module files directly to manifest under module ID
+    manifest[module.id] = module.files;
+
     // Add all files to the 'all' collection
     for (const file of module.files) {
-      manifest.all.push(file);
+      manifest.all!.push(file);
 
-      // Map module ID to legacy manifest collections:
+      // Map module ID to legacy manifest collections for backward compatibility:
       // - 'pages' module -> pages collection
       // - 'blog' module -> blog collection
       // - Everything else (guides, docs, etc.) -> docs collection
       if (module.id === 'pages') {
-        manifest.pages.push(file);
+        pages.push(file);
       } else if (module.id === 'blog') {
-        manifest.blog.push(file);
+        blog.push(file);
       } else {
         // All other modules (docs, guides, etc.) go to docs collection
-        manifest.docs.push(file);
+        docs.push(file);
       }
     }
   }
+
+  // Add backward compatibility collections
+  if (pages.length > 0) manifest.pages = pages;
+  if (docs.length > 0) manifest.docs = docs;
+  if (blog.length > 0) manifest.blog = blog;
 
   return manifest;
 }
 
 /**
  * Build initial route manifest from content
+ * Works with dynamic manifest structure
  */
 function buildInitialRouteManifest(manifest: ContentManifest) {
   const routes: Record<string, any> = {};
 
-  for (const page of manifest.pages) {
-    routes[page.urlPath] = {
-      path: page.urlPath,
-      meta: {
-        title: page.processed.frontmatter.title,
-        type: 'page',
-      },
-    };
-  }
+  // Process all modules dynamically
+  for (const [moduleId, files] of Object.entries(manifest)) {
+    // Skip non-array entries (like 'all' collection)
+    if (!Array.isArray(files)) continue;
 
-  for (const doc of manifest.docs) {
-    routes[doc.urlPath] = {
-      path: doc.urlPath,
-      meta: {
-        title: doc.processed.frontmatter.title,
-        type: 'doc',
-      },
-    };
-  }
-
-  for (const post of manifest.blog) {
-    routes[post.urlPath] = {
-      path: post.urlPath,
-      meta: {
-        title: post.processed.frontmatter.title,
-        type: 'blog',
-        date: post.processed.frontmatter.date,
-      },
-    };
+    for (const file of files as ContentFile[]) {
+      routes[file.urlPath] = {
+        path: file.urlPath,
+        meta: {
+          title: file.processed.frontmatter.title,
+          type: file.type || 'custom',
+          moduleId: file.moduleId,
+        },
+      };
+    }
   }
 
   return routes;
@@ -376,6 +382,7 @@ async function collectBuildAssets(outDir: string): Promise<string[]> {
 
 /**
  * Generate route files from content manifest
+ * Works with dynamic manifest structure
  */
 export async function generateRoutes(
   manifest: ContentManifest,
@@ -388,28 +395,48 @@ export async function generateRoutes(
   // Only delete files in directories we manage, preserving user's custom files
   await cleanupGeneratedRoutes(routesDir, manifest, debug);
 
-  // Generate static page routes
-  for (const page of manifest.pages) {
-    await generatePageRoute(page, routesDir, config, modules, debug);
-  }
+  // Collect module IDs from manifest for cleanup
+  const moduleIds: string[] = [];
+  let pageCount = 0;
+  let docCount = 0;
+  let blogCount = 0;
 
-  // Generate individual doc routes (not dynamic)
-  for (const doc of manifest.docs) {
-    await generateDocRoute(doc, routesDir, config, modules, debug);
-  }
+  // Generate routes for each module dynamically
+  for (const [moduleId, files] of Object.entries(manifest)) {
+    // Skip non-array entries (like 'all' collection)
+    if (!Array.isArray(files)) continue;
 
-  // Generate individual blog routes (not dynamic)
-  for (const post of manifest.blog) {
-    await generateBlogRoute(post, routesDir, config, modules, debug);
+    moduleIds.push(moduleId);
+    const contentFiles = files as ContentFile[];
+
+    if (moduleId === 'pages') {
+      // Generate static page routes (root-level, no prefix)
+      for (const page of contentFiles) {
+        await generatePageRoute(page, routesDir, config, modules, debug);
+        pageCount++;
+      }
+    } else if (moduleId === 'blog') {
+      // Generate individual blog routes
+      for (const post of contentFiles) {
+        await generateBlogRoute(post, routesDir, config, modules, debug);
+        blogCount++;
+      }
+    } else {
+      // Generate individual doc routes for all other modules
+      for (const doc of contentFiles) {
+        await generateDocRoute(doc, routesDir, config, modules, debug);
+        docCount++;
+      }
+    }
   }
 
   // Generate root layout that wraps all pages with <${input.content}/>
   await generateRootLayout(routesDir, config, debug);
 
   if (debug) {
-    console.log(`   Generated ${manifest.pages.length} page routes`);
-    console.log(`   Generated ${manifest.docs.length} doc routes`);
-    console.log(`   Generated ${manifest.blog.length} blog routes`);
+    console.log(`   Generated ${pageCount} page routes`);
+    console.log(`   Generated ${docCount} doc routes`);
+    console.log(`   Generated ${blogCount} blog routes`);
   }
 }
 
@@ -439,8 +466,11 @@ export async function cleanupGeneratedRoutes(
     'lib/**/*',          // User's utilities
   ];
 
-  // Directories we manage and can clean up
-  const MANAGED_PREFIXES = ['docs/', 'blog/', 'pages/'];
+  // Build dynamic managed prefixes from manifest
+  // Skip 'pages' (root-level) and 'all' (meta-collection)
+  const MANAGED_PREFIXES = Object.keys(manifest)
+    .filter(key => key !== 'pages' && key !== 'all')
+    .map(key => `${key}/`);
 
   try {
     const allFiles = await fs.readdir(routesDir, {
@@ -1446,81 +1476,57 @@ export async function generateCatchAllRoutes(
   await generateContentManifest(manifest, routesDir, config);
   if (debug) console.log('   Generated content-manifest.json');
 
-  // Step 2: Generate catch-all route for each non-pages module
-  // Group docs files by their module ID (extracted from urlPath)
-  const docModules = new Map<string, ContentFile[]>();
-  for (const doc of manifest.docs) {
-    const pathParts = doc.urlPath.split('/').filter(Boolean);
-    const moduleId = pathParts[0] || 'docs';
-    if (!docModules.has(moduleId)) {
-      docModules.set(moduleId, []);
+  // Step 2: Generate catch-all routes for each module dynamically
+  for (const [moduleId, files] of Object.entries(manifest)) {
+    // Skip non-array entries (like 'all' collection)
+    if (!Array.isArray(files)) continue;
+
+    const contentFiles = files as ContentFile[];
+    if (contentFiles.length === 0) continue;
+
+    if (moduleId === 'pages') {
+      // Generate catch-all route for pages (root-level, no module prefix)
+      const pagesDir = path.join(routesDir, '$$slug');
+      await fs.mkdir(pagesDir, { recursive: true });
+
+      // Handler
+      const pagesHandler = await loadTemplate('catch-all-handler.js.template', {
+        CONTENT_TYPE: 'pages',
+        MANIFEST_PATH: '../content-manifest.json',
+      });
+      await fs.writeFile(path.join(pagesDir, '+handler.js'), pagesHandler);
+
+      // Page
+      const pagesPage = await loadTemplate('catch-all-page.marko.template', {
+        CONTENT_TYPE_CLASS: 'page',
+      });
+      await fs.writeFile(path.join(pagesDir, '+page.marko'), pagesPage);
+
+      if (debug) console.log(`   Generated pages catch-all route (${contentFiles.length} files)`);
+    } else {
+      // Generate catch-all route for non-pages modules (docs, blog, guides, etc.)
+      const moduleDir = path.join(routesDir, moduleId, '$$slug');
+      await fs.mkdir(moduleDir, { recursive: true });
+
+      // Handler - use correct manifest path based on nesting
+      const manifestPath = moduleId === 'blog' ? '../../content-manifest.json' : '../../content-manifest.json';
+
+      const handlerTemplate = await loadTemplate('catch-all-handler.js.template', {
+        CONTENT_TYPE: moduleId,
+        MANIFEST_PATH: manifestPath,
+      });
+      await fs.writeFile(path.join(moduleDir, '+handler.js'), handlerTemplate);
+
+      // Page
+      const pageTemplate = await loadTemplate('catch-all-page.marko.template', {
+        CONTENT_TYPE_CLASS: moduleId,
+      });
+      await fs.writeFile(path.join(moduleDir, '+page.marko'), pageTemplate);
+
+      if (debug) console.log(`   Generated ${moduleId} catch-all route (${contentFiles.length} files)`);
     }
-    docModules.get(moduleId)!.push(doc);
   }
 
-  // Generate catch-all routes for each doc module
-  for (const [moduleId, docs] of docModules) {
-    const moduleDir = path.join(routesDir, moduleId, '$$slug');
-    await fs.mkdir(moduleDir, { recursive: true });
-
-    // Handler
-    const handlerTemplate = await loadTemplate('catch-all-handler.js.template', {
-      CONTENT_TYPE: moduleId,
-      MANIFEST_PATH: '../../content-manifest.json',
-    });
-    await fs.writeFile(path.join(moduleDir, '+handler.js'), handlerTemplate);
-
-    // Page
-    const pageTemplate = await loadTemplate('catch-all-page.marko.template', {
-      CONTENT_TYPE_CLASS: moduleId,
-    });
-    await fs.writeFile(path.join(moduleDir, '+page.marko'), pageTemplate);
-
-    if (debug) console.log(`   Generated ${moduleId} catch-all route (${docs.length} files)`);
-  }
-
-  // Step 3: Generate catch-all route for blog
-  if (manifest.blog.length > 0) {
-    const blogDir = path.join(routesDir, 'blog', '$$slug');
-    await fs.mkdir(blogDir, { recursive: true });
-
-    // Handler
-    const blogHandler = await loadTemplate('catch-all-handler.js.template', {
-      CONTENT_TYPE: 'blog',
-      MANIFEST_PATH: '../../content-manifest.json',
-    });
-    await fs.writeFile(path.join(blogDir, '+handler.js'), blogHandler);
-
-    // Page
-    const blogPage = await loadTemplate('catch-all-page.marko.template', {
-      CONTENT_TYPE_CLASS: 'blog',
-    });
-    await fs.writeFile(path.join(blogDir, '+page.marko'), blogPage);
-
-    if (debug) console.log(`   Generated blog catch-all route (${manifest.blog.length} files)`);
-  }
-
-  // Step 4: Generate catch-all route for pages (root-level, no module prefix)
-  if (manifest.pages.length > 0) {
-    const pagesDir = path.join(routesDir, '$$slug');
-    await fs.mkdir(pagesDir, { recursive: true });
-
-    // Handler
-    const pagesHandler = await loadTemplate('catch-all-handler.js.template', {
-      CONTENT_TYPE: 'pages',
-      MANIFEST_PATH: '../content-manifest.json',
-    });
-    await fs.writeFile(path.join(pagesDir, '+handler.js'), pagesHandler);
-
-    // Page
-    const pagesPage = await loadTemplate('catch-all-page.marko.template', {
-      CONTENT_TYPE_CLASS: 'page',
-    });
-    await fs.writeFile(path.join(pagesDir, '+page.marko'), pagesPage);
-
-    if (debug) console.log(`   Generated pages catch-all route (${manifest.pages.length} files)`);
-  }
-
-  // Step 5: Generate root layout that wraps all pages
+  // Step 3: Generate root layout that wraps all pages
   await generateRootLayout(routesDir, config, debug);
 }

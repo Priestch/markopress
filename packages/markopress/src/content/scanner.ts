@@ -13,36 +13,36 @@ import { parseMarkdown } from '../markdown/index.js';
 
 /**
  * Scan content directories for markdown files
+ * Now uses dynamic module-based scanning
  */
 export async function scanContent(options: ContentScannerOptions): Promise<ContentManifest> {
   const { dirs, rootDir, markdownOptions } = options;
   const manifest: ContentManifest = {
-    pages: [],
-    docs: [],
-    blog: [],
     all: [],
   };
 
-  // Scan each content directory
-  if (dirs.pages) {
-    const pages = await scanDirectory(dirs.pages, rootDir, markdownOptions, 'pages', 'page');
-    manifest.pages.push(...pages);
-    manifest.all.push(...pages);
-  }
+  // Scan ALL configured directories dynamically
+  for (const [moduleId, dirPath] of Object.entries(dirs)) {
+    if (!dirPath) continue;
 
-  if (dirs.docs) {
-    const docs = await scanDirectory(dirs.docs, rootDir, markdownOptions, 'docs', 'doc');
-    manifest.docs.push(...docs);
-    manifest.all.push(...docs);
-  }
-
-  if (dirs.blog) {
-    const blog = await scanDirectory(dirs.blog, rootDir, markdownOptions, 'blog', 'blog');
-    manifest.blog.push(...blog);
-    manifest.all.push(...blog);
+    // Determine content file type based on module ID
+    const fileType = getFileType(moduleId);
+    const files = await scanDirectory(dirPath, rootDir, markdownOptions, moduleId, fileType);
+    manifest[moduleId] = files;
+    manifest.all!.push(...files);
   }
 
   return manifest;
+}
+
+/**
+ * Get content file type classification from module ID
+ */
+function getFileType(moduleId: string): 'page' | 'doc' | 'blog' | 'custom' {
+  if (moduleId === 'pages') return 'page';
+  if (moduleId === 'blog') return 'blog';
+  if (moduleId === 'docs') return 'doc';
+  return 'custom';
 }
 
 /**
@@ -90,7 +90,7 @@ async function scanDirectory(
   rootDir: string,
   markdownOptions?: MarkdownOptions,
   moduleId?: string,
-  type?: ContentType
+  type?: 'page' | 'doc' | 'blog' | 'custom'
 ): Promise<ContentFile[]> {
   const fullDirPath = path.resolve(rootDir, dirPath);
 
@@ -128,6 +128,7 @@ async function scanDirectory(
         filePath,
         relativePath,
         type,
+        moduleId: moduleId || 'unknown',
         urlPath,
         processed,
       });

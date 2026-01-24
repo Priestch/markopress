@@ -1,6 +1,7 @@
 /**
  * Content Manifest Generator for Dynamic Routes
  * Generates a JSON manifest file that catch-all routes can use to look up content
+ * Now supports dynamic module-based structure
  */
 
 import { promises as fs } from 'node:fs';
@@ -19,16 +20,16 @@ export interface ContentLookupEntry {
   frontmatter: Record<string, unknown>;
 }
 
-export interface ContentLookupManifest extends Record<string, any> {
-  docs: Record<string, ContentLookupEntry>;
-  blog: Record<string, ContentLookupEntry>;
-  pages: Record<string, ContentLookupEntry>;
+// Use a type instead of interface to avoid index signature conflicts
+export type ContentLookupManifest = {
+  // Sidebar and navbar (global)
   sidebar: Record<string, Array<{ text: string; link: string }>>;
   navbar: Array<{ text: string; link: string }>;
-}
+} & Record<string, Record<string, ContentLookupEntry> | Array<{ text: string; link: string }> | undefined>;
 
 /**
  * Generate a content manifest JSON file for dynamic route lookup
+ * Works with dynamic module-based manifest structure
  */
 export async function generateContentManifest(
   manifest: ContentManifest,
@@ -36,65 +37,51 @@ export async function generateContentManifest(
   config: ResolvedConfig
 ): Promise<void> {
   const lookup: ContentLookupManifest = {
-    docs: {},
-    blog: {},
-    pages: {},
     sidebar: {},
     navbar: config.theme?.options?.navbar || [],
   };
 
-  // Group docs by their module ID (extracted from urlPath)
-  // e.g., "/guides/getting-started" -> module "guides", slug "getting-started"
-  // e.g., "/docs/installation" -> module "docs", slug "installation"
-  const docModules = new Map<string, ContentFile[]>();
-  for (const doc of manifest.docs) {
-    const pathParts = doc.urlPath.split('/').filter(Boolean);
-    const moduleId = pathParts[0] || 'docs';
-    if (!docModules.has(moduleId)) {
-      docModules.set(moduleId, []);
-    }
-    docModules.get(moduleId)!.push(doc);
-  }
+  // Process all modules dynamically
+  for (const [moduleId, files] of Object.entries(manifest)) {
+    // Skip non-array entries (like 'all' collection)
+    if (!Array.isArray(files)) continue;
 
-  // Process each doc module dynamically
-  for (const [moduleId, docs] of docModules) {
-    // Initialize the module's collection if it doesn't exist
-    if (!lookup[moduleId]) {
-      lookup[moduleId] = {} as Record<string, ContentLookupEntry>;
-    }
+    const contentFiles = files as ContentFile[];
 
-    const prefix = `/${moduleId}`;
+    // Initialize the module's collection
+    lookup[moduleId] = {} as Record<string, ContentLookupEntry>;
+
+    // Determine the URL prefix for this module
+    const prefix = moduleId === 'pages' ? '/' : `/${moduleId}`;
     const moduleLookup = lookup[moduleId] as Record<string, ContentLookupEntry>;
 
-    for (const doc of docs) {
-      const slug = getSlug(doc.urlPath, prefix);
-      moduleLookup[slug] = createLookupEntry(doc);
+    for (const file of contentFiles) {
+      const slug = getSlug(file.urlPath, prefix);
+      moduleLookup[slug] = createLookupEntry(file);
     }
-  }
-
-  // Process blog - use relative path after /blog/ as slug
-  for (const post of manifest.blog) {
-    const slug = getSlug(post.urlPath, '/blog');
-    lookup.blog[slug] = createLookupEntry(post);
-  }
-
-  // Process pages - use relative path after / as slug
-  for (const page of manifest.pages) {
-    const slug = getSlug(page.urlPath, '/');
-    lookup.pages[slug] = createLookupEntry(page);
   }
 
   // Generate sidebar data
   const sidebarConfig = config.theme?.options?.sidebar || {};
   for (const [prefix, items] of Object.entries(sidebarConfig)) {
     if (typeof items === 'object' && 'autoGenerate' in items && items.autoGenerate === true) {
-      // Auto-generate sidebar from all docs
-      lookup.sidebar[prefix] = manifest.docs
-        .filter((d) => d.urlPath.startsWith(prefix))
-        .map((d) => ({
-          text: String(d.processed.frontmatter.title || d.urlPath),
-          link: d.urlPath,
-        }));
+      // Auto-generate sidebar from all relevant content files
+      // Find files that match the prefix path
+      const sidebarFiles: ContentFile[] = [];
+
+      for (const [moduleId, files] of Object.entries(manifest)) {
+        if (!Array.isArray(files)) continue;
+        for (const file of files as ContentFile[]) {
+          if (file.urlPath.startsWith(prefix)) {
+            sidebarFiles.push(file);
+          }
+        }
+      }
+
+      lookup.sidebar[prefix] = sidebarFiles.map((d) => ({
+        text: String(d.processed.frontmatter.title || d.urlPath),
+        link: d.urlPath,
+      }));
     } else if (Array.isArray(items)) {
       lookup.sidebar[prefix] = items;
     }
@@ -133,8 +120,11 @@ function getSlug(urlPath: string, prefix: string): string {
 function createLookupEntry(file: ContentFile): ContentLookupEntry {
   const { frontmatter } = file.processed;
 
+  // Get prefix based on module ID
+  const prefix = file.moduleId === 'pages' ? '/' : `/${file.moduleId}`;
+
   return {
-    slug: getSlug(file.urlPath, file.type === 'doc' ? '/docs' : file.type === 'blog' ? '/blog' : '/'),
+    slug: getSlug(file.urlPath, prefix),
     title: String(frontmatter.title || 'Untitled'),
     description: String(frontmatter.description || ''),
     html: file.processed.html || '',

@@ -2,6 +2,7 @@
  * TOC Plugin for MarkoPress
  *
  * Generates table of contents from markdown headers
+ * Works with any content module dynamically
  */
 
 import type { MarkoPressPlugin } from 'markopress/plugin';
@@ -9,6 +10,13 @@ import type { ContentModule } from 'markopress/content';
 import type { ProcessedMarkdown } from 'markopress/markdown';
 
 export interface TocOptions {
+  /**
+   * Target module(s) to generate TOC for
+   * Can be a single module ID (e.g., 'docs', 'guides') or an array of IDs
+   * If not specified, works with all available modules
+   */
+  module?: string | string[];
+
   /**
    * Minimum header level to include
    * @default 2
@@ -31,13 +39,14 @@ export interface TocItem {
 
 /**
  * Create TOC plugin
+ * Supports dynamic module targeting via the `module` option
+ * If no module is specified, works with all available modules
  */
 export default function tocPlugin(options: TocOptions = {}): MarkoPressPlugin {
-  const { minDepth = 2, maxDepth = 3 } = options;
+  const { minDepth = 2, maxDepth = 3, module: targetModule } = options;
 
-  return {
+  const pluginConfig: MarkoPressPlugin = {
     name: '@markopress/plugin-feature-toc',
-    modules: ['docs', 'pages', 'blog'],
 
     async enhanceModules(modules: ContentModule[]) {
       modules.forEach(module => {
@@ -58,6 +67,14 @@ export default function tocPlugin(options: TocOptions = {}): MarkoPressPlugin {
       });
     },
   };
+
+  // If specific modules are requested, set them
+  // Otherwise, let it work with all modules by not setting the `modules` property
+  if (targetModule) {
+    pluginConfig.modules = Array.isArray(targetModule) ? targetModule : [targetModule];
+  }
+
+  return pluginConfig;
 }
 
 /**

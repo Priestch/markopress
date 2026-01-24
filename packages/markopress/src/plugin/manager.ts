@@ -487,16 +487,20 @@ export class PluginManager {
   createContentContext(manifest: ContentManifest): ContentContext {
     const baseContext = this.createPluginContext();
 
+    // Ensure pages and blog arrays exist for backward compatibility
+    if (!manifest.pages) manifest.pages = [];
+    if (!manifest.blog) manifest.blog = [];
+
     return {
       ...baseContext,
       addPage: (page: ContentFile) => {
-        manifest.pages.push(page);
+        (manifest.pages as ContentFile[]).push(page);
       },
       addPost: (post: ContentFile) => {
-        manifest.blog.push(post);
+        (manifest.blog as ContentFile[]).push(post);
       },
-      getPages: () => manifest.pages,
-      getPosts: () => manifest.blog,
+      getPages: () => manifest.pages as ContentFile[],
+      getPosts: () => manifest.blog as ContentFile[],
     };
   }
 

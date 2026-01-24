@@ -9,6 +9,7 @@ import { spawn } from 'node:child_process';
 import { loadConfig } from '../config/index.js';
 import { scanContentModules } from '../content/scanner.js';
 import type { ContentModule } from '../content/module.js';
+import type { ContentFile } from '../content/types.js';
 import { PluginManager } from '../plugin/manager.js';
 import { generateRoutes, copyThemeCSS, copyThemeComponents, generateCatchAllRoutes } from '../build/index.js';
 import { modulesToManifest } from '../build/index.js';
@@ -78,28 +79,21 @@ export async function startDevServer(options: DevServerOptions = {}) {
   // Ensure routes directory exists
   await fs.mkdir(routesDir, { recursive: true });
 
-  // Build initial route manifest
+  // Build initial route manifest from dynamic manifest
   let routeManifest: Record<string, any> = {};
-  for (const page of manifest.pages) {
-    routeManifest[page.urlPath] = {
-      path: page.urlPath,
-      title: page.processed.frontmatter.title || 'Untitled',
-      ...page.processed.frontmatter
-    };
-  }
-  for (const doc of manifest.docs) {
-    routeManifest[doc.urlPath] = {
-      path: doc.urlPath,
-      title: doc.processed.frontmatter.title || 'Untitled',
-      ...doc.processed.frontmatter
-    };
-  }
-  for (const post of manifest.blog) {
-    routeManifest[post.urlPath] = {
-      path: post.urlPath,
-      title: post.processed.frontmatter.title || 'Untitled',
-      ...post.processed.frontmatter
-    };
+
+  // Process all modules dynamically
+  for (const [moduleId, files] of Object.entries(manifest)) {
+    // Skip non-array entries (like 'all' collection)
+    if (!Array.isArray(files)) continue;
+
+    for (const file of files as ContentFile[]) {
+      routeManifest[file.urlPath] = {
+        path: file.urlPath,
+        title: file.processed.frontmatter.title || 'Untitled',
+        ...file.processed.frontmatter
+      };
+    }
   }
 
   // Execute extendRoutes hooks
