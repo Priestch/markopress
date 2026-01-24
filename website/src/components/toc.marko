@@ -3,13 +3,52 @@
  * Displays page headers with active link highlighting
  */
 
-<let/activeSlug=null/>
+class {
+  onCreate() {
+    this.state = {
+      activeSlug: null,
+    };
+  }
 
-<script>
-  const isActive = (slug) => {
-    return activeSlug === slug;
-  };
-</script>
+  onMount() {
+    // Set up IntersectionObserver for scroll spy
+    if (typeof window !== 'undefined' && 'IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const id = entry.target.getAttribute('id');
+              if (id) {
+                this.state.activeSlug = id;
+              }
+            }
+          });
+        },
+        {
+          rootMargin: '-100px 0px -66%',
+          threshold: 0
+        }
+      );
+
+      // Observe all headers
+      document.querySelectorAll('h2[id], h3[id], h4[id]').forEach((header) => {
+        observer.observe(header);
+      });
+
+      this.observer = observer;
+    }
+  }
+
+  onDestroy() {
+    if (this.observer) {
+      this.observer.disconnect();
+    }
+  }
+
+  isActive(slug) {
+    return this.state.activeSlug === slug;
+  }
+}
 
 <nav class="toc-nav">
   <h2 class="toc-title">On This Page</h2>
@@ -17,10 +56,11 @@
   <if=input.headers && input.headers.length > 0>
     <ul class="toc-list">
       <for|header| of=input.headers>
-        <li class="toc-item toc-level-${header.level}">
+        <li class=["toc-item", "toc-level-" + header.level]>
           <a
             href="#${header.slug}"
-            class="toc-link active-${isActive(header.slug)}">
+            class="toc-link"
+            class-list={{active: isActive(header.slug)}}>
             ${header.title}
           </a>
 
@@ -28,10 +68,11 @@
           <if=header.children && header.children.length > 0>
             <ul class="toc-list toc-nested">
               <for|child| of=header.children>
-                <li class="toc-item toc-level-${child.level}">
+                <li class=["toc-item", "toc-level-" + child.level]>
                   <a
                     href="#${child.slug}"
-                    class="toc-link active-${isActive(child.slug)}">
+                    class="toc-link"
+                    class-list={{active: isActive(child.slug)}}>
                     ${child.title}
                   </a>
                 </li>
@@ -96,7 +137,7 @@
     border-left-color: var(--border-color);
   }
 
-  .toc-link.active-true {
+  .toc-link.active {
     color: var(--accent-primary);
     border-left-color: var(--accent-primary);
     font-weight: var(--font-medium);

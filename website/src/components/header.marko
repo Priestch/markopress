@@ -2,19 +2,25 @@
  * Header component
  */
 
-<let/siteTitle=input.siteTitle || 'MarkoPress'/>
-<let/navItems=input.navItems || []/>
+class {
+  onCreate() {
+    this.state = {
+      siteTitle: input.siteTitle || 'MarkoPress',
+      navItems: input.navItems || [],
+    };
+  }
+}
 
-<div class="site-header">
+<header class="site-header">
   <div class="header-container">
-    <a href="/" class="site-title">${siteTitle}</a>
+    <a href="/" class="site-title">${state.siteTitle}</a>
     <nav class="site-nav">
-      <for|item| in=navItems>
-        <a href=item.link class="nav-link">${item.text}</a>
+      <for|item| in=(state.navItems)>
+        <a href="${item.link}" class="nav-link">${item.text}</a>
       </for>
     </nav>
   </div>
-</div>
+</header>
 
 <style>
   .site-header {

@@ -10,7 +10,7 @@ import { loadConfig } from '../config/index.js';
 import { scanContentModules } from '../content/scanner.js';
 import type { ContentModule } from '../content/module.js';
 import { PluginManager } from '../plugin/manager.js';
-import { generateRoutes, copyThemeCSS, generateCatchAllRoutes } from '../build/index.js';
+import { generateRoutes, copyThemeCSS, copyThemeComponents, generateCatchAllRoutes } from '../build/index.js';
 import { modulesToManifest } from '../build/index.js';
 
 interface DevServerOptions {
@@ -125,6 +125,11 @@ export async function startDevServer(options: DevServerOptions = {}) {
   console.log('🎨 Copying theme CSS...');
   await copyThemeCSS(config.root, config, false);
   console.log('   Theme CSS copied\n');
+
+  // Copy theme components for Vite/Marko plugin discovery
+  console.log('📦 Copying theme components...');
+  await copyThemeComponents(config.root, config, false);
+  console.log('   Theme components copied\n');
 
   // Start @marko/run dev server
   console.log('🔨 Starting @marko/run dev server...\n');

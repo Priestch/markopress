@@ -2,19 +2,25 @@
  * Footer component
  */
 
-<let/message=input.message || ''/>
-<let/copyright=input.copyright || ''/>
+class {
+  onCreate() {
+    this.state = {
+      message: input.message || '',
+      copyright: input.copyright || '',
+    };
+  }
+}
 
-<div class="site-footer">
+<footer class="site-footer">
   <div class="footer-container">
-    <if=message>
-      <p class="footer-message">${message}</p>
+    <if=state.message>
+      <p class="footer-message">${state.message}</p>
     </if>
-    <if=copyright>
-      <p class="footer-copyright">${copyright}</p>
+    <if=state.copyright>
+      <p class="footer-copyright">${state.copyright}</p>
     </if>
   </div>
-</div>
+</footer>
 
 <style>
   .site-footer {

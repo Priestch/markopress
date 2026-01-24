@@ -3,8 +3,8 @@
  * Displays edit link, last updated timestamp, and prev/next navigation
  */
 
-<script>
-  const formatDate = (date) => {
+class {
+  formatDate(date) {
     if (!date) return '';
     if (typeof window === 'undefined') return date;
 
@@ -14,8 +14,8 @@
       month: 'long',
       day: 'numeric'
     });
-  };
-</script>
+  }
+}
 
 <footer class="doc-footer">
   <!-- Edit Link -->

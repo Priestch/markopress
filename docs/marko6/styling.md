@@ -24,7 +24,37 @@ Adding a tag variable to `<style>` leverages CSS Modules, exposing classes as an
 Usage patterns include:
 - Direct class reference: `class=styles.foo`
 - Array of classes: `class=[styles.foo, styles.bar]`
-- Conditional objects: `class={ [styles.bar]: true }`
+
+**Conditional Classes with CSS Modules:**
+
+The conditional object syntax like `class={ [styles.bar]: true }` does NOT work with CSS module references. The conditional syntax only works with string literal class names.
+
+To conditionally apply CSS module classes, pre-compute the class value using `<let>`:
+
+```marko
+<style/styles>
+  .base { padding: 8px }
+  .active { background: blue }
+  .disabled { opacity: 0.5 }
+</style>
+
+<!-- ❌ WRONG: These syntaxes don't work with CSS modules -->
+<div class=[styles.base, styles.active: isActive]/>
+<div class={styles.base: true, styles.active: isActive}/>
+<div class="${styles.base} ${isActive ? styles.active : ''}"/>
+
+<!-- ✅ CORRECT: Pre-compute with <let> -->
+<let/divClass=isActive ? styles.base + ' ' + styles.active : styles.base + ' ' + styles.disabled/>
+<div class=divClass/>
+
+<!-- ✅ ALSO CORRECT: Separate if blocks for simple cases -->
+<if=isActive>
+  <div class=[styles.base, styles.active]/>
+</if>
+<if=!isActive>
+  <div class=[styles.base, styles.disabled]/>
+</if>
+```
 
 Preprocessors combine with CSS Modules using syntax like `<style.scss/styles>`.
 

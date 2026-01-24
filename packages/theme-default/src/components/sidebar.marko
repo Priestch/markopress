@@ -1,87 +1,238 @@
-/**
- * Sidebar component for documentation
+/*!
+ * Sidebar Component
+ * Hierarchical navigation with collapsible groups
  */
 
-class {
-  onCreate() {
-    this.state = {
-      sidebar: input.sidebar || [],
-      currentPath: input.currentPath || '',
-    };
-  }
-}
+<let/openGroups=new Set((input.initialOpenGroups || []))/>
 
-<nav class="sidebar">
-  <for|section| in=(state.sidebar)>
+<script>
+  const isActive = (href) => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname === href;
+    }
+    return false;
+  };
+</script>
+
+<div
+  class="sidebar-content"
+  role="navigation"
+  aria-label="Sidebar navigation">
+  <!-- Sidebar Sections -->
+  <for|section| of=(input.sections || [])>
     <div class="sidebar-section">
+      <!-- Section Header -->
       <if=section.text>
-        <h3 class="sidebar-title">${section.text}</h3>
+        <div class="sidebar-section-header">${section.text}</div>
       </if>
-      <if=section.items>
-        <ul class="sidebar-links">
-          <for|item| in=(section.items)>
-            <li class="sidebar-item">
-              <a href="${item.link}" class="sidebar-link">
-                ${item.text}
-              </a>
-              <if=item.items>
-                <ul class="sidebar-links nested">
-                  <for|subItem| in=(item.items)>
+
+      <!-- Section Items -->
+      <ul class="sidebar-nav">
+        <for|item| of=section.items>
+          <!-- Item with children (collapsible group) -->
+          <if=item.items>
+            <li class="sidebar-group">
+              <div
+                class="sidebar-group-header"
+                onClick(e) {
+                  if (openGroups.has(item.text)) {
+                    openGroups.delete(item.text);
+                  } else {
+                    openGroups.add(item.text);
+                  }
+                }
+                role="button"
+                tabindex="0"
+                aria-expanded=openGroups.has(item.text)>
+                <span class="sidebar-group-title">${item.text}</span>
+                <if=openGroups.has(item.text)>
+                  <svg
+                    class="sidebar-group-icon sidebar-group-icon-rotated"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </if>
+                <else>
+                  <svg
+                    class="sidebar-group-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </else>
+              </div>
+
+              <if=openGroups.has(item.text)>
+                <ul class="sidebar-group-items">
+                  <for|subitem| of=item.items>
                     <li class="sidebar-item">
-                      <a href="${subItem.link}" class="sidebar-link">
-                        ${subItem.text}
+                      <a
+                        class="sidebar-link"
+                        href=subitem.link>
+                        <if=subitem.icon>
+                          <span class="sidebar-icon">${subitem.icon}</span>
+                        </if>
+                        <span class="sidebar-text">${subitem.text}</span>
                       </a>
                     </li>
                   </for>
                 </ul>
               </if>
             </li>
-          </for>
-        </ul>
-      </if>
+          </if>
+
+          <!-- Regular item (no children) -->
+          <else>
+            <li class="sidebar-item">
+              <a
+                class="sidebar-link"
+                href=item.link>
+                <if=item.icon>
+                  <span class="sidebar-icon">${item.icon}</span>
+                </if>
+                <span class="sidebar-text">${item.text}</span>
+              </a>
+            </li>
+          </else>
+        </for>
+      </ul>
     </div>
   </for>
-</nav>
+</div>
 
 <style>
-  .sidebar {
-    width: 280px;
-    padding-right: 2rem;
+  .sidebar-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
   }
 
+  /* Section */
   .sidebar-section {
-    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
   }
 
-  .sidebar-title {
-    font-size: 0.875rem;
-    text-transform: uppercase;
+  .sidebar-section-header {
+    padding: var(--sidebar-category-padding, var(--spacing-sm) 0);
+    font-size: var(--sidebar-category-font-size, 0.75rem);
+    font-weight: var(--sidebar-category-font-weight, 600);
+    text-transform: var(--sidebar-category-text-transform, uppercase);
+    color: var(--text-2, #6b7280);
     letter-spacing: 0.05em;
-    margin-bottom: 0.75rem;
   }
 
-  .sidebar-links {
+  /* Navigation List */
+  .sidebar-nav {
     list-style: none;
-    padding: 0;
-    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sidebar-item-gap, var(--spacing-xs));
   }
 
-  .sidebar-links.nested {
-    padding-left: 1rem;
-  }
-
+  /* Regular Item */
   .sidebar-item {
-    margin-bottom: 0.5rem;
+    list-style: none;
   }
 
   .sidebar-link {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--sidebar-item-padding, var(--spacing-sm) var(--spacing-md));
+    font-size: var(--sidebar-item-font-size, 0.875rem);
+    font-weight: var(--sidebar-item-font-weight, 400);
+    color: var(--text-2, #6b7280);
     text-decoration: none;
-    color: inherit;
-    padding: 0.25rem 0;
+    border-radius: var(--sidebar-item-border-radius, 4px);
+    transition: all var(--transition-fast, 0.15s);
+    line-height: var(--sidebar-item-height, 1.4);
+    height: var(--sidebar-item-height, auto);
   }
 
   .sidebar-link:hover {
-    color: var(--accent-color);
+    color: var(--text-1, #1f2937);
+    background: var(--sidebar-hover-background, rgba(0, 0, 0, 0.05));
+  }
+
+  .sidebar-link.active-true {
+    color: var(--color-primary-1, #3a5ccc);
+    background: var(--sidebar-active-background, rgba(100, 108, 255, 0.14));
+    font-weight: var(--sidebar-item-font-weight, 500);
+    border-left: var(--sidebar-active-border, 2px solid #3451b2);
+  }
+
+  .sidebar-icon {
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
+
+  .sidebar-text {
+    flex: 1;
+  }
+
+  /* Collapsible Group */
+  .sidebar-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sidebar-item-padding, var(--spacing-sm) var(--spacing-md));
+    font-size: var(--sidebar-item-font-size, 0.875rem);
+    font-weight: 500;
+    color: var(--text-1, #1f2937);
+    cursor: pointer;
+    border-radius: var(--sidebar-item-border-radius, 4px);
+    transition: background-color var(--transition-fast, 0.15s);
+    user-select: none;
+    height: var(--sidebar-item-height, auto);
+  }
+
+  .sidebar-group-header:hover {
+    background: var(--sidebar-hover-background, rgba(0, 0, 0, 0.05));
+  }
+
+  .sidebar-group-title {
+    flex: 1;
+  }
+
+  .sidebar-group-icon {
+    flex-shrink: 0;
+    transition: transform var(--transition-fast, 0.15s);
+  }
+
+  .sidebar-group-icon-rotated {
+    transform: rotate(90deg);
+  }
+
+  .sidebar-group-items {
+    list-style: none;
+    padding-left: var(--spacing-lg);
+    margin-top: var(--spacing-xs);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sidebar-item-gap, var(--spacing-xs));
+    border-left: 1px solid var(--border-divider, #e5e7eb);
+  }
+
+  .sidebar-group-items .sidebar-link {
+    font-size: var(--sidebar-item-font-size, 0.875rem);
+    color: var(--text-2, #6b7280);
   }
 </style>

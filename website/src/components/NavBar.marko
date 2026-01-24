@@ -3,16 +3,25 @@
  * Main navigation bar with links and dropdown menus
  */
 
-<let/openDropdown=null/>
+class {
+  onCreate() {
+    this.state = {
+      openDropdown: null,
+    };
+  }
 
-<script>
-  const isActive = (href) => {
-    if (typeof window !== 'undefined') {
-      return window.location.pathname === href;
-    }
-    return false;
-  };
-</script>
+  toggleDropdown(id) {
+    this.state.openDropdown = this.state.openDropdown === id ? null : id;
+  }
+
+  closeDropdown() {
+    this.state.openDropdown = null;
+  }
+
+  isActive(href) {
+    return window.location.pathname === href;
+  }
+}
 
 <nav class="navbar-nav-inner">
   <for|item| of=(input.items || [])>
@@ -22,20 +31,19 @@
         <button
           class="nav-link dropdown-trigger"
           aria-haspopup="true"
-          aria-expanded=openDropdown === item.text
-          onClick(e) {
-            openDropdown = openDropdown === item.text ? null : item.text;
-          }>
+          aria-expanded=state.openDropdown === item.text
+          on-click('toggleDropdown', item.text)
+          on-clickout('closeDropdown')>
           <span>${item.text}</span>
           <svg class="dropdown-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </button>
 
-        <if=openDropdown === item.text>
+        <if=state.openDropdown === item.text>
           <div class="dropdown-menu">
             <for|subitem| of=item.items>
-              <a class="dropdown-item active-${isActive(subitem.link)}" href=subitem.link>
+              <a class="dropdown-item" href=subitem.link class-list={active: isActive(subitem.link)}>
                 ${subitem.text}
               </a>
             </for>
@@ -44,7 +52,7 @@
       </div>
     <!-- Regular Link -->
     <else>
-      <a class="nav-link active-${isActive(item.link)}" href=item.link>
+      <a class="nav-link" href=item.link class-list={active: isActive(item.link)}>
         ${item.text}
       </a>
     </else>
@@ -56,7 +64,7 @@
       <button
         class="nav-link dropdown-trigger"
         aria-haspopup="true"
-        aria-expanded=openDropdown === 'lang'>
+        aria-expanded=state.openDropdown === 'lang'>
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="2" y1="12" x2="22" y2="12"></line>
@@ -64,10 +72,10 @@
         </svg>
       </button>
 
-      <if=openDropdown === 'lang'>
+      <if=state.openDropdown === 'lang'>
         <div class="dropdown-menu">
           <for|locale| of=input.locales>
-            <a class="dropdown-item active-${locale.active}" href=locale.link>
+            <a class="dropdown-item" href=locale.link class-list={active: locale.active}>
               ${locale.label}
             </a>
           </for>
@@ -119,7 +127,7 @@
     background: var(--bg-tertiary);
   }
 
-  .nav-link.active-true {
+  .nav-link.active {
     color: var(--accent-primary);
     background: var(--accent-bg);
   }
@@ -174,7 +182,7 @@
     background: var(--bg-tertiary);
   }
 
-  .dropdown-item.active-true {
+  .dropdown-item.active {
     color: var(--accent-primary);
     background: var(--accent-bg);
   }

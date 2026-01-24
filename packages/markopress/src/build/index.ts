@@ -176,12 +176,17 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       console.log('   All tags validated ✓\n');
     }
 
-    // Step 13: Copy theme CSS to public directory
+    // Step 13: Copy theme components to src/components
+    console.log('📦 Copying theme components...');
+    await copyThemeComponents(process.cwd(), config, debug);
+    console.log('   Theme components copied\n');
+
+    // Step 14: Copy theme CSS to public directory
     console.log('🎨 Copying theme CSS...');
     await copyThemeCSS(process.cwd(), config, debug);
     console.log('   Theme CSS copied\n');
 
-    // Step 14: Build with @marko/run
+    // Step 15: Build with @marko/run
     console.log('🔨 Building with @marko/run...');
     const resolvedOutDir = outDir || config.build.outDir;
     const buildResult = await runMarkoRunBuild(resolvedOutDir, debug);
@@ -196,10 +201,10 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       };
     }
 
-    // Step 15: Collect build assets (NEW)
+    // Step 16: Collect build assets (NEW)
     const assets = await collectBuildAssets(buildResult.outDir);
 
-    // Step 16: Execute postBuild hooks (NEW)
+    // Step 17: Execute postBuild hooks (NEW)
     if (pluginManager) {
       console.log('🔌 Processing plugin postBuild hooks...');
       await pluginManager.execPostBuildHooks(
@@ -210,7 +215,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       console.log('   Post-build hooks completed\n');
     }
 
-    // Step 17: Copy Marko tags directory to output (after build so it doesn't get cleaned)
+    // Step 18: Copy Marko tags directory to output (after build so it doesn't get cleaned)
     console.log('📦 Copying Marko tags directory...');
     await copyTagsDirectory(process.cwd(), buildResult.outDir, config, debug);
     console.log('   Tags directory copied\n');
@@ -884,6 +889,92 @@ export async function copyThemeCSS(
   if (debug) {
     console.log(`   Copied ${cssFileName} from: ${foundPath}`);
     console.log(`   Output: ${outputPath}`);
+  }
+}
+
+/**
+ * Convert PascalCase to kebab-case
+ * ThemeNavbarEnd -> theme-navbar-end
+ */
+function pascalToKebab(str: string): string {
+  return str
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+    .toLowerCase();
+}
+
+/**
+ * Copy theme components to src/routes/components for <components/xxx> tag resolution
+ * This copies theme tags so they can be used with <components/xxx-name/> syntax
+ * Files are renamed from PascalCase to kebab-case to match tag usage
+ */
+export async function copyThemeComponents(
+  rootDir: string,
+  config: ResolvedConfig,
+  debug: boolean
+): Promise<void> {
+  const themeName = config.theme?.name || '@markopress/theme-default';
+
+  // Security: Validate theme name to prevent path traversal
+  try {
+    validateThemeName(themeName);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Security: ${errorMessage}`);
+  }
+
+  // Theme components should be in dist/tags of the theme package
+  const possiblePaths = [
+    // pnpm workspace: root node_modules
+    path.join(rootDir, '..', 'node_modules', themeName, 'dist', 'tags'),
+    // Local node_modules
+    path.join(rootDir, 'node_modules', themeName, 'dist', 'tags'),
+    // Direct packages path (for monorepo)
+    path.join(rootDir, '..', 'packages', 'theme-default', 'dist', 'tags'),
+  ];
+
+  let themeTagsDir: string | null = null;
+
+  for (const tagsPath of possiblePaths) {
+    try {
+      await fs.access(tagsPath);
+      themeTagsDir = tagsPath;
+      break;
+    } catch {
+      // Try next path
+    }
+  }
+
+  if (!themeTagsDir) {
+    // Theme components directory doesn't exist, skip copying
+    if (debug) {
+      console.log(`   No theme components directory found`);
+    }
+    return;
+  }
+
+  // Create destination directory in src/routes/tags
+  // Marko discovers tags from a tags/ directory
+  const destDir = path.join(rootDir, 'src', 'routes', 'tags');
+  await fs.mkdir(destDir, { recursive: true });
+
+  // Get all .marko files from theme tags directory
+  const files = await fs.readdir(themeTagsDir);
+  const markoFiles = files.filter(f => f.endsWith('.marko'));
+
+  // Copy each .marko file to src/routes/components
+  // Convert PascalCase filenames to kebab-case for tag resolution
+  for (const file of markoFiles) {
+    const srcPath = path.join(themeTagsDir, file);
+    const nameWithoutExt = file.slice(0, -('.marko'.length));
+    const kebabName = pascalToKebab(nameWithoutExt);
+    const destPath = path.join(destDir, kebabName + '.marko');
+    await fs.copyFile(srcPath, destPath);
+  }
+
+  if (debug && markoFiles.length > 0) {
+    console.log(`   Copied ${markoFiles.length} theme component(s) from: ${themeTagsDir}`);
+    console.log(`   Output: ${destDir}`);
   }
 }
 

@@ -3,56 +3,14 @@
  * Subtle progress bar at top of page showing scroll progress
  */
 
-class {
-  onCreate() {
-    this.state = {
-      progress: 0,
-    };
-  }
-
-  onMount() {
-    if (typeof window === 'undefined') return;
-
-    this.updateProgress = () => {
-      if (typeof document === 'undefined') return;
-
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      const scrollTop = window.scrollY;
-      const scrollableHeight = documentHeight - windowHeight;
-
-      this.state.progress = scrollableHeight > 0
-        ? (scrollTop / scrollableHeight) * 100
-        : 0;
-    };
-
-    // Throttled update for performance
-    let ticking = false;
-    this.onScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          this.updateProgress();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener('scroll', this.onScroll, { passive: true });
-    this.updateProgress();
-  }
-
-  onDestroy() {
-    if (this.onScroll) {
-      window.removeEventListener('scroll', this.onScroll);
-    }
-  }
-}
+<let/progress=0/>
 
 <div class="reading-progress">
+  <let/widthStyle=progress + '%'/>
   <div
     class="reading-progress-bar"
-    style={width: state.progress + '%'}></div>
+    style="width: ${widthStyle}">
+  </div>
 </div>
 
 <style>
