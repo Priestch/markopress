@@ -7,7 +7,7 @@
   <if=$global.description>
     <meta name="description" content=$global.description>
   </if>
-  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/_markopress/theme/theme-{{THEME_STYLE}}.css">
   <link rel="stylesheet" href="/_markopress/theme/styles.css">
 </head>
 <body>
@@ -31,21 +31,7 @@
         </if>
 
         <!-- Header Actions -->
-        <theme-navbar-end/>
-
-        <!-- Fallback for theme-navbar-end if not provided -->
-        <div class="navbar-actions" no-adopt>
-          <button class="btn-icon mobile-menu-toggle" aria-label="Toggle menu" onClick() {
-            mobileMenuOpen = !mobileMenuOpen;
-          }>
-            <if=!mobileMenuOpen>
-              <span class="icon-menu">☰</span>
-            </if>
-            <else>
-              <span class="icon-close">✕</span>
-            </else>
-          </button>
-        </div>
+        <theme-navbar-end mobileMenuOpen=mobileMenuOpen setMobileMenuOpen=(v) => { mobileMenuOpen = v; }/>
       </div>
 
       <!-- Mobile Menu -->

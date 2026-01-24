@@ -736,9 +736,13 @@ async function generateRootLayout(
   const navbar = config.theme?.options?.navbar || [];
   const siteTitle = config.site?.title || 'MarkoPress';
 
+  // Get theme style (default, vitepress, or docusaurus)
+  const themeStyle = (config.theme?.options?.style as string) || 'default';
+
   // Generate layout using template file
   const template = await loadTemplate('layout.marko.template', {
     SITE_TITLE: siteTitle,
+    THEME_STYLE: themeStyle,
   });
 
   await fs.writeFile(layoutFile, template);

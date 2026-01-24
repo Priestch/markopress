@@ -134,14 +134,14 @@ function generateTypographyVariables(lines: string[], typography: TypographyToke
  * Generate spacing CSS variables
  */
 function generateSpacingVariables(lines: string[], spacing: SpacingTokens): void {
-  lines.push(`  --spacing-xs: ${spacing.scale.xs};`);
-  lines.push(`  --spacing-sm: ${spacing.scale.sm};`);
-  lines.push(`  --spacing-md: ${spacing.scale.md};`);
-  lines.push(`  --spacing-lg: ${spacing.scale.lg};`);
-  lines.push(`  --spacing-xl: ${spacing.scale.xl};`);
-  lines.push(`  --spacing-2xl: ${spacing.scale['2xl']};`);
-  lines.push(`  --spacing-3xl: ${spacing.scale['3xl']};`);
-  lines.push(`  --spacing-4xl: ${spacing.scale['4xl']};`);
+  lines.push(`  --space-xs: ${spacing.scale.xs};`);
+  lines.push(`  --space-sm: ${spacing.scale.sm};`);
+  lines.push(`  --space-md: ${spacing.scale.md};`);
+  lines.push(`  --space-lg: ${spacing.scale.lg};`);
+  lines.push(`  --space-xl: ${spacing.scale.xl};`);
+  lines.push(`  --space-2xl: ${spacing.scale['2xl']};`);
+  lines.push(`  --space-3xl: ${spacing.scale['3xl']};`);
+  lines.push(`  --space-4xl: ${spacing.scale['4xl']};`);
 }
 
 /**

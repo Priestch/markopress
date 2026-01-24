@@ -18,7 +18,7 @@ export default defineConfig({
   theme: {
     name: '@markopress/theme-default',
     options: {
-      style: 'docusaurus', // or 'docusaurus' or 'default'
+      style: 'vitepress', // or 'docusaurus' or 'default'
       navbar: [
         { text: 'Home', link: '/' },
         { text: 'Features', link: '/features' },
@@ -44,7 +44,7 @@ export default defineConfig({
     },
   },
   markdown: {
-    lineNumbers: false,  // Disable to avoid Shiki HTML parsing issues
+    lineNumbers: true,  // Disable to avoid Shiki HTML parsing issues
     markoTags: {
       enabled: false,  // Temporarily disabled for blog index testing
       tagsDir: '.markopress/tags',

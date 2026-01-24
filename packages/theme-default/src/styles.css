@@ -32,24 +32,24 @@
   --c-danger: #ef4444;
   --c-info: #06b6d4;
 
-  /* Semantic Mappings */
-  --bg-primary: var(--c-white);
-  --bg-secondary: var(--c-gray-50);
-  --bg-tertiary: var(--c-gray-100);
+  /* Semantic Mappings - fallbacks to design system variables */
+  --bg-primary: var(--bg-default, #ffffff);
+  --bg-secondary: var(--bg-alt, #f9fafb);
+  --bg-tertiary: var(--bg-soft, #f3f4f6);
   --bg-code: var(--c-gray-900);
-  --bg-code-inline: var(--c-gray-100);
+  --bg-code-inline: var(--bg-soft, #f3f4f6);
 
-  --text-primary: var(--c-gray-900);
-  --text-secondary: var(--c-gray-600);
-  --text-tertiary: var(--c-gray-500);
+  --text-primary: var(--text-1, #111827);
+  --text-secondary: var(--text-2, #4b5563);
+  --text-tertiary: var(--text-3, #6b7280);
   --text-code: var(--c-gray-100);
   --text-inverse: var(--c-white);
 
-  --border-color: var(--c-gray-200);
-  --border-hover: var(--c-gray-300);
+  --border-color: var(--border-default, #e5e7eb);
+  --border-hover: var(--border-divider, #e5e7eb);
 
-  --accent-primary: var(--c-brand);
-  --accent-hover: var(--c-brand-dark);
+  --accent-primary: var(--color-primary-3);
+  --accent-hover: var(--color-primary-1);
   --accent-bg: rgba(59, 130, 246, 0.1);
 
   /* Shadows */
@@ -113,20 +113,20 @@
 
 /* Dark Mode */
 .dark {
-  --bg-primary: var(--c-gray-900);
-  --bg-secondary: var(--c-gray-800);
-  --bg-tertiary: var(--c-gray-700);
+  --bg-primary: var(--bg-default);
+  --bg-secondary: var(--bg-alt);
+  --bg-tertiary: var(--bg-soft);
   --bg-code: var(--c-gray-950);
-  --bg-code-inline: var(--c-gray-800);
+  --bg-code-inline: var(--bg-soft);
 
-  --text-primary: var(--c-gray-100);
-  --text-secondary: var(--c-gray-400);
-  --text-tertiary: var(--c-gray-500);
+  --text-primary: var(--text-1);
+  --text-secondary: var(--text-2);
+  --text-tertiary: var(--text-3);
   --text-code: var(--c-gray-100);
   --text-inverse: var(--c-gray-900);
 
-  --border-color: var(--c-gray-700);
-  --border-hover: var(--c-gray-600);
+  --border-color: var(--border-default);
+  --border-hover: var(--border-divider);
 
   --accent-bg: rgba(96, 165, 250, 0.15);
 }
@@ -278,6 +278,26 @@ a:hover {
   }
 }
 
+/* Navigation links */
+.nav-link {
+  color: var(--text-2);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.nav-link:hover {
+  color: var(--color-primary-3);
+  background: var(--bg-soft);
+}
+
+.nav-link.active {
+  color: var(--color-primary-3);
+  background: var(--color-primary-soft);
+}
+
 .navbar-actions {
   display: flex;
   align-items: center;
@@ -375,9 +395,53 @@ a:hover {
   color: var(--accent-primary);
 }
 
+/* Sidebar navigation */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+}
+
+.sidebar-link {
+  display: block;
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-2);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  line-height: 1.4;
+  min-height: 36px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.sidebar-link:hover {
+  color: var(--text-1);
+  background: var(--bg-soft);
+}
+
+.sidebar-link.active {
+  color: var(--color-primary-1);
+  background: var(--color-primary-soft);
+  font-weight: var(--font-weight-semibold);
+  border-left: 2px solid var(--color-primary-1);
+  padding-left: calc(var(--space-md) - 2px);
+}
+
 /* ============================================
    MAIN CONTENT
    ============================================ */
+
+.main-wrapper {
+  display: flex;
+  flex: 1;
+  margin-top: var(--navbar-height);
+  min-height: calc(100vh - var(--navbar-height));
+}
 
 .main-content {
   flex: 1;
@@ -385,6 +449,13 @@ a:hover {
   padding: var(--space-xl) var(--space-lg);
   margin-left: 0;
   transition: margin-left var(--transition-base);
+}
+
+@media (min-width: 1024px) {
+  .main-content {
+    max-width: var(--content-max-width);
+    margin: 0 auto;
+  }
 }
 
 .sidebar:not(.collapsed) ~ .main-content {
@@ -633,6 +704,84 @@ pre.line-numbers {
 .code-block pre {
   margin: 0;
   border-radius: 0 0 8px 8px;
+}
+
+/* ============================================
+   DESIGN SYSTEM ACCENTS
+   ============================================ */
+
+/* Selected text */
+::selection {
+  background: var(--color-primary-soft);
+  color: var(--text-1);
+}
+
+/* Primary buttons */
+.btn-primary {
+  background: var(--color-primary-3);
+  color: var(--bg-default);
+  border: none;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-2);
+}
+
+/* Blockquotes */
+blockquote {
+  border-left: 4px solid var(--color-primary-3);
+  padding-left: var(--space-md);
+  color: var(--text-2);
+  margin: var(--space-md) 0;
+}
+
+/* Header anchors */
+a.header-anchor {
+  color: var(--color-primary-3);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+h1:hover a.header-anchor,
+h2:hover a.header-anchor,
+h3:hover a.header-anchor,
+h4:hover a.header-anchor {
+  opacity: 1;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--space-lg) 0;
+}
+
+table th,
+table td {
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+table th {
+  background: var(--color-primary-soft);
+  color: var(--text-1);
+  font-weight: var(--font-weight-semibold);
+}
+
+table tr:hover {
+  background: var(--bg-soft);
+}
+
+/* Focus rings */
+*:focus-visible {
+  outline: 2px solid var(--color-primary-3);
+  outline-offset: 2px;
 }
 
 /* ============================================
