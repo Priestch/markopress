@@ -564,6 +564,10 @@ async function generatePageRoute(
   const description = String(page.processed.frontmatter.description || '');
   const content = page.processed.html || '';
 
+  // Get TOC from pages module enhancement
+  const pagesModule = modules.find(m => m.id === 'pages');
+  const toc = pagesModule?.getEnhancement<Map<string, any>>('toc')?.get(page.urlPath);
+
   // Generate the handler file (+handler.js)
   const handlerFile = path.join(path.dirname(routeDir), '+handler.js');
   const navbar = config.theme?.options?.navbar || [];
@@ -573,6 +577,7 @@ async function generatePageRoute(
   context.description = ${JSON.stringify(description)};
   context.navbar = ${JSON.stringify(navbar)};
   context.content = ${JSON.stringify(content)};
+  context.toc = ${JSON.stringify(toc || [])};
   context.head = ${JSON.stringify(head)};
 }
 `;
@@ -694,6 +699,10 @@ async function generateBlogRoute(
   const author = String(post.processed.frontmatter.author || '');
   const content = post.processed.html || '';
 
+  // Get TOC from blog module enhancement
+  const blogModule = modules.find(m => m.id === 'blog');
+  const toc = blogModule?.getEnhancement<Map<string, any>>('toc')?.get(post.urlPath);
+
   // Generate handler file (+handler.js)
   const handlerFile = path.join(path.dirname(routeDir), '+handler.js');
   const navbar = config.theme?.options?.navbar || [];
@@ -705,6 +714,7 @@ async function generateBlogRoute(
   context.date = ${JSON.stringify(date)};
   context.author = ${JSON.stringify(author)};
   context.content = ${JSON.stringify(content)};
+  context.toc = ${JSON.stringify(toc || [])};
   context.head = ${JSON.stringify(head)};
 }
 `;
@@ -1470,7 +1480,7 @@ export async function generateCatchAllRoutes(
   console.log('   Using catch-all dynamic routes approach...');
 
   // Step 1: Generate content manifest JSON
-  await generateContentManifest(manifest, routesDir, config);
+  await generateContentManifest(manifest, routesDir, config, modules);
   if (debug) console.log('   Generated content-manifest.json');
 
   // Step 2: Generate catch-all routes for each module dynamically

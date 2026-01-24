@@ -99,7 +99,7 @@ function buildTocFromHeaders(
 
   for (const header of filteredHeaders) {
     const item: TocItem = {
-      id: header.id,
+      id: header.slug || header.id,
       text: header.title,
       level: header.level,
     };

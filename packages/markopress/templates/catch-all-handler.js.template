@@ -2,22 +2,27 @@ import manifest from '{{MANIFEST_PATH}}';
 
 export async function GET(context, next) {
   const slug = context.params.slug || 'index';
-  const contentType = '{{CONTENT_TYPE}}'; // 'docs', 'blog', or 'pages'
-  
+  const contentType = '{{CONTENT_TYPE}}'; // 'pages', 'blog', 'guides', etc.
+
   // Look up content from manifest
   const content = manifest[contentType][slug];
-  
+
   if (!content) {
     // Let it fall through to 404
     return next();
   }
-  
+
   // Set context for template
   context.title = content.title;
   context.description = content.description;
   context.content = content.html;
   context.slug = slug;
-  
+
+  // TOC (table of contents) - available for all content types
+  if (content.toc) {
+    context.toc = content.toc;
+  }
+
   // Blog-specific fields
   if (content.date) {
     context.date = content.date;
@@ -28,20 +33,22 @@ export async function GET(context, next) {
   if (content.tags) {
     context.tags = content.tags;
   }
-  
-  // Docs sidebar
-  if (contentType === 'docs') {
+
+  // Sidebar (for docs/guides)
+  if (manifest.sidebar && Object.keys(manifest.sidebar).length > 0) {
     // Determine which sidebar to use based on the path
-    let sidebarKey = '/docs';
+    let sidebarKey = null;
     for (const key of Object.keys(manifest.sidebar)) {
       if (context.url.pathname.startsWith(key)) {
         sidebarKey = key;
         break;
       }
     }
-    context.sidebar = manifest.sidebar[sidebarKey] || [];
+    if (sidebarKey) {
+      context.sidebar = manifest.sidebar[sidebarKey] || [];
+    }
   }
-  
+
   // Navbar
   context.navbar = manifest.navbar || [];
 }

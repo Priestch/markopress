@@ -8,6 +8,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { ContentManifest, ContentFile } from '../content/types.js';
 import type { ResolvedConfig } from '../config/types.js';
+import type { ContentModule } from '../content/module.js';
 
 export interface ContentLookupEntry {
   slug: string;
@@ -17,6 +18,7 @@ export interface ContentLookupEntry {
   date?: string;
   author?: string;
   tags?: string[];
+  toc?: any[]; // Table of contents
   frontmatter: Record<string, unknown>;
 }
 
@@ -42,7 +44,8 @@ export type ContentLookupManifest = ContentLookupManifestBase & Record<string, M
 export async function generateContentManifest(
   manifest: ContentManifest,
   routesDir: string,
-  config: ResolvedConfig
+  config: ResolvedConfig,
+  modules?: any[] // ContentModule[] for accessing TOC enhancements
 ): Promise<void> {
   const lookup: ContentLookupManifest = {
     sidebar: {},
@@ -60,9 +63,13 @@ export async function generateContentManifest(
     const prefix = moduleId === 'pages' ? '/' : `/${moduleId}`;
     const moduleLookup = lookup[moduleId] as Record<string, ContentLookupEntry>;
 
+    // Get the module with enhancements for TOC access
+    const targetModule = modules?.find((m: any) => m.id === moduleId);
+    const tocMap = targetModule?.getEnhancement?.('toc');
+
     for (const file of contentFiles) {
       const slug = getSlug(file.urlPath, prefix);
-      moduleLookup[slug] = createLookupEntry(file);
+      moduleLookup[slug] = createLookupEntry(file, tocMap);
     }
   }
 
@@ -121,11 +128,17 @@ function getSlug(urlPath: string, prefix: string): string {
 /**
  * Create a lookup entry from a content file
  */
-function createLookupEntry(file: ContentFile): ContentLookupEntry {
+function createLookupEntry(
+  file: ContentFile,
+  tocMap?: Map<string, any[]>
+): ContentLookupEntry {
   const { frontmatter } = file.processed;
 
   // Get prefix based on module ID
   const prefix = file.moduleId === 'pages' ? '/' : `/${file.moduleId}`;
+
+  // Get TOC from the map if available
+  const toc = tocMap?.get(file.urlPath);
 
   return {
     slug: getSlug(file.urlPath, prefix),
@@ -135,6 +148,7 @@ function createLookupEntry(file: ContentFile): ContentLookupEntry {
     date: frontmatter.date ? String(frontmatter.date) : undefined,
     author: frontmatter.author ? String(frontmatter.author) : undefined,
     tags: frontmatter.tags ? (Array.isArray(frontmatter.tags) ? frontmatter.tags : [String(frontmatter.tags)]) : undefined,
+    toc,
     frontmatter,
   };
 }

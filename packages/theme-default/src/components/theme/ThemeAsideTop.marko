@@ -4,7 +4,77 @@
   Perfect for: "On this page" title, page status, etc.
 -->
 
-<!-- Default: Empty - users can add custom content -->
 <div class="theme-aside-top">
-  <!-- User override content goes here -->
+  <if=input.toc && input.toc.length > 0>
+    <div class="table-of-contents">
+      <div class="toc-title">On this page</div>
+      <ul class="toc-list">
+        <for|item| of=input.toc>
+          <theme-toc-item item=item/>
+        </for>
+      </ul>
+    </div>
+  </if>
 </div>
+
+<style>
+  .table-of-contents {
+    padding: var(--space-md, 1rem);
+    border-bottom: 1px solid var(--border-default, #e5e7eb);
+  }
+
+  .toc-title {
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--text-2, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-sm, 0.5rem);
+  }
+
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .toc-list li {
+    margin: 0;
+  }
+
+  .toc-link {
+    display: block;
+    padding: var(--space-xs, 0.25rem) 0;
+    color: var(--text-2, #4b5563);
+    text-decoration: none;
+    font-size: var(--font-size-sm, 0.875rem);
+    line-height: 1.5;
+    border-left: 2px solid transparent;
+    padding-left: var(--space-sm, 0.5rem);
+    transition: all var(--transition-fast, 0.15s ease);
+  }
+
+  .toc-link:hover {
+    color: var(--color-primary-3, #3b82f6);
+    border-left-color: var(--color-primary-3, #3b82f6);
+  }
+
+  .toc-link.active {
+    color: var(--color-primary-3, #3b82f6);
+    border-left-color: var(--color-primary-3, #3b82f6);
+    font-weight: var(--font-weight-medium, 500);
+  }
+
+  /* Nested levels - use toc-list--nested for indentation */
+  .toc-list--nested {
+    margin-left: var(--space-md, 1rem);
+  }
+
+  .toc-list--nested .toc-link {
+    font-size: var(--font-size-xs, 0.75rem);
+  }
+
+  .toc-list--nested .toc-list--nested {
+    margin-left: var(--space-sm, 0.5rem);
+  }
+</style>

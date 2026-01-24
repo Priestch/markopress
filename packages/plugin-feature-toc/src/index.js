@@ -8,7 +8,7 @@
  * Create TOC plugin
  */
 export default function tocPlugin(options = {}) {
-  const { minDepth = 2, maxDepth = 3 } = options;
+  const { minDepth = 1, maxDepth = 3 } = options;
 
   return {
     name: '@markopress/plugin-feature-toc',
@@ -36,12 +36,37 @@ export default function tocPlugin(options = {}) {
 }
 
 /**
+ * Strip markdown link syntax from text
+ * Converts [text](url) -> text
+ */
+function stripMarkdownLinks(text) {
+  if (!text) return text;
+  // Match [text](url) pattern and replace with just text
+  return text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+}
+
+/**
  * Build TOC from markdown headers
  * Returns a hierarchical structure with nested children
  */
 function buildTocFromHeaders(headers, minDepth, maxDepth) {
+  // Headers are stored as a tree (h1 -> h2 children -> h3 children)
+  // We need to flatten the tree to get all headers
+  const flatHeaders = [];
+
+  function flattenTree(nodes) {
+    for (const node of nodes) {
+      flatHeaders.push(node);
+      if (node.children && node.children.length > 0) {
+        flattenTree(node.children);
+      }
+    }
+  }
+
+  flattenTree(headers);
+
   // Filter headers by depth
-  const filteredHeaders = headers.filter(h => h.level >= minDepth && h.level <= maxDepth);
+  const filteredHeaders = flatHeaders.filter(h => h.level >= minDepth && h.level <= maxDepth);
 
   if (filteredHeaders.length === 0) {
     return [];
@@ -53,8 +78,8 @@ function buildTocFromHeaders(headers, minDepth, maxDepth) {
 
   for (const header of filteredHeaders) {
     const item = {
-      id: header.id,
-      text: header.title,
+      id: header.slug || header.id,
+      text: stripMarkdownLinks(header.title),
       level: header.level,
     };
 
