@@ -755,10 +755,10 @@ Need ideas? Check out these themes:
 
 Now that you've mastered theming:
 
-- 🎨 Create custom [components](/docs/interactive-components)
-- 🔌 Build theme [plugins](/docs/plugins)
-- 📖 Read full [theme documentation](/docs/theming)
-- 🚀 [Deploy](/docs/deployment) your custom site
+- 🎨 Create custom [components](/guides/interactive-components)
+- 🔌 Build theme [plugins](/guides/plugins)
+- 📖 Read full [theme documentation](/guides/theming)
+- 🚀 [Deploy](/guides/deployment) your custom site
 
 ---
 

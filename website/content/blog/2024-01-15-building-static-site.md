@@ -71,7 +71,7 @@ my-site/
 │   ├── pages/             # → /route
 │   │   ├── index.md       # Homepage
 │   │   └── about.md       # About page
-│   ├── docs/              # → /docs/route
+│   ├── docs/              # → /guides/route
 │   │   └── intro.md       # Documentation
 │   └── blog/              # → /blog/route
 │       └── first-post.md  # Blog post
@@ -142,7 +142,7 @@ Create documentation with automatic sidebar navigation.
 
 ### Create a Doc File
 
-Create `content/docs/getting-started.md`:
+Create `content/guides/getting-started.md`:
 
 ```markdown
 ---
@@ -187,11 +187,11 @@ Edit `markopress.config.ts`:
 export default defineConfig({
   themeConfig: {
     sidebar: {
-      '/docs/': [
+      '/guides/': [
         {
           text: 'Guide',
           items: [
-            { text: 'Getting Started', link: '/docs/getting-started' },
+            { text: 'Getting Started', link: '/guides/getting-started' },
           ],
         },
       ],
@@ -344,18 +344,18 @@ export default defineConfig({
   themeConfig: {
     navbar: [
       { text: 'Home', link: '/' },
-      { text: 'Docs', link: '/docs/getting-started' },
+      { text: 'Docs', link: '/guides/getting-started' },
       { text: 'Blog', link: '/blog' },
       { text: 'About', link: '/about' },
     ],
 
     sidebar: {
-      '/docs/': [
+      '/guides/': [
         {
           text: 'Getting Started',
           items: [
-            { text: 'Introduction', link: '/docs/getting-started' },
-            { text: 'Installation', link: '/docs/installation' },
+            { text: 'Introduction', link: '/guides/getting-started' },
+            { text: 'Installation', link: '/guides/installation' },
           ],
         },
       ],
@@ -471,10 +471,10 @@ Congratulations! You've built and deployed your first MarkoPress site! 🎉
 
 ### Continue Learning
 
-- 📖 [Configuration Guide](/docs/configuration)
-- 🎨 [Theming Guide](/docs/theming)
-- 🔌 [Plugin Development](/docs/plugins)
-- 🚀 [Deployment Guide](/docs/deployment)
+- 📖 [Configuration Guide](/guides/configuration)
+- 🎨 [Theming Guide](/guides/theming)
+- 🔌 [Plugin Development](/guides/plugins)
+- 🚀 [Deployment Guide](/guides/deployment)
 
 ### Add More Features
 
@@ -530,7 +530,7 @@ Make sure your `.markopress/theme/styles.css` file is in the correct location an
 ### Pages Not Showing
 
 Check that:
-- Files are in the correct directories (`content/pages/`, `content/docs/`, `content/blog/`)
+- Files are in the correct directories (`content/pages/`, `content/guides/`, `content/blog/`)
 - Files have valid frontmatter (title, description)
 - File paths in config match actual file locations
 
@@ -548,7 +548,7 @@ Your site is now live and ready to share with the world!
 
 ## Resources
 
-- [Documentation](/docs/getting-started)
+- [Documentation](/guides/getting-started)
 - [GitHub](https://github.com/markopress/markopress)
 - [Discord Community](https://discord.gg/markopress)
 - [Examples](https://github.com/markopress/examples)

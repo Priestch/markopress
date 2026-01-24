@@ -114,8 +114,8 @@ MarkoPress includes a flexible theming system with:
 Check out these links to see the features in action:
 
 - **[Blog Index](/blog)** - See the auto-generated blog listing
-- **[Documentation](/docs/getting-started)** - Explore docs with sidebar and TOC
-- **[Plugins Guide](/docs/plugins)** - Learn how to create your own plugins
+- **[Documentation](/guides/getting-started)** - Explore docs with sidebar and TOC
+- **[Plugins Guide](/guides/plugins)** - Learn how to create your own plugins
 
 ---
 

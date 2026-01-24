@@ -35,7 +35,7 @@ Perfect for personal projects, blogs, and portfolios.
 - Documentation (small projects)
 - Learning and experimentation
 
-[Get Started Free →](./docs/getting-started)
+[Get Started Free →](./guides/getting-started)
 
 ---
 
@@ -63,7 +63,7 @@ For professionals and growing teams.
 - Team documentation
 - Client projects
 
-[Start 14-Day Free Trial →](./docs/getting-started)
+[Start 14-Day Free Trial →](./guides/getting-started)
 
 ---
 
@@ -200,7 +200,7 @@ MarkoPress is GDPR compliant. We don't track users or collect personal data. You
 
 **Migrating from VitePress?**
 
-Your VitePress content is fully compatible! Use our [migration guide](./docs/migration) to switch in minutes.
+Your VitePress content is fully compatible! Use our [migration guide](./guides/migration) to switch in minutes.
 
 ```bash
 npx @markopress/migrate@latest from-vitepress
@@ -222,7 +222,7 @@ Our team can help with custom migrations. Contact us at [migration@markopress.de
 
 Try Pro risk-free for 14 days. If you're not completely satisfied, we'll refund your money—no questions asked.
 
-[Start Free Trial →](./docs/getting-started)
+[Start Free Trial →](./guides/getting-started)
 
 ## Student & Open Source
 
@@ -271,7 +271,7 @@ Looking to deploy multiple sites? We offer volume discounts:
 Choose the plan that works for you and start building today.
 
 **Still have questions?**
-- 📖 Read our [documentation](./docs/getting-started)
+- 📖 Read our [documentation](./guides/getting-started)
 - 💬 Join our [Discord community](https://discord.gg/markopress)
 - 📧 [Contact support](mailto:support@markopress.dev)
 

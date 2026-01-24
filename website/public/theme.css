@@ -870,7 +870,7 @@ a {
 
 /* Active nav link highlight */
 .nav-link.active,
-.nav-link[href*="/docs/"] {
+.nav-link[href*="/guides/"] {
   color: var(--color-primary-3, #3b82f6);
   font-weight: var(--font-weight-semibold, 600);
 }

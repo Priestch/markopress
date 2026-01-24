@@ -65,9 +65,9 @@ npm run dev
 Check out our documentation and examples:
 
 - **[Features Demo](/features)** - See all features in action
-- **[Documentation](/docs/getting-started)** - Get started guide
+- **[Documentation](/guides/getting-started)** - Get started guide
 - **[Blog](/blog)** - Latest updates and tutorials
-- **[Plugins](/docs/plugins)** - Create custom plugins
+- **[Plugins](/guides/plugins)** - Create custom plugins
 
 ## 🎨 Theming
 
@@ -78,10 +78,10 @@ Customize every aspect of your site:
 export default {
   theme: {
     options: {
-      sidebar: '/docs/**',
+      sidebar: '/guides/**',
       navbar: [
         { text: 'Home', link: '/' },
-        { text: 'Docs', link: '/docs/getting-started' },
+        { text: 'Guides', link: '/guides/getting-started' },
         { text: 'Blog', link: '/blog' },
       ]
     }

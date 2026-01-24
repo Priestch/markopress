@@ -43,8 +43,8 @@ Your content structure automatically becomes your site structure:
 content/
 ├── pages/
 │   └── index.md        → /
-├── docs/
-│   └── guide.md        → /docs/guide
+├── guides/
+│   └── guide.md        → /guides/guide
 └── blog/
     └── 2024-01-11.md   → /blog/2024-01-11
 ```

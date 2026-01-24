@@ -751,9 +751,9 @@ Your blog is now ready! Here's what to do next:
 
 ## Continue Learning
 
-- 📖 [Theming Guide](/docs/theming)
-- 🔌 [Plugin Development](/docs/plugins)
-- 🚀 [Deployment Guide](/docs/deployment)
+- 📖 [Theming Guide](/guides/theming)
+- 🔌 [Plugin Development](/guides/plugins)
+- 🚀 [Deployment Guide](/guides/deployment)
 - 📊 [SEO Best Practices](/blog/2024-03-02-seo-optimization)
 
 ---

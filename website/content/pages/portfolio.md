@@ -249,9 +249,9 @@ Join thousands of developers building with MarkoPress:
 
 ### Support
 
-- 📖 [Getting Started](./docs/getting-started)
-- 🎨 [Theming Guide](./docs/theming)
-- 🔌 [Plugin Development](./docs/plugins)
+- 📖 [Getting Started](./guides/getting-started)
+- 🎨 [Theming Guide](./guides/theming)
+- 🔌 [Plugin Development](./guides/plugins)
 - 💬 [Discord](https://discord.gg/markopress)
 - 🐛 [GitHub Issues](https://github.com/markopress/markopress/issues)
 
@@ -281,7 +281,7 @@ We're looking for:
 
 ## Explore More
 
-- 📖 [Documentation](./docs/getting-started)
+- 📖 [Documentation](./guides/getting-started)
 - 🎨 [Theme Gallery](./themes)
 - 🔌 [Plugin Directory](./plugins)
 - 💬 [Community](https://discord.gg/markopress)

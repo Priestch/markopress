@@ -342,7 +342,7 @@ Everything you need to build professional-grade static sites with MarkoPress.
         <li>✅ Basic themes</li>
         <li>✅ Community support</li>
       </ul>
-      <a href="/docs/getting-started" class="pricing-cta">Get Started</a>
+      <a href="/guides/getting-started" class="pricing-cta">Get Started</a>
     </div>
 
     <div class="pricing-card popular">
@@ -449,7 +449,7 @@ Everything you need to build professional-grade static sites with MarkoPress.
 <div class="cta-section">
   <h2>Join 5,000+ developers building with MarkoPress</h2>
   <p style="margin: 2rem 0;">Start building faster, better sites today.</p>
-  <a href="/docs/getting-started" style="display: inline-block; padding: 1rem 2.5rem; background: var(--accent-color); color: var(--text-inverted); text-decoration: none; border-radius: 8px; font-weight: 600;">Get Started Free →</a>
+  <a href="/guides/getting-started" style="display: inline-block; padding: 1rem 2.5rem; background: var(--accent-color); color: var(--text-inverted); text-decoration: none; border-radius: 8px; font-weight: 600;">Get Started Free →</a>
 </div>
 
 ---
