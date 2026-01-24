@@ -38,11 +38,8 @@ export interface ContentScannerOptions {
 
 /**
  * Content manifest - dynamic module-based structure
+ * Each key is a module ID pointing to its content files
  */
-export interface ContentManifest {
-  // Dynamic modules - keyed by module ID (e.g., 'pages', 'docs', 'blog', 'guides', 'tutorials', etc.)
-  [moduleId: string]: ContentFile[] | Record<string, ContentFile[]> | undefined;
-
-  // All content across all modules (for backward compatibility)
-  all?: ContentFile[];
+export interface ContentManifest extends Record<string, ContentFile[]> {
+  // No special keys - all keys are module IDs
 }

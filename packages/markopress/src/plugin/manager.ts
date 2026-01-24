@@ -7,7 +7,6 @@ import type {
   MarkoPressPlugin,
   PluginConfig,
   PluginContext,
-  ContentContext,
   BuildContext,
   ContentManifest,
   RouteManifest,
@@ -325,18 +324,9 @@ export class PluginManager {
 
   /**
    * Execute contentLoaded hooks with enhanced context
-   * Merges manifest into allContent for backward compatibility
    */
   async execContentLoadedHooks(manifest?: ContentManifest): Promise<void> {
-    // For backward compatibility, merge manifest into allContent
-    if (manifest) {
-      this.allContent.addPluginContent('core', {
-        pages: manifest.pages as any,
-        docs: manifest.docs as any,
-        blog: manifest.blog as any,
-      });
-    }
-
+    // No need to merge manifest - plugins work directly with dynamic modules
     for (const plugin of this.plugins) {
       if (plugin.contentLoaded) {
         try {
@@ -383,14 +373,13 @@ export class PluginManager {
 
   /**
    * Execute postBuild hooks on all plugins
-   * Also supports deprecated afterBuild hook
    */
   async execPostBuildHooks(
     outDir: string,
     routes: RouteManifest,
     assets: string[]
   ): Promise<void> {
-    // Execute new postBuild hooks
+    // Execute postBuild hooks
     for (const plugin of this.plugins) {
       if (plugin.postBuild) {
         try {
@@ -403,25 +392,6 @@ export class PluginManager {
         } catch (error) {
           console.error(
             `Plugin ${plugin.name} postBuild hook failed:`,
-            error
-          );
-        }
-      }
-    }
-
-    // Support deprecated afterBuild hook
-    for (const plugin of this.plugins) {
-      if (plugin.afterBuild) {
-        try {
-          const buildContext = this.createBuildContext(
-            // Convert AllContent to ContentManifest for compatibility
-            this.allContentToManifest(),
-            routes
-          );
-          await plugin.afterBuild(buildContext);
-        } catch (error) {
-          console.error(
-            `Plugin ${plugin.name} afterBuild hook failed:`,
             error
           );
         }
@@ -444,22 +414,6 @@ export class PluginManager {
   }
 
   /**
-   * Convert AllContent to ContentManifest for backward compatibility
-   */
-  private allContentToManifest(): ContentManifest {
-    return {
-      pages: this.allContent.getPages() as any,
-      docs: this.allContent.getDocs() as any,
-      blog: this.allContent.getPosts() as any,
-      all: [
-        ...this.allContent.getPages(),
-        ...this.allContent.getDocs(),
-        ...this.allContent.getPosts(),
-      ] as any,
-    };
-  }
-
-  /**
    * Clear plugin state
    */
   clear(): void {
@@ -478,29 +432,6 @@ export class PluginManager {
         warn: (msg: string) => console.warn(`[markopress] ${msg}`),
         error: (msg: string) => console.error(`[markopress] ${msg}`),
       },
-    };
-  }
-
-  /**
-   * Create content context
-   */
-  createContentContext(manifest: ContentManifest): ContentContext {
-    const baseContext = this.createPluginContext();
-
-    // Ensure pages and blog arrays exist for backward compatibility
-    if (!manifest.pages) manifest.pages = [];
-    if (!manifest.blog) manifest.blog = [];
-
-    return {
-      ...baseContext,
-      addPage: (page: ContentFile) => {
-        (manifest.pages as ContentFile[]).push(page);
-      },
-      addPost: (post: ContentFile) => {
-        (manifest.blog as ContentFile[]).push(post);
-      },
-      getPages: () => manifest.pages as ContentFile[],
-      getPosts: () => manifest.blog as ContentFile[],
     };
   }
 

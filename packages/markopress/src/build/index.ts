@@ -255,45 +255,14 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 /**
  * Convert content modules to dynamic manifest
  * Each module becomes a top-level key in the manifest
- * Also provides backward-compatible pages/docs/blog collections
  */
 export function modulesToManifest(modules: ContentModule[]): ContentManifest {
-  const manifest: ContentManifest = {
-    all: [],
-  };
-
-  // Backward compatibility collections
-  const pages: ContentFile[] = [];
-  const docs: ContentFile[] = [];
-  const blog: ContentFile[] = [];
+  const manifest: ContentManifest = {} as ContentManifest;
 
   for (const module of modules) {
     // Add module files directly to manifest under module ID
     manifest[module.id] = module.files;
-
-    // Add all files to the 'all' collection
-    for (const file of module.files) {
-      manifest.all!.push(file);
-
-      // Map module ID to legacy manifest collections for backward compatibility:
-      // - 'pages' module -> pages collection
-      // - 'blog' module -> blog collection
-      // - Everything else (guides, docs, etc.) -> docs collection
-      if (module.id === 'pages') {
-        pages.push(file);
-      } else if (module.id === 'blog') {
-        blog.push(file);
-      } else {
-        // All other modules (docs, guides, etc.) go to docs collection
-        docs.push(file);
-      }
-    }
   }
-
-  // Add backward compatibility collections
-  if (pages.length > 0) manifest.pages = pages;
-  if (docs.length > 0) manifest.docs = docs;
-  if (blog.length > 0) manifest.blog = blog;
 
   return manifest;
 }
@@ -403,7 +372,7 @@ export async function generateRoutes(
 
   // Generate routes for each module dynamically
   for (const [moduleId, files] of Object.entries(manifest)) {
-    // Skip non-array entries (like 'all' collection)
+    // Skip non-array entries
     if (!Array.isArray(files)) continue;
 
     moduleIds.push(moduleId);
@@ -467,9 +436,9 @@ export async function cleanupGeneratedRoutes(
   ];
 
   // Build dynamic managed prefixes from manifest
-  // Skip 'pages' (root-level) and 'all' (meta-collection)
+  // Skip 'pages' (root-level, no directory prefix)
   const MANAGED_PREFIXES = Object.keys(manifest)
-    .filter(key => key !== 'pages' && key !== 'all')
+    .filter(key => key !== 'pages')
     .map(key => `${key}/`);
 
   try {
@@ -1478,7 +1447,7 @@ export async function generateCatchAllRoutes(
 
   // Step 2: Generate catch-all routes for each module dynamically
   for (const [moduleId, files] of Object.entries(manifest)) {
-    // Skip non-array entries (like 'all' collection)
+    // Skip non-array entries
     if (!Array.isArray(files)) continue;
 
     const contentFiles = files as ContentFile[];

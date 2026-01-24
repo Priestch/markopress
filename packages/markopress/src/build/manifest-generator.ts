@@ -20,12 +20,20 @@ export interface ContentLookupEntry {
   frontmatter: Record<string, unknown>;
 }
 
-// Use a type instead of interface to avoid index signature conflicts
-export type ContentLookupManifest = {
-  // Sidebar and navbar (global)
-  sidebar: Record<string, Array<{ text: string; link: string }>>;
-  navbar: Array<{ text: string; link: string }>;
-} & Record<string, Record<string, ContentLookupEntry> | Array<{ text: string; link: string }> | undefined>;
+// Content lookup manifest - JSON structure for catch-all routes
+// Use Record with explicit union type for all values
+type ModuleLookupEntry = Record<string, ContentLookupEntry>;
+type SidebarConfig = Record<string, Array<{ text: string; link: string }>>;
+type NavbarConfig = Array<{ text: string; link: string }>;
+
+// Base interface for known keys
+interface ContentLookupManifestBase {
+  sidebar: SidebarConfig;
+  navbar: NavbarConfig;
+}
+
+// Combine with dynamic keys using Record
+export type ContentLookupManifest = ContentLookupManifestBase & Record<string, ModuleLookupEntry | SidebarConfig | NavbarConfig>;
 
 /**
  * Generate a content manifest JSON file for dynamic route lookup
@@ -43,10 +51,7 @@ export async function generateContentManifest(
 
   // Process all modules dynamically
   for (const [moduleId, files] of Object.entries(manifest)) {
-    // Skip non-array entries (like 'all' collection)
-    if (!Array.isArray(files)) continue;
-
-    const contentFiles = files as ContentFile[];
+    const contentFiles = files;
 
     // Initialize the module's collection
     lookup[moduleId] = {} as Record<string, ContentLookupEntry>;
@@ -70,8 +75,7 @@ export async function generateContentManifest(
       const sidebarFiles: ContentFile[] = [];
 
       for (const [moduleId, files] of Object.entries(manifest)) {
-        if (!Array.isArray(files)) continue;
-        for (const file of files as ContentFile[]) {
+        for (const file of files) {
           if (file.urlPath.startsWith(prefix)) {
             sidebarFiles.push(file);
           }

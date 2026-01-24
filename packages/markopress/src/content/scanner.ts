@@ -17,9 +17,7 @@ import { parseMarkdown } from '../markdown/index.js';
  */
 export async function scanContent(options: ContentScannerOptions): Promise<ContentManifest> {
   const { dirs, rootDir, markdownOptions } = options;
-  const manifest: ContentManifest = {
-    all: [],
-  };
+  const manifest: ContentManifest = {} as ContentManifest;
 
   // Scan ALL configured directories dynamically
   for (const [moduleId, dirPath] of Object.entries(dirs)) {
@@ -29,7 +27,6 @@ export async function scanContent(options: ContentScannerOptions): Promise<Conte
     const fileType = getFileType(moduleId);
     const files = await scanDirectory(dirPath, rootDir, markdownOptions, moduleId, fileType);
     manifest[moduleId] = files;
-    manifest.all!.push(...files);
   }
 
   return manifest;
