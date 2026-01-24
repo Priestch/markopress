@@ -7,12 +7,12 @@ import fs from 'node:fs/promises';
 import fastGlob from 'fast-glob';
 import type MarkdownIt from 'markdown-it';
 import pLimit from 'p-limit';
+import type { ContentType, ContentFile, ContentScannerOptions, ContentManifest } from './types.js';
 
 /**
  * Concurrency limiter type (p-limit returns this)
  */
 type Limit = <T>(fn: () => Promise<T>) => Promise<T>;
-import type { ContentType, ContentFile, ContentScannerOptions, ContentManifest } from './types.js';
 import type { MarkdownOptions } from '../markdown/types.js';
 import type { ContentModule, ModuleMetadata } from './module.js';
 import { createContentModule } from './module.js';
@@ -165,21 +165,29 @@ async function scanDirectory(
         sharedContext.limit(async () => {
           const content = await fs.readFile(filePath, 'utf-8');
 
-          // Lazy-load MarkdownIt once across all files
-          if (!sharedContext.md) {
-            if (!sharedContext.mdPromise) {
-              sharedContext.mdPromise = import('../markdown/index.js').then(
-                (m) => m.getMarkdownIt(markdownOptions, { rootDir, filePath })
-              );
+          // When markoTags are enabled, we cannot share MarkdownIt because
+          // the tag validator needs the correct filePath for each file
+          const shouldShareMd = !markdownOptions?.markoTags?.enabled;
+
+          let sharedMd: MarkdownIt | undefined;
+          if (shouldShareMd) {
+            // Lazy-load MarkdownIt once across all files
+            if (!sharedContext.md) {
+              if (!sharedContext.mdPromise) {
+                sharedContext.mdPromise = import('../markdown/index.js').then(
+                  (m) => m.getMarkdownIt(markdownOptions, { rootDir, filePath })
+                );
+              }
+              sharedContext.md = await sharedContext.mdPromise;
             }
-            sharedContext.md = await sharedContext.mdPromise;
+            sharedMd = sharedContext.md;
           }
 
           const processed = await parseMarkdown(
             content,
             markdownOptions,
             { rootDir, filePath },
-            sharedContext.md
+            sharedMd
           );
 
           // Skip draft posts
