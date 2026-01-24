@@ -582,56 +582,57 @@ a:hover {
 }
 
 /* ============================================
-   CODE BLOCKS
+   CODE BLOCKS - VitePress Style
    ============================================ */
 
 /* Inline code */
 :not(pre) > code {
-  padding: var(--space-xs) var(--space-sm);
-  background: var(--bg-code-inline);
+  padding: 3px 6px;
+  background: rgba(142, 150, 170, 0.14);
   color: var(--accent-primary);
   font-family: var(--font-mono);
   font-size: 0.875em;
-  border-radius: var(--radius-sm);
+  border-radius: 4px;
+  transition: color 0.25s, background-color 0.5s;
 }
 
-/* Code blocks */
+/* Code blocks - VitePress style */
 pre {
   position: relative;
-  margin: var(--space-lg) 0;
-  padding: var(--space-lg);
-  background: var(--bg-code);
-  color: var(--text-code);
+  margin: 16px 0;
+  padding: 20px 24px;
+  background: var(--bg-alt);
+  color: var(--text-secondary);
   font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  line-height: var(--leading-relaxed);
+  font-size: 0.875em;
+  line-height: 1.7;
   overflow-x: auto;
-  border-radius: var(--radius-lg);
+  border-radius: 8px;
 }
 
 pre.line-numbers {
-  padding-left: calc(var(--space-lg) + 3rem);
+  padding-left: calc(24px + 3rem);
 }
 
 /* Code title */
 .code-block {
-  margin: var(--space-lg) 0;
+  margin: 16px 0;
 }
 
 .code-title {
-  padding: var(--space-sm) var(--space-md);
-  background: var(--bg-code);
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-alt);
   color: var(--text-secondary);
-  font-size: var(--text-xs);
+  font-size: 12px;
   font-family: var(--font-mono);
   border: 1px solid var(--border-color);
   border-bottom: none;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: 8px 8px 0 0;
 }
 
 .code-block pre {
   margin: 0;
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  border-radius: 0 0 8px 8px;
 }
 
 /* ============================================

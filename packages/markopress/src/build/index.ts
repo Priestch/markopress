@@ -889,6 +889,30 @@ export async function copyThemeCSS(
     console.log(`   Copied ${cssFileName} from: ${foundPath}`);
     console.log(`   Output: ${outputPath}`);
   }
+
+  // Also copy the component styles (styles.css) from the theme package
+  const stylesCSSFileName = 'styles.css';
+  const stylesPossiblePaths = [
+    path.join(rootDir, '..', 'node_modules', themeName, 'src', stylesCSSFileName),
+    path.join(rootDir, 'node_modules', themeName, 'src', stylesCSSFileName),
+    path.join(rootDir, '..', 'packages', 'theme-default', 'src', stylesCSSFileName),
+  ];
+
+  for (const cssPath of stylesPossiblePaths) {
+    try {
+      await fs.access(cssPath);
+      const stylesCSS = await fs.readFile(cssPath, 'utf-8');
+      const stylesOutputPath = path.join(themeDir, stylesCSSFileName);
+      await fs.writeFile(stylesOutputPath, stylesCSS);
+      if (debug) {
+        console.log(`   Copied ${stylesCSSFileName} from: ${cssPath}`);
+        console.log(`   Output: ${stylesOutputPath}`);
+      }
+      break;
+    } catch {
+      // Try next path
+    }
+  }
 }
 
 /**

@@ -8,6 +8,7 @@
     <meta name="description" content=$global.description>
   </if>
   <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/_markopress/theme/styles.css">
 </head>
 <body>
   <let/mobileMenuOpen=false/>

@@ -744,59 +744,6 @@ a:hover {
 }
 
 /* ============================================
-   CODE BLOCKS
-   ============================================ */
-
-/* Inline code */
-:not(pre) > code {
-  padding: var(--space-xs) var(--space-sm);
-  background: var(--bg-code-inline);
-  color: var(--color-primary-3);
-  font-family: var(--font-mono);
-  font-size: 0.875em;
-  border-radius: var(--radius-sm);
-}
-
-/* Code blocks */
-pre {
-  position: relative;
-  margin: var(--space-lg) 0;
-  padding: var(--space-lg);
-  background: var(--bg-code);
-  color: var(--text-code);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-sm);
-  line-height: var(--leading-relaxed);
-  overflow-x: auto;
-  border-radius: var(--radius-lg);
-}
-
-pre.line-numbers {
-  padding-left: calc(var(--space-lg) + 3rem);
-}
-
-/* Code title */
-.code-block {
-  margin: var(--space-lg) 0;
-}
-
-.code-title {
-  padding: var(--space-sm) var(--space-md);
-  background: var(--bg-code);
-  color: var(--text-2);
-  font-size: var(--font-size-xs);
-  font-family: var(--font-mono);
-  border: 1px solid var(--border-default);
-  border-bottom: none;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-}
-
-.code-block pre {
-  margin: 0;
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-}
-
-/* ============================================
    RESPONSIVE DESIGN
    ============================================ */
 
@@ -889,11 +836,6 @@ a {
 
 .btn-primary:hover {
   background: var(--color-primary-2, #2563eb);
-}
-
-/* Code blocks get primary tint */
-pre {
-  border-left: 3px solid var(--color-primary-3, #3b82f6);
 }
 
 /* Blockquotes */
