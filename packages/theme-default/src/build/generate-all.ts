@@ -3,7 +3,7 @@
  * Generates all theme CSS variants from design systems
  */
 
-import { writeFile, mkdir, copyFile } from 'fs/promises';
+import { writeFile, mkdir, copyFile, readFile } from 'fs/promises';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { readdir } from 'fs/promises';
@@ -69,11 +69,18 @@ export async function generateAllThemes() {
 
   console.log('Generating theme CSS files...\n');
 
+  // Read the component styles (includes line numbers, code blocks, etc.)
+  const stylesCssPath = resolve(__dirname, '../../src/styles.css');
+  const componentStyles = await readFile(stylesCssPath, 'utf-8');
+
   for (const style of styles) {
     const system = designSystems[style];
     const css = generateThemeCSS(system);
     const outputPath = resolve(publicDir, `theme-${style}.css`);
-    await writeFile(outputPath, css, 'utf-8');
+
+    // Combine design system CSS + component styles
+    const fullCss = `${css}\n\n/* Component Styles */\n${componentStyles}`;
+    await writeFile(outputPath, fullCss, 'utf-8');
     console.log(`✓ Generated theme-${style}.css`);
   }
 
