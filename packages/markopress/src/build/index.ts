@@ -6,7 +6,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { scanContent, scanContentModules } from '../content/scanner.js';
+import pLimit from 'p-limit';
+import { scanContent, scanContentModules, type ScanContext } from '../content/scanner.js';
 import { loadConfig } from '../config/loader.js';
 import type { ContentManifest, ContentFile } from '../content/types.js';
 import type { ContentModule } from '../content/module.js';
@@ -58,13 +59,20 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       console.log('   Plugin content loaded\n');
     }
 
-    // Step 3: Scan content modules (NEW APPROACH)
+    // Step 3: Scan content modules with parallel processing
     console.log('📂 Scanning content modules...');
-    const modules = await scanContentModules({
-      rootDir: process.cwd(),
-      dirs: config.content,
-      markdownOptions: config.markdown,
-    });
+    const scanContext: ScanContext = {
+      limit: pLimit(50), // Process up to 50 files concurrently
+      md: null,
+    };
+    const modules = await scanContentModules(
+      {
+        rootDir: process.cwd(),
+        dirs: config.content,
+        markdownOptions: config.markdown,
+      },
+      scanContext
+    );
 
     // Log module information
     for (const module of modules) {

@@ -5,11 +5,30 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import fastGlob from 'fast-glob';
+import type MarkdownIt from 'markdown-it';
+import pLimit from 'p-limit';
 import type { ContentType, ContentFile, ContentScannerOptions, ContentManifest } from './types.js';
+
+/**
+ * Concurrency limiter type (p-limit returns this)
+ */
+type Limit = <T>(fn: () => Promise<T>) => Promise<T>;
 import type { MarkdownOptions } from '../markdown/types.js';
 import type { ContentModule, ModuleMetadata } from './module.js';
 import { createContentModule } from './module.js';
 import { parseMarkdown } from '../markdown/index.js';
+
+/**
+ * Shared context for parallel content scanning
+ */
+export interface ScanContext {
+  /** Concurrency limiter shared across all directories */
+  limit: Limit;
+  /** Shared MarkdownIt instance (lazy-loaded) */
+  md: MarkdownIt | null;
+  /** Promise for MarkdownIt creation (prevents race conditions) */
+  mdPromise?: Promise<MarkdownIt>;
+}
 
 /**
  * Scan content directories for markdown files
@@ -48,7 +67,10 @@ function getFileType(moduleId: string): 'page' | 'doc' | 'blog' | 'custom' {
  * New module-based scanning approach. Each configured content directory
  * becomes a module that plugins can enhance.
  */
-export async function scanContentModules(options: ContentScannerOptions): Promise<ContentModule[]> {
+export async function scanContentModules(
+  options: ContentScannerOptions,
+  sharedContext?: ScanContext
+): Promise<ContentModule[]> {
   const { dirs, rootDir, markdownOptions } = options;
   const modules: ContentModule[] = [];
 
@@ -56,7 +78,7 @@ export async function scanContentModules(options: ContentScannerOptions): Promis
   for (const [key, dirPath] of Object.entries(dirs)) {
     if (!dirPath) continue;
 
-    const files = await scanDirectory(dirPath, rootDir, markdownOptions, key);
+    const files = await scanDirectory(dirPath, rootDir, markdownOptions, key, undefined, sharedContext);
 
     // Create module metadata
     const metadata: ModuleMetadata = {
@@ -87,7 +109,8 @@ async function scanDirectory(
   rootDir: string,
   markdownOptions?: MarkdownOptions,
   moduleId?: string,
-  type?: 'page' | 'doc' | 'blog' | 'custom'
+  type?: 'page' | 'doc' | 'blog' | 'custom',
+  sharedContext?: ScanContext
 ): Promise<ContentFile[]> {
   const fullDirPath = path.resolve(rootDir, dirPath);
 
@@ -104,33 +127,97 @@ async function scanDirectory(
 
   const contentFiles: ContentFile[] = [];
 
-  for (const filePath of files) {
-    try {
-      const content = await fs.readFile(filePath, 'utf-8');
-      const processed = await parseMarkdown(content, markdownOptions, {
-        rootDir,
-        filePath,
-      });
+  // If no shared context, use sequential processing (backward compatibility)
+  if (!sharedContext) {
+    for (const filePath of files) {
+      try {
+        const content = await fs.readFile(filePath, 'utf-8');
+        const processed = await parseMarkdown(content, markdownOptions, {
+          rootDir,
+          filePath,
+        });
 
-      // Skip draft posts
-      if (processed.frontmatter.draft) {
-        continue;
+        // Skip draft posts
+        if (processed.frontmatter.draft) {
+          continue;
+        }
+
+        const relativePath = path.relative(rootDir, filePath);
+        const urlPath = getUrlPath(relativePath, dirPath, moduleId);
+
+        contentFiles.push({
+          id: generateId(relativePath),
+          filePath,
+          relativePath,
+          type,
+          moduleId: moduleId || 'unknown',
+          urlPath,
+          processed,
+        });
+      } catch (error) {
+        console.error(`Failed to scan file: ${filePath}`, error);
       }
+    }
+  } else {
+    // Parallel processing with shared context
+    const results = await Promise.allSettled(
+      files.map((filePath) =>
+        sharedContext.limit(async () => {
+          const content = await fs.readFile(filePath, 'utf-8');
 
-      const relativePath = path.relative(rootDir, filePath);
-      const urlPath = getUrlPath(relativePath, dirPath, moduleId);
+          // When markoTags are enabled, we cannot share MarkdownIt because
+          // the tag validator needs the correct filePath for each file
+          const shouldShareMd = !markdownOptions?.markoTags?.enabled;
 
-      contentFiles.push({
-        id: generateId(relativePath),
-        filePath,
-        relativePath,
-        type,
-        moduleId: moduleId || 'unknown',
-        urlPath,
-        processed,
-      });
-    } catch (error) {
-      console.error(`Failed to scan file: ${filePath}`, error);
+          let sharedMd: MarkdownIt | undefined;
+          if (shouldShareMd) {
+            // Lazy-load MarkdownIt once across all files
+            if (!sharedContext.md) {
+              if (!sharedContext.mdPromise) {
+                sharedContext.mdPromise = import('../markdown/index.js').then(
+                  (m) => m.getMarkdownIt(markdownOptions, { rootDir, filePath })
+                );
+              }
+              sharedContext.md = await sharedContext.mdPromise;
+            }
+            sharedMd = sharedContext.md;
+          }
+
+          const processed = await parseMarkdown(
+            content,
+            markdownOptions,
+            { rootDir, filePath },
+            sharedMd
+          );
+
+          // Skip draft posts
+          if (processed.frontmatter.draft) {
+            return null;
+          }
+
+          const relativePath = path.relative(rootDir, filePath);
+          const urlPath = getUrlPath(relativePath, dirPath, moduleId);
+
+          return {
+            id: generateId(relativePath),
+            filePath,
+            relativePath,
+            type,
+            moduleId: moduleId || 'unknown',
+            urlPath,
+            processed,
+          } as ContentFile | null;
+        })
+      )
+    );
+
+    // Collect successful results
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value) {
+        contentFiles.push(result.value);
+      } else if (result.status === 'rejected') {
+        console.error(`File processing failed:`, result.reason);
+      }
     }
   }
 

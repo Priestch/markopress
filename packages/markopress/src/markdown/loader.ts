@@ -39,47 +39,17 @@ async function getHighlighterInstance() {
 }
 
 /**
- * Parse markdown with frontmatter
+ * Get or create a shared MarkdownIt instance
+ * This allows reusing the same instance across multiple parseMarkdown calls
+ *
+ * @param options - Markdown parsing options
+ * @param env - Markdown environment context
+ * @returns Configured MarkdownIt instance
  */
-export async function parseMarkdown(
-  src: string,
+export async function getMarkdownIt(
   options: MarkdownOptions = {},
   env: MarkdownEnv = {}
-): Promise<ProcessedMarkdown> {
-  // Parse frontmatter
-  const { data: frontmatter, content: rawContent, excerpt } = matter(src, {
-    excerpt: true,
-    excerpt_separator: '<!-- more -->',
-  });
-
-  // Preprocess file includes
-  const content = await preprocessIncludesWithRegions(rawContent, {
-    root: env.rootDir ?? process.cwd(),
-    currentFile: env.filePath ?? '',
-  });
-
-  // Setup markdown-it with Shiki
-  const md = await setupMarkdownIt(options, env);
-
-  // Render to HTML
-  const html = md.render(content, env);
-
-  // Extract headers
-  const headers = extractHeaders(content);
-
-  return {
-    frontmatter,
-    content,
-    html,
-    excerpt,
-    headers: buildHeaderTree(headers),
-  };
-}
-
-/**
- * Setup markdown-it with plugins and Shiki highlighting
- */
-async function setupMarkdownIt(options: MarkdownOptions, env: MarkdownEnv): Promise<MarkdownIt> {
+): Promise<MarkdownIt> {
   const highlighter = await getHighlighterInstance();
 
   // Create enhanced highlighter with line features
@@ -137,6 +107,53 @@ async function setupMarkdownIt(options: MarkdownOptions, env: MarkdownEnv): Prom
   }
 
   return md;
+}
+
+/**
+ * Parse markdown with frontmatter
+ */
+export async function parseMarkdown(
+  src: string,
+  options: MarkdownOptions = {},
+  env: MarkdownEnv = {},
+  existingMd?: MarkdownIt
+): Promise<ProcessedMarkdown> {
+  // Parse frontmatter
+  const { data: frontmatter, content: rawContent, excerpt } = matter(src, {
+    excerpt: true,
+    excerpt_separator: '<!-- more -->',
+  });
+
+  // Preprocess file includes
+  const content = await preprocessIncludesWithRegions(rawContent, {
+    root: env.rootDir ?? process.cwd(),
+    currentFile: env.filePath ?? '',
+  });
+
+  // Use provided MarkdownIt or create new one
+  const md = existingMd || await setupMarkdownIt(options, env);
+
+  // Render to HTML
+  const html = md.render(content, env);
+
+  // Extract headers
+  const headers = extractHeaders(content);
+
+  return {
+    frontmatter,
+    content,
+    html,
+    excerpt,
+    headers: buildHeaderTree(headers),
+  };
+}
+
+/**
+ * Setup markdown-it with plugins and Shiki highlighting
+ * @deprecated Use getMarkdownIt() directly for better reusability
+ */
+async function setupMarkdownIt(options: MarkdownOptions, env: MarkdownEnv): Promise<MarkdownIt> {
+  return getMarkdownIt(options, env);
 }
 
 /**
