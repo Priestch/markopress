@@ -4,13 +4,15 @@
   Perfect for: "On this page" title, page status, etc.
 -->
 
+<let/hasToc= (input.toc && input.toc.length)>
+
 <div class="theme-aside-top">
-  <if=input.toc && input.toc.length > 0>
+  <if=hasToc>
     <div class="table-of-contents">
       <div class="toc-title">On this page</div>
       <ul class="toc-list">
         <for|item| of=input.toc>
-          <theme-toc-item item=item/>
+          <theme-toc-item item=item></theme-toc-item>
         </for>
       </ul>
     </div>

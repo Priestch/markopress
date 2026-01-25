@@ -228,7 +228,72 @@ For components with multiple content areas:
 
 ## Common Pitfalls
 
-### 1. Template Literals in Attributes
+### 1. Comparison Operators in If-Attributes
+
+**CRITICAL:** Marko v6 does NOT support `>`, `<`, `>=`, `<=` operators in `<if>` tag attributes. These are output as literal text.
+
+```marko
+<!-- ❌ WRONG: Outputs "0>" as text -->
+<if=input.items.length > 0>
+  Content
+</if>
+
+<!-- ❌ WRONG: Outputs "<" as text -->
+<if=input.index < 10>
+  Content
+</if>
+
+<!-- ✅ CORRECT: Compute in let variable first -->
+<let/hasItems= (input.items && input.items.length)>
+<if=hasItems>
+  Content
+</if>
+
+<!-- ✅ CORRECT: For comparisons, use valid operators -->
+<let/isValidIndex= (input.index <= 10)>
+<if=isValidIndex>
+  Content
+</if>
+```
+
+### 2. Boolean Conversion for Variables
+
+**CRITICAL:** When a `<let>` variable evaluates to `0`, passing it to `<if>` outputs "0>" as text.
+
+```marko
+<!-- ❌ WRONG: Returns 0 for empty array, outputs "0>" -->
+<let/hasChildren= (input.item.children && input.item.children.length)>
+<if=hasChildren>
+  Content
+</if>
+
+<!-- ✅ CORRECT: Use !! for proper boolean conversion -->
+<let/hasChildren= !!(input.item.children && input.item.children.length)>
+<if=hasChildren>
+  Content
+</if>
+```
+
+### 3. Self-Closing Custom Components
+
+**CRITICAL:** Self-closing custom components may output `/>` as text in HTML.
+
+```marko
+<!-- ❌ WRONG: May output "/>" as text -->
+<theme-toc-item item=item/>
+<my-component data=input.data/>
+
+<!-- ✅ CORRECT: Use explicit closing tags -->
+<theme-toc-item item=item></theme-toc-item>
+<my-component data=input.data></my-component>
+
+<!-- ✅ OK: Self-closing HTML elements work fine -->
+<img src=input.imagePath/>
+<input value=input.text/>
+<br/>
+```
+
+### 4. Template Literals in Attributes
 
 ```marko
 <!-- ❌ WRONG: Not supported in Marko v6 -->
@@ -441,11 +506,14 @@ Missing semicolon
 1. ✅ Component name is kebab-case
 2. ✅ File is in `tags/` directory
 3. ✅ Using `<${input.content}/>` for body content
-3. ✅ Not using reserved attribute names
-4. ✅ Using array syntax for dynamic classes
-4. ✅ Using `<if=expression>` not `<if(expression)>`
-7. ✅ Rebuilt after changes
-8. ✅ Tags copied to `dist/`
+4. ✅ Not using reserved attribute names
+5. ✅ Using array syntax for dynamic classes
+6. ✅ Using `<if=expression>` not `<if(expression)>`
+7. ✅ NO comparison operators (`>`, `<`) in `<if>` attributes
+8. ✅ Using `!!` for boolean conversion in `<let>` variables
+9. ✅ Using explicit closing tags for custom components
+10. ✅ Rebuilt after changes
+11. ✅ Tags copied to `dist/`
 
 ---
 
@@ -457,6 +525,6 @@ Missing semicolon
 
 ---
 
-**Last Updated:** 2025-01-17
+**Last Updated:** 2025-01-17 (updated 2025-01-25)
 
 **Version:** Marko.js v6, @marko/run v0.9.4

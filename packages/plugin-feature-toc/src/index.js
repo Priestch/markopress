@@ -36,6 +36,20 @@ export default function tocPlugin(options = {}) {
 }
 
 /**
+ * Decode HTML entities in text (Node.js compatible)
+ * Converts &gt; -> >, &lt; -> <, &amp; -> &, etc.
+ */
+function decodeHtmlEntities(text) {
+  if (!text) return text;
+  return text
+    .replace(/&gt;/g, '>')
+    .replace(/&lt;/g, '<')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+/**
  * Strip markdown link syntax from text
  * Converts [text](url) -> text
  */
@@ -79,7 +93,7 @@ function buildTocFromHeaders(headers, minDepth, maxDepth) {
   for (const header of filteredHeaders) {
     const item = {
       id: header.slug || header.id,
-      text: stripMarkdownLinks(header.title),
+      text: decodeHtmlEntities(stripMarkdownLinks(header.title)),
       level: header.level,
     };
 

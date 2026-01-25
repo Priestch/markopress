@@ -210,7 +210,126 @@ onTagDetected(
 
 ## 🟡 Important Learnings
 
-### 8. If-Statement Syntax
+### 8. Comparison Operators in If-Attributes
+
+**Mistake:** Used `>` and `<` operators directly in `<if>` tag attributes
+```marko
+<!-- ❌ WRONG: Outputs "0>" as text -->
+<if=input.toc && input.toc.length > 0>
+  Content
+</if>
+
+<!-- ❌ WRONG: Outputs "<" as text -->
+<if=input.index < 10>
+  Content
+</if>
+```
+
+**Why it failed:** Marko's template parser doesn't recognize comparison operators in attributes and outputs them as literal text.
+
+**Solution:** Use `<let>` variables for complex conditions
+```marko
+<!-- ✅ CORRECT: Compute condition in let variable -->
+<let/hasToc= (input.toc && input.toc.length)>
+<if=hasToc>
+  Content
+</if>
+
+<!-- ✅ CORRECT: For greater-than check -->
+<let/isValidIndex= (input.index <= 10)>
+<if=isValidIndex>
+  Content
+</if>
+```
+
+**Files affected:**
+- `packages/theme-default/src/components/theme/ThemeAsideTop.marko`
+
+---
+
+### 9. Boolean Conversion for Let Variables
+
+**Mistake:** Expression returning `0` instead of `false` causes "0>" artifact
+```marko
+<!-- ❌ WRONG: Returns 0 for empty array -->
+<let/hasChildren= (input.item.children && input.item.children.length)>
+<if=hasChildren>
+  Content
+</if>
+<!-- Outputs: "0>" when hasChildren is 0 -->
+```
+
+**Why it failed:** The `&&` operator returns the last truthy value or the first falsy value. An empty array `[]` is truthy, but `[].length` is `0` (falsy). When `0` is passed to `<if>`, Marko outputs "0>" as text.
+
+**Solution:** Use double negation `!!` for proper boolean conversion
+```marko
+<!-- ✅ CORRECT: Returns true/false -->
+<let/hasChildren= !!(input.item.children && input.item.children.length)>
+<if=hasChildren>
+  Content
+</if>
+```
+
+**Files affected:**
+- `packages/theme-default/src/components/theme/ThemeTocItem.marko`
+
+---
+
+### 10. Self-Closing Component Tags Output Text
+
+**Mistake:** Used self-closing syntax for custom components
+```marko
+<!-- ❌ WRONG: Outputs "/>" as text -->
+<theme-toc-item item=item/>
+<my-component data=input.data/>
+```
+
+**Why it failed:** Self-closing custom components in Marko v6 may output the `/>` sequence as text in the HTML output.
+
+**Solution:** Use explicit opening and closing tags
+```marko
+<!-- ✅ CORRECT: Explicit closing tag -->
+<theme-toc-item item=item></theme-toc-item>
+<my-component data=input.data></my-component>
+```
+
+**Note:** Self-closing tags work fine for HTML elements (`<img/>`, `<input/>`, `<br/>`) but should be avoided for custom components.
+
+**Files affected:**
+- `packages/theme-default/src/components/theme/ThemeAsideTop.marko`
+- `packages/theme-default/src/components/theme/ThemeTocItem.marko`
+
+---
+
+### 11. Theme Components Are Copied During Build
+
+**Mistake:** Modified component files in `website/src/routes/tags/` expecting changes to persist
+
+**Why it failed:** The build process copies theme components from `packages/theme-default/` to the website, overwriting local modifications.
+
+**Build flow:**
+```
+packages/theme-default/src/components/theme/*.marko
+    → (build)
+website/src/routes/tags/*.marko (gets overwritten)
+```
+
+**Solution:** Always modify source files in the theme package
+```bash
+# ✅ CORRECT: Edit source
+vim packages/theme-default/src/components/theme/ThemeAsideTop.marko
+
+# Then rebuild both
+cd packages/theme-default && pnpm build
+cd ../website && pnpm build
+```
+
+**Files affected:**
+- Build process in `packages/markopress/src/build/index.ts`
+
+---
+
+### 12. If-Statement Syntax (Legacy)
 
 **Rule:** No parentheses around the expression
 
@@ -273,8 +392,12 @@ npx markopress dev     # Start dev server
 | Tags not copied | 25 min | Build process missing step |
 | Regex bug | 10 min | Closing tags not handled |
 | If-statement syntax | 15 min | Marko v5 vs v6 difference |
+| Comparison operators in `<if>` | 45 min | `>` outputs as text in templates |
+| Boolean conversion | 20 min | `0` passed to `<if>` outputs "0>" |
+| Self-closing tags | 15 min | `/>` outputs as text for components |
+| Theme component source | 10 min | Modified wrong file, build overwrites |
 
-**Total:** ~3 hours of debugging for what should have been 30 minutes of work
+**Total:** ~4 hours of debugging for what should have been 45 minutes of work
 
 ---
 
@@ -288,6 +411,15 @@ Before implementing a feature:
 - [ ] Verify build pipeline connections
 - [ ] Add comprehensive error messages
 - [ ] Document correct syntax immediately
+
+### Marko v6 Syntax Rules (CRITICAL)
+
+- [ ] **NO comparison operators in `<if>` attributes** - Use `<let>` variable first
+- [ ] **NO self-closing custom components** - Use explicit closing tags
+- [ ] **Use `!!` for boolean conversion** in `<let>` variables used in `<if>`
+- [ ] **Edit theme source files** in `packages/theme-default/`, not in `website/`
+- [ ] **Rebuild theme package** before rebuilding website
+- [ ] **Use `<if=expression>`** not `<if(expression)>` (no parentheses)
 
 ---
 
@@ -310,6 +442,6 @@ Before implementing a feature:
 
 ---
 
-**Date:** 2025-01-17
+**Date:** 2025-01-17 (updated 2025-01-25 for TOC debugging)
 **Project:** MarkoPress Marko Tags Feature
 **Status:** ✅ Complete and Working
