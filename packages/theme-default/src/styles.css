@@ -681,26 +681,29 @@ pre {
   border-radius: 8px;
 }
 
+/* Code blocks with line numbers - override padding */
 pre.line-numbers {
-  padding-left: calc(24px + 3rem);
-  position: relative;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 /* Line numbers */
 .line-numbers .line {
   position: relative;
-  padding-left: 24px;
+  padding-left: 44px;
+  display: block;
 }
 
 .line-numbers .line::before {
   content: attr(data-line);
   position: absolute;
-  left: 0;
-  width: 24px;
+  left: 8px;
+  width: 28px;
   text-align: right;
-  color: var(--color-gray-3);
-  font-size: 0.8em;
+  color: var(--text-3);
+  font-size: 0.75em;
   user-select: none;
+  opacity: 0.6;
 }
 
 /* Code title */

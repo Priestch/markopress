@@ -131,6 +131,7 @@ export async function getMarkdownIt(
 
   // Add plugins
   md.use(mdAnchor, {
+    slugify: slugify,
     permalink: mdAnchor.permalink.linkInsideHeader({
       symbol: '#',
       placement: 'before',
@@ -211,17 +212,48 @@ async function setupMarkdownIt(options: MarkdownOptions, env: MarkdownEnv): Prom
 }
 
 /**
+ * Strip markdown formatting from text for cleaner TOC entries
+ * Removes bold, italic, code, links, and other inline markdown
+ */
+function stripMarkdownFormatting(text: string): string {
+  return text
+    // Remove inline code: `code`
+    .replace(/`([^`]+)`/g, '$1')
+    // Remove bold/italic: **text**, __text__, *text*, _text_
+    .replace(/\*\*\*\+([^*]+)\*\*\+/g, '$1')
+    .replace(/___+([^_]+)___+/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    // Remove links: [text](url) or [text](url "title")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\[([^\]]+)\]\[[^\]]+\]/g, '$1')
+    .trim();
+}
+
+/**
  * Extract headers from markdown content
+ * Skips code blocks (fenced and indented) to avoid extracting comments from code examples
  */
 function extractHeaders(content: string): Array<{ level: number; title: string; slug: string }> {
   const headers: Array<{ level: number; title: string; slug: string }> = [];
+
+  // Remove code blocks before processing headers
+  // This prevents extracting # comments from bash/code examples
+  const withoutCodeBlocks = content
+    .replace(/```[\s\S]*?```/g, '') // Fenced code blocks
+    .replace(/~~~[\s\S]*?~~~/g, '') // Tilde-fenced code blocks
+    .replace(/^(\t| {4}).+$/gm, ''); // Indented code blocks
+
   const headerRegex = /^(#{1,6})\s+(.+)$/gm;
   let match;
 
-  while ((match = headerRegex.exec(content)) !== null) {
+  while ((match = headerRegex.exec(withoutCodeBlocks)) !== null) {
     const level = match[1].length;
-    const title = match[2].trim();
-    const slug = slugify(title);
+    const rawTitle = match[2].trim();
+    const title = stripMarkdownFormatting(rawTitle);
+    const slug = slugify(rawTitle); // Use raw title for slug to preserve numbering
     headers.push({ level, title, slug });
   }
 
@@ -264,14 +296,28 @@ function buildHeaderTree(
 
 /**
  * Slugify text for URL-safe IDs
+ * Preserves emojis (URL-safe) and text, removes special chars
+ * Handles camelCase by inserting hyphens at word boundaries
  */
 function slugify(text: string): string {
   return text
-    .toLowerCase()
     .trim()
+    // Insert hyphens between lowercase-to-uppercase transitions (camelCase)
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    // Insert hyphens between digit-to-letter transitions
+    .replace(/([0-9])([a-zA-Z])/g, '$1-$2')
+    // Insert hyphens between letter-to-digit transitions
+    .replace(/([a-zA-Z])([0-9])/g, '$1-$2')
+    .toLowerCase()
+    // Replace spaces with hyphens
     .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-');
+    // Remove special chars but keep letters, numbers, hyphens, and emojis
+    // Emojis are in Unicode ranges outside \w (word chars)
+    .replace(/[^\w\u00A0-\uFFFF\-]+/g, '')
+    // Remove leading/trailing hyphens
+    .replace(/^-+|-+$/g, '')
+    // Replace multiple hyphens with single
+    .replace(/-+/g, '-');
 }
 
 /**
