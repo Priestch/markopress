@@ -78,7 +78,9 @@ export async function scanContentModules(
   for (const [key, dirPath] of Object.entries(dirs)) {
     if (!dirPath) continue;
 
+    console.time(`Scanning ${key}`);
     const files = await scanDirectory(dirPath, rootDir, markdownOptions, key, undefined, sharedContext);
+    console.timeEnd(`Scanning ${key}`);
 
     // Create module metadata
     const metadata: ModuleMetadata = {

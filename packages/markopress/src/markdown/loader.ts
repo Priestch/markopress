@@ -19,21 +19,65 @@ import type { MarkdownOptions, ProcessedMarkdown, Header, MarkdownEnv } from './
 let highlighterInstance: Awaited<ReturnType<typeof createHighlighter>> | null = null;
 
 /**
- * Get or create Shiki highlighter with all bundled languages
+ * Common languages that cover most use cases
+ * Loading all 300+ languages adds ~5 seconds to build time
+ */
+const COMMON_LANGUAGES = [
+  'javascript',
+  'typescript',
+  'js',
+  'ts',
+  'jsx',
+  'tsx',
+  'python',
+  'py',
+  'rust',
+  'rs',
+  'go',
+  'java',
+  'c',
+  'cpp',
+  'cs',
+  'csharp',
+  'php',
+  'ruby',
+  'rb',
+  'bash',
+  'sh',
+  'shell',
+  'html',
+  'css',
+  'scss',
+  'json',
+  'yaml',
+  'yml',
+  'toml',
+  'markdown',
+  'md',
+  'sql',
+  'dart',
+  'kotlin',
+  'swift',
+  'xml',
+  'vue',
+  'svelte',
+] as const;
+
+/**
+ * Get or create Shiki highlighter with common languages
  */
 async function getHighlighterInstance() {
   if (!highlighterInstance) {
-    // Load all bundled languages from Shiki
-    // This avoids errors from unsupported language names
-    const { bundledLanguages, bundledLanguagesInfo } = await import('shiki/langs');
-
-    // Extract language names from bundled languages
-    const langNames = Object.keys(bundledLanguages);
+    console.time('Shiki initialization');
+    // Load common languages only for faster initialization
+    // Falls back to plain text for unknown languages
+    console.log(`Loading ${COMMON_LANGUAGES.length} common Shiki languages...`);
 
     highlighterInstance = await createHighlighter({
       themes: ['github-light', 'github-dark'],
-      langs: langNames,
+      langs: Array.from(COMMON_LANGUAGES),
     });
+    console.timeEnd('Shiki initialization');
   }
   return highlighterInstance;
 }
