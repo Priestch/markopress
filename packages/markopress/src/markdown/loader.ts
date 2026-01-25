@@ -64,20 +64,30 @@ const COMMON_LANGUAGES = [
 ] as const;
 
 /**
- * Get or create Shiki highlighter with common languages
+ * Get or create Shiki highlighter
  */
-async function getHighlighterInstance() {
+async function getHighlighterInstance(
+  languages?: 'common' | 'all' | readonly string[]
+): Promise<Awaited<ReturnType<typeof createHighlighter>>> {
   if (!highlighterInstance) {
-    console.time('Shiki initialization');
-    // Load common languages only for faster initialization
-    // Falls back to plain text for unknown languages
-    console.log(`Loading ${COMMON_LANGUAGES.length} common Shiki languages...`);
+    let langs: readonly string[];
+
+    if (languages === 'all') {
+      // Load all bundled languages (slow!)
+      const { bundledLanguages } = await import('shiki/langs');
+      langs = Object.keys(bundledLanguages);
+    } else if (Array.isArray(languages)) {
+      // Custom language list
+      langs = languages;
+    } else {
+      // Default to common languages (fast)
+      langs = Array.from(COMMON_LANGUAGES);
+    }
 
     highlighterInstance = await createHighlighter({
       themes: ['github-light', 'github-dark'],
-      langs: Array.from(COMMON_LANGUAGES),
+      langs: Array.from(langs),
     });
-    console.timeEnd('Shiki initialization');
   }
   return highlighterInstance;
 }
@@ -94,7 +104,7 @@ export async function getMarkdownIt(
   options: MarkdownOptions = {},
   env: MarkdownEnv = {}
 ): Promise<MarkdownIt> {
-  const highlighter = await getHighlighterInstance();
+  const highlighter = await getHighlighterInstance(options.highlightLanguages);
 
   // Create enhanced highlighter with line features
   const enhancedHighlight = createEnhancedHighlighter(highlighter, {
