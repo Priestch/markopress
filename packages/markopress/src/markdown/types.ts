@@ -10,14 +10,6 @@ export interface MarkdownOptions {
   };
 
   /**
-   * Syntax highlighting languages to load.
-   * - 'common': Load 38 common languages (default, faster)
-   * - 'all': Load all 300+ languages (slower, ~5s)
-   * - string[]: Custom list of language names
-   */
-  highlightLanguages?: 'common' | 'all' | readonly string[];
-
-  /**
    * Marko tags support
    */
   markoTags?: {
@@ -53,4 +45,6 @@ export interface MarkdownEnv {
   relativePath?: string;
   rootDir?: string;
   filePath?: string;
+  /** Enable TOC extraction for this file (default: false) */
+  extractToc?: boolean;
 }

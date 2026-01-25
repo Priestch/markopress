@@ -1,25 +1,15 @@
-/**
- * TOC Plugin for MarkoPress
- *
- * Generates table of contents from markdown headers
- */
-
-/**
- * Create TOC plugin
- */
-export default function tocPlugin(options = {}) {
-  const { minDepth = 1, maxDepth = 3 } = options;
-
-  return {
-    name: '@markopress/plugin-feature-toc',
-    modules: ['docs', 'pages', 'blog'],
-
+function tocPlugin(options = {}) {
+  const { minDepth = 2, maxDepth = 3, module: targetModule } = options;
+  const pluginConfig = {
+    name: "@markopress/plugin-feature-toc",
     async enhanceModules(modules) {
-      modules.forEach(module => {
-        // Create a Map to store TOC for each file
-        const tocMap = new Map();
-
-        module.files.forEach(file => {
+      modules.forEach((module) => {
+        const extractToc = module.getEnhancement("extractToc");
+        if (extractToc !== true) {
+          return;
+        }
+        const tocMap = /* @__PURE__ */ new Map();
+        module.files.forEach((file) => {
           const toc = buildTocFromHeaders(
             file.processed.headers,
             minDepth,
@@ -27,96 +17,43 @@ export default function tocPlugin(options = {}) {
           );
           tocMap.set(file.urlPath, toc);
         });
-
-        // Add the TOC map as an enhancement
-        module.enhance('toc', tocMap);
+        module.enhance("toc", tocMap);
       });
-    },
-  };
-}
-
-/**
- * Decode HTML entities in text (Node.js compatible)
- * Converts &gt; -> >, &lt; -> <, &amp; -> &, etc.
- */
-function decodeHtmlEntities(text) {
-  if (!text) return text;
-  return text
-    .replace(/&gt;/g, '>')
-    .replace(/&lt;/g, '<')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
-}
-
-/**
- * Strip markdown link syntax from text
- * Converts [text](url) -> text
- */
-function stripMarkdownLinks(text) {
-  if (!text) return text;
-  // Match [text](url) pattern and replace with just text
-  return text.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
-}
-
-/**
- * Build TOC from markdown headers
- * Returns a hierarchical structure with nested children
- */
-function buildTocFromHeaders(headers, minDepth, maxDepth) {
-  // Headers are stored as a tree (h1 -> h2 children -> h3 children)
-  // We need to flatten the tree to get all headers
-  const flatHeaders = [];
-
-  function flattenTree(nodes) {
-    for (const node of nodes) {
-      flatHeaders.push(node);
-      if (node.children && node.children.length > 0) {
-        flattenTree(node.children);
-      }
     }
+  };
+  if (targetModule) {
+    pluginConfig.modules = Array.isArray(targetModule) ? targetModule : [targetModule];
   }
-
-  flattenTree(headers);
-
-  // Filter headers by depth
-  const filteredHeaders = flatHeaders.filter(h => h.level >= minDepth && h.level <= maxDepth);
-
-  if (filteredHeaders.length === 0) {
+  return pluginConfig;
+}
+function buildTocFromHeaders(headers, minDepth, maxDepth) {
+  if (!headers || headers.length === 0) {
     return [];
   }
-
-  // Build hierarchical structure
   const result = [];
-  const stack = [];
-
-  for (const header of filteredHeaders) {
-    const item = {
-      id: header.slug || header.id,
-      text: decodeHtmlEntities(stripMarkdownLinks(header.title)),
-      level: header.level,
-    };
-
-    // Pop items from stack until we find the parent level
-    while (stack.length > 0 && stack[stack.length - 1].level >= header.level) {
-      stack.pop();
-    }
-
-    // If stack is empty, add to root
-    if (stack.length === 0) {
+  for (const header of headers) {
+    if (header.level >= minDepth && header.level <= maxDepth) {
+      const item = {
+        slug: header.slug || header.id,
+        title: header.title,
+        level: header.level
+      };
+      if (header.children && header.children.length > 0) {
+        const childItems = buildTocFromHeaders(header.children, minDepth, maxDepth);
+        if (childItems.length > 0) {
+          item.children = childItems;
+        }
+      }
       result.push(item);
     } else {
-      // Add as child of parent
-      const parent = stack[stack.length - 1];
-      if (!parent.children) {
-        parent.children = [];
+      if (header.children && header.children.length > 0) {
+        const childItems = buildTocFromHeaders(header.children, minDepth, maxDepth);
+        result.push(...childItems);
       }
-      parent.children.push(item);
     }
-
-    // Push current item to stack
-    stack.push(item);
   }
-
   return result;
 }
+export {
+  tocPlugin as default
+};

@@ -15,16 +15,62 @@ export type HeadTag =
   | [string, Record<string, string>, string];
 
 /**
- * Content module configuration
- * Can have any number of named modules (e.g., pages, guides, docs, blog, tutorials, etc.)
+ * Module-specific options
+ *
+ * @example
+ * // Enable TOC for guides module only
+ * { guides: { dir: 'content/guides', toc: true } }
  */
-export interface ContentConfig {
-  pages?: string;  // Special: pages module gets no URL prefix (root-level routes)
-  docs?: string;   // Optional: legacy 'docs' module name
-  blog?: string;   // Special: blog module with date-based sorting
-  // Any other module names are supported (e.g., guides, tutorials, etc.)
-  [key: string]: string | undefined;
+export interface ModuleOptions {
+  /**
+   * Directory path for this module (relative to project root)
+   * Defaults to `content/{moduleId}` if not specified
+   */
+  dir?: string;
+
+  /**
+   * Enable table of contents extraction for this module
+   *
+   * When enabled, markdown headers are extracted during scanning and
+   * stored for use by the TOC plugin. Set to `true` only for modules
+   * where you want TOC generation.
+   *
+   * @default false (TOC is not extracted unless explicitly enabled)
+   */
+  toc?: boolean;
+
+  /** Module type override */
+  type?: 'page' | 'doc' | 'blog' | 'custom';
 }
+
+/**
+ * Content module configuration
+ *
+ * Supports any number of named modules (e.g., pages, guides, docs, blog, tutorials, etc.)
+ *
+ * @example
+ * // Simple form - string directory path
+ * content: {
+ *   pages: 'content/pages',
+ *   docs: 'content/docs',
+ * }
+ *
+ * @example
+ * // Extended form - with options
+ * content: {
+ *   pages: 'content/pages',                      // Simple path, no TOC
+ *   guides: { dir: 'content/guides', toc: true }, // Enable TOC for guides
+ *   blog: 'content/blog',                        // Simple path, no TOC
+ * }
+ *
+ * @migration-guide
+ * Before: content was a strict interface with only `pages`, `docs`, `blog` keys
+ * After: content is a flexible Record that accepts any module name
+ *
+ * The `highlightLanguages` markdown option has been removed.
+ * Languages are now loaded automatically based on actual usage (lazy loading).
+ */
+export type ContentConfig = Record<string, string | ModuleOptions | undefined>;
 
 /**
  * Navigation link item
@@ -68,14 +114,6 @@ export interface ThemeConfig {
 
 export interface MarkdownConfig {
   lineNumbers?: boolean;
-
-  /**
-   * Syntax highlighting languages to load.
-   * - 'common': Load 38 common languages (default, faster)
-   * - 'all': Load all 300+ languages (slower, ~5s)
-   * - string[]: Custom list of language names
-   */
-  highlightLanguages?: 'common' | 'all' | readonly string[];
 
   theme?: {
     light?: string;

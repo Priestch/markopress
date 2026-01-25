@@ -1,6 +1,26 @@
 <div class="content {{CONTENT_TYPE_CLASS}}">
-  <h1>${$global.title}</h1>
-  <div class="content-body">
-    $!{$global.content}
+  <div class="content-layout">
+    <div class="content-body">
+      <h1>${$global.title}</h1>
+      $!{$global.content}
+    </div>
+
+    <toc headers=$global.toc/>
   </div>
 </div>
+
+<style>
+  .content-layout {
+    display: flex;
+    gap: 32px;
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .content-body {
+    flex: 1;
+    min-width: 0;
+    max-width: 100%;
+  }
+</style>

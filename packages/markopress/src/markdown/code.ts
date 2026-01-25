@@ -7,9 +7,14 @@
  * - Diff syntax (// [!code --], // [!code ++])
  * - Code focus (// [!code focus])
  * - Error/warning annotations (// [!code error], // [!code warning])
+ *
+ * Uses codeToHast() for better performance - generates HAST (tree) instead of HTML string,
+ * then converts to HTML at the end with hastToHtml().
  */
 
 import type { Highlighter } from 'shiki';
+import { hastToHtml } from 'shiki';
+import type { Element, Text, Root, ElementContent } from 'hast';
 
 export interface CodeBlockOptions {
   /**
@@ -170,6 +175,8 @@ export function processCodeLines(code: string): ProcessedLine[] {
 
 /**
  * Enhanced code highlighter with line features
+ * Uses codeToHast() for better performance - generates HAST (tree) instead of HTML string
+ * Supports dual themes (light + dark) in a single pass for dark mode support
  */
 export function createEnhancedHighlighter(
   highlighter: Highlighter,
@@ -183,23 +190,33 @@ export function createEnhancedHighlighter(
 
     // Process lines for special markers
     const processedLines = processCodeLines(code);
+    const cleanCode = processedLines.map((l) => l.content).join('\n');
 
-    // Generate HTML with Shiki
-    let html: string;
+    // Generate HAST with Shiki using dual themes (light + dark) in one pass
+    // This generates CSS variables that switch via parent class (.shiki-dark)
+    let hast: Root;
     try {
-      // Reconstruct code without markers
-      const cleanCode = processedLines.map((l) => l.content).join('\n');
-      html = highlighter.codeToHtml(cleanCode, {
+      hast = highlighter.codeToHast(cleanCode, {
         lang: resolvedLang,
-        theme: 'github-light',
+        themes: {
+          light: 'github-light',
+          dark: 'github-dark',
+        },
       });
     } catch (e) {
-      // Fallback for unsupported languages
+      // Fallback for unsupported languages - log warning and return plain code
+      if ((e as any).message?.includes('language')) {
+        console.warn(`[Shiki] Language "${resolvedLang}" not supported, falling back to plain text. ` +
+          `Run build with debug=true to see available languages.`);
+      }
       return `<pre class="shiki"><code>${escapeHtml(code)}</code></pre>`;
     }
 
-    // Parse the generated HTML to add enhancements
-    html = enhanceHighlightedCode(html, meta, processedLines);
+    // Enhance HAST with line features
+    enhanceHastWithLineFeatures(hast, meta, processedLines);
+
+    // Convert HAST to HTML
+    let html = hastToHtml(hast);
 
     // Wrap with title if provided
     if (meta.title) {
@@ -214,75 +231,159 @@ export function createEnhancedHighlighter(
 }
 
 /**
- * Enhance Shiki-generated HTML with line features
+ * Enhance HAST with line numbers, highlights, and other features
+ * Works directly on the tree structure for better performance than string manipulation
  */
-function enhanceHighlightedCode(
-  html: string,
+function enhanceHastWithLineFeatures(
+  hast: Root,
   meta: CodeBlockMeta,
   processedLines: ProcessedLine[]
-): string {
-  // Parse HTML and add line numbers + classes
-  const lines = html.split('\n');
+): void {
+  // Find the <pre> element
+  const preElement = findElement(hast, 'pre');
+  if (!preElement) return;
 
-  // Check if it's wrapped in <pre><code>
-  const preMatch = html.match(/<pre class="([^"]*)"[^>]*>/);
-  const codeMatch = html.match(/<code[^>]*>/);
-
-  if (!preMatch || !codeMatch) {
-    return html;
-  }
-
-  const preClasses = preMatch[1];
-  const newPreClasses = [
-    preClasses,
+  // Update pre classes
+  const existingClasses = preElement.properties?.className || [];
+  const preClasses: string[] = [
+    ...(Array.isArray(existingClasses) ? existingClasses : [existingClasses]).filter(Boolean) as string[],
     meta.lineNumbers ? 'line-numbers' : '',
     meta.highlightLines?.size ? 'has-highlights' : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  ].filter(Boolean);
+  preElement.properties = { ...preElement.properties, className: preClasses };
 
-  // Extract code lines (between <code> and </code>)
-  const codeContent = html.match(/<code[^>]*>([\s\S]*)<\/code>/)?.[1] || '';
-  // Split by newlines - don't filter yet as we need to preserve line numbers
-  const codeLines = codeContent.split('\n');
+  // Find the <code> element
+  const codeElement = findElement(preElement, 'code');
+  if (!codeElement) return;
 
-  // Build enhanced lines
-  const enhancedLines = codeLines
-    .map((line, idx) => {
-    const lineNum = idx + 1;
-    const processed = processedLines[idx] || { classes: [] };
+  // Split code children into lines and enhance each line
+  const lines = splitChildrenIntoLines(codeElement.children || []);
+  const enhancedChildren: ElementContent[] = [];
 
-    // Check if line already has a span wrapper (from Shiki)
-    if (line.trim().startsWith('<span')) {
-      // Shiki already wrapped it, just add line number attribute if needed
-      if (meta.lineNumbers) {
-        return line.replace(/^(<span\s+)/, `$1data-line="${lineNum}" `);
-      }
-      return line;
+  for (let i = 0; i < lines.length; i++) {
+    const lineNodes = lines[i];
+    const lineNum = i + 1;
+    const processed = processedLines[i] || { classes: [] };
+
+    // Skip empty lines
+    if (lineNodes.length === 0 || (lineNodes.length === 1 && isEmptyText(lineNodes[0]))) {
+      continue;
     }
 
-    // Plain line without span wrapper
-    const classes: string[] = ['line'];
-
-    // Add highlight class
+    // Build classes for this line
+    const lineClasses: string[] = ['line'];
     if (meta.highlightLines?.has(lineNum)) {
-      classes.push('highlighted');
+      lineClasses.push('highlighted');
+    }
+    lineClasses.push(...processed.classes);
+
+    // Find the first element node to attach classes/attributes
+    const firstElement = lineNodes.find((node): node is Element => node.type === 'element');
+
+    if (firstElement) {
+      // Add classes to existing element
+      const elemClasses = firstElement.properties?.className || [];
+      const combinedClasses: string[] = [
+        ...(Array.isArray(elemClasses) ? elemClasses : [elemClasses]).filter(Boolean) as string[],
+        ...lineClasses,
+      ];
+      firstElement.properties = {
+        ...firstElement.properties,
+        className: combinedClasses,
+      };
+
+      // Add data-line attribute if needed
+      if (meta.lineNumbers) {
+        firstElement.properties['data-line'] = lineNum;
+      }
+    } else if (lineNodes[0]) {
+      // Wrap text-only line in a span
+      const wrapper: Element = {
+        type: 'element',
+        tagName: 'span',
+        properties: {
+          className: lineClasses,
+          ...(meta.lineNumbers && { 'data-line': lineNum }),
+        },
+        children: lineNodes,
+      };
+      enhancedChildren.push(wrapper);
+      continue;
     }
 
-    // Add processed classes (diff, focus, error, warning)
-    classes.push(...processed.classes);
+    enhancedChildren.push(...lineNodes);
+  }
 
-    // Build line HTML
-    const classStr = classes.join(' ');
-    return `<span class="${classStr}"${meta.lineNumbers ? ` data-line="${lineNum}"` : ''}>${line}</span>`;
-  })
-  .filter(line => {
-    // Remove empty spans (from empty lines in code blocks)
-    return !line.match(/<span class="line"><\/span>/) &&
-           !line.match(/<span class="line">\s*<\/span>/);
-  });
+  // Rebuild code children with newlines between lines
+  codeElement.children = [];
+  for (let i = 0; i < enhancedChildren.length; i++) {
+    codeElement.children.push(enhancedChildren[i]);
+    // Add newline between lines (but not after the last one)
+    if (i < enhancedChildren.length - 1) {
+      codeElement.children.push({ type: 'text', value: '\n' });
+    }
+  }
+}
 
-  return `<pre class="${newPreClasses}"><code>${enhancedLines.join('\n')}</code></pre>`;
+/**
+ * Find an element by tag name in HAST tree
+ */
+function findElement(parent: Root | Element, tagName: string): Element | null {
+  if (parent.type !== 'element') return null;
+  if (parent.tagName === tagName) return parent;
+
+  for (const child of parent.children || []) {
+    if (child.type === 'element') {
+      const found = findElement(child, tagName);
+      if (found) return found;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Split code element children into lines
+ * Text nodes with newlines create line boundaries
+ */
+function splitChildrenIntoLines(children: ElementContent[]): Array<Array<ElementContent>> {
+  const lines: Array<Array<ElementContent>> = [];
+  let currentLine: Array<ElementContent> = [];
+
+  for (const child of children) {
+    if (child.type === 'text') {
+      // Split text by newlines
+      const parts = child.value.split('\n');
+      for (let i = 0; i < parts.length; i++) {
+        if (i > 0) {
+          // Newline encountered - start a new line
+          lines.push(currentLine);
+          currentLine = [];
+        }
+        if (parts[i]) {
+          // Only add non-empty text
+          currentLine.push({ type: 'text', value: parts[i] });
+        }
+      }
+    } else {
+      // Element node - add to current line
+      currentLine.push(child);
+    }
+  }
+
+  // Don't forget the last line
+  if (currentLine.length > 0) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
+/**
+ * Check if a node is an empty text node
+ */
+function isEmptyText(node: ElementContent): boolean {
+  return node.type === 'text' && !node.value;
 }
 
 /**

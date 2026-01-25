@@ -3,6 +3,7 @@
  */
 
 import type { ProcessedMarkdown } from '../markdown/index.js';
+import type { ModuleOptions } from '../config/types.js';
 
 /**
  * Content file type - generic string to support any module ID
@@ -29,9 +30,10 @@ export interface ContentFile {
 
 /**
  * Content scanner options
+ * Supports both simple string paths and extended module options
  */
 export interface ContentScannerOptions {
-  dirs: Record<string, string | undefined>;  // Dynamic module ID -> directory mapping (undefined = not configured)
+  dirs: Record<string, string | ModuleOptions | undefined>;  // Dynamic module ID -> directory/options mapping
   rootDir: string;
   markdownOptions?: import('../markdown/types.js').MarkdownOptions;
 }

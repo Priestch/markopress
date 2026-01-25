@@ -31,8 +31,8 @@ export interface TocOptions {
 }
 
 export interface TocItem {
-  id: string;
-  text: string;
+  slug: string;
+  title: string;
   level: number;
   children?: TocItem[];
 }
@@ -50,6 +50,14 @@ export default function tocPlugin(options: TocOptions = {}): MarkoPressPlugin {
 
     async enhanceModules(modules: ContentModule[]) {
       modules.forEach(module => {
+        // Check if this module has TOC extraction enabled via config
+        // TOC is only extracted if explicitly enabled (toc: true)
+        const extractToc = module.getEnhancement<boolean>('extractToc');
+
+        if (extractToc !== true) {
+          return; // Skip TOC generation unless explicitly enabled
+        }
+
         // Create a Map to store TOC for each file
         const tocMap = new Map<string, TocItem[]>();
 
@@ -80,49 +88,44 @@ export default function tocPlugin(options: TocOptions = {}): MarkoPressPlugin {
 /**
  * Build TOC from markdown headers
  * Returns a hierarchical structure with nested children
+ * Handles nested tree structure by recursively filtering by depth
  */
 function buildTocFromHeaders(
   headers: ProcessedMarkdown['headers'],
   minDepth: number,
   maxDepth: number
 ): TocItem[] {
-  // Filter headers by depth
-  const filteredHeaders = headers.filter(h => h.level >= minDepth && h.level <= maxDepth);
-
-  if (filteredHeaders.length === 0) {
+  if (!headers || headers.length === 0) {
     return [];
   }
 
-  // Build hierarchical structure
   const result: TocItem[] = [];
-  const stack: TocItem[] = [];
 
-  for (const header of filteredHeaders) {
-    const item: TocItem = {
-      id: header.slug || header.id,
-      text: header.title,
-      level: header.level,
-    };
+  for (const header of headers) {
+    // If this header is within the depth range, include it
+    if (header.level >= minDepth && header.level <= maxDepth) {
+      const item: TocItem = {
+        slug: header.slug || header.id,
+        title: header.title,
+        level: header.level,
+      };
 
-    // Pop items from stack until we find the parent level
-    while (stack.length > 0 && stack[stack.length - 1].level >= header.level) {
-      stack.pop();
-    }
+      // Recursively process children
+      if (header.children && header.children.length > 0) {
+        const childItems = buildTocFromHeaders(header.children, minDepth, maxDepth);
+        if (childItems.length > 0) {
+          item.children = childItems;
+        }
+      }
 
-    // If stack is empty, add to root
-    if (stack.length === 0) {
       result.push(item);
     } else {
-      // Add as child of parent
-      const parent = stack[stack.length - 1];
-      if (!parent.children) {
-        parent.children = [];
+      // Header is outside range, but its children might be within range
+      if (header.children && header.children.length > 0) {
+        const childItems = buildTocFromHeaders(header.children, minDepth, maxDepth);
+        result.push(...childItems);
       }
-      parent.children.push(item);
     }
-
-    // Push current item to stack
-    stack.push(item);
   }
 
   return result;

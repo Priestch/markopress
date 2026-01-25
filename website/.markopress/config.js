@@ -11,9 +11,9 @@ export default defineConfig({
     ],
   },
   content: {
-    pages: 'content/pages',
-    guides: 'content/guides',
-    blog: 'content/blog',
+    pages: 'content/pages',           // No TOC (default)
+    guides: { dir: 'content/guides', toc: true },  // Enable TOC for guides
+    blog: 'content/blog',             // No TOC for blog posts
   },
   theme: {
     name: '@markopress/theme-default',
@@ -44,7 +44,6 @@ export default defineConfig({
     },
   },
   markdown: {
-    lineNumbers: true,  // Disable to avoid Shiki HTML parsing issues
     markoTags: {
       enabled: false,  // Temporarily disabled for blog index testing
       tagsDir: '.markopress/tags',

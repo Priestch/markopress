@@ -36,31 +36,59 @@ export interface BuildResult {
 export async function build(options: BuildOptions = {}): Promise<BuildResult> {
   const { outDir, debug = false, useCatchAllRoutes } = options;
   const errors: string[] = [];
+  const timings = new Map<string, number>();
+  const startTimes = new Map<string, number>();
+
+  /**
+   * Timing helper - tracks elapsed time for build steps
+   * Uses performance.now() for high-resolution timing
+   */
+  const time = (label: string) => ({
+    start: () => {
+      startTimes.set(label, performance.now());
+    },
+    end: () => {
+      const start = startTimes.get(label) || 0;
+      const elapsed = performance.now() - start;
+      timings.set(label, elapsed);
+    },
+  });
 
   try {
     console.log('🚀 Building MarkoPress site...\n');
 
     // Step 0: Load configuration
+    const t0 = time('Config loading');
+    t0.start();
     const config = await loadConfig(process.cwd(), { mode: 'production', command: 'build' });
+    t0.end();
 
     // Step 1: Initialize plugin manager
     let pluginManager: PluginManager | undefined;
     if (config.plugins && config.plugins.length > 0) {
       console.log('🔌 Loading plugins...');
+      const t1 = time('Plugin loading');
+      t1.start();
       pluginManager = new PluginManager(config);
       await pluginManager.loadPlugins(config.plugins);
+      t1.end();
       console.log('');
     }
 
     // Step 2: Execute loadContent hooks (for backward compatibility)
     if (pluginManager) {
       console.log('📦 Loading plugin content...');
+      const t2 = time('Plugin loadContent hooks');
+      t2.start();
       await pluginManager.execLoadContentHooks();
+      t2.end();
       console.log('   Plugin content loaded\n');
     }
 
     // Step 3: Scan content modules with parallel processing
     console.log('📂 Scanning content modules...');
+    const t3 = time('Content scanning');
+    t3.start();
     const scanContext: ScanContext = {
       limit: pLimit(50), // Process up to 50 files concurrently
       md: null,
@@ -73,6 +101,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       },
       scanContext
     );
+    t3.end();
 
     // Log module information
     for (const module of modules) {
@@ -83,7 +112,10 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     // Step 4: Execute enhanceModules hooks (NEW)
     if (pluginManager) {
       console.log('🔌 Processing plugin enhanceModules hooks...');
+      const t4 = time('Plugin enhanceModules hooks');
+      t4.start();
       await pluginManager.execEnhanceModulesHooks(modules);
+      t4.end();
       console.log('   Modules enhanced\n');
     }
 
@@ -93,36 +125,47 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     // Step 6: Execute contentLoaded hooks (for backward compatibility)
     if (pluginManager) {
       console.log('🔌 Processing plugin contentLoaded hooks...');
+      const t6 = time('Plugin contentLoaded hooks');
+      t6.start();
       await pluginManager.execContentLoadedHooks(manifest);
+      t6.end();
       console.log('   Plugin content processed\n');
     }
 
-    // Step 5: Initialize tag validator if Marko tags enabled
+    // Step 7: Initialize tag validator if Marko tags enabled
     if (config.markdown.markoTags?.enabled) {
       const tagsDir = path.join(process.cwd(), config.markdown.markoTags.tagsDir || 'src/.markopress/tags');
       console.log('🔍 Scanning tags directory...');
+      const t7 = time('Tag validation setup');
+      t7.start();
       await globalTagValidator.loadAvailableTags(tagsDir);
+      t7.end();
       console.log(`   Found ${globalTagValidator.getAvailableTagsCount()} tags\n`);
     } else {
       globalTagValidator.reset();
     }
 
-    // Step 6: Ensure routes directory exists
+    // Step 8: Ensure routes directory exists
     // Note: Routes must be in src/routes/ for @marko/run compatibility
     const routesDir = path.join(process.cwd(), 'src', 'routes');
     await fs.mkdir(routesDir, { recursive: true });
 
-    // Step 7: Generate initial route manifest
+    // Step 9: Generate initial route manifest
     let routeManifest = buildInitialRouteManifest(manifest);
 
-    // Step 8: Execute extendRoutes hooks
+    // Step 10: Execute extendRoutes hooks
     if (pluginManager) {
+      const t8 = time('Extend routes hooks');
+      t8.start();
       routeManifest = await pluginManager.execExtendRoutesHooks(routeManifest);
+      t8.end();
       console.log('🔌 Extended routes manifest:', Object.keys(routeManifest).length);
     }
 
-    // Step 9: Generate routes for content
+    // Step 11: Generate routes for content
     console.log('📝 Generating routes from content...');
+    const t9 = time('Route generation');
+    t9.start();
     const routeMode = useCatchAllRoutes ?? config.build.useCatchAllRoutes;
     if (routeMode) {
       await generateCatchAllRoutes(manifest, routesDir, config, modules, debug);
@@ -131,9 +174,10 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       await generateRoutes(manifest, routesDir, config, modules, debug);
       console.log('   Using static routes');
     }
+    t9.end();
     console.log('   Routes generated\n');
 
-    // Step 10: Convert routeManifest entries with handler/component to plugin routes
+    // Step 12: Convert routeManifest entries with handler/component to plugin routes
     // This allows plugins to add custom routes via extendRoutes hook
     const manifestRoutes: any[] = [];
     for (const [path, route] of Object.entries(routeManifest)) {
@@ -145,28 +189,37 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
     console.log(`🔌 Total manifest routes: ${Object.keys(routeManifest).length}, Plugin routes: ${manifestRoutes.length}`);
 
-    // Step 11: Generate plugin routes
+    // Step 13: Generate plugin routes
     if (pluginManager) {
       const pluginRoutes = pluginManager.getPluginRoutes();
       const allPluginRoutes = [...pluginRoutes, ...manifestRoutes];
       if (allPluginRoutes.length > 0) {
         console.log(`🔌 Generating ${allPluginRoutes.length} plugin routes...`);
+        const t10 = time('Plugin route generation');
+        t10.start();
         await generatePluginRoutes(allPluginRoutes, routesDir, config, debug);
+        t10.end();
         console.log('   Plugin routes generated\n');
       }
     }
 
-    // Step 11: Execute allContentLoaded hooks (NEW)
+    // Step 14: Execute allContentLoaded hooks (NEW)
     if (pluginManager) {
       console.log('🔌 Processing plugin allContentLoaded hooks...');
+      const t11 = time('AllContentLoaded hooks');
+      t11.start();
       await pluginManager.execAllContentLoadedHooks(routeManifest);
+      t11.end();
       console.log('   All content processed\n');
     }
 
-    // Step 12: Validate Marko tags if enabled
+    // Step 15: Validate Marko tags if enabled
     if (config.markdown.markoTags?.enabled) {
       console.log('🔍 Validating Marko tags...');
+      const t12 = time('Tag validation');
+      t12.start();
       const validation = globalTagValidator.validate();
+      t12.end();
 
       if (!validation.success) {
         const errorMessage = formatValidationError(validation.missingTags);
@@ -184,20 +237,29 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       console.log('   All tags validated ✓\n');
     }
 
-    // Step 13: Copy theme components to src/components
+    // Step 16: Copy theme components to src/components
     console.log('📦 Copying theme components...');
+    const t13 = time('Theme components copy');
+    t13.start();
     await copyThemeComponents(process.cwd(), config, debug);
+    t13.end();
     console.log('   Theme components copied\n');
 
-    // Step 14: Copy theme CSS to public directory
+    // Step 17: Copy theme CSS to public directory
     console.log('🎨 Copying theme CSS...');
+    const t14 = time('Theme CSS copy');
+    t14.start();
     await copyThemeCSS(process.cwd(), config, debug);
+    t14.end();
     console.log('   Theme CSS copied\n');
 
-    // Step 15: Build with @marko/run
+    // Step 18: Build with @marko/run
     console.log('🔨 Building with @marko/run...');
+    const t15 = time('@marko/run build');
+    t15.start();
     const resolvedOutDir = outDir || config.build.outDir;
     const buildResult = await runMarkoRunBuild(resolvedOutDir, debug);
+    t15.end();
 
     if (!buildResult.success) {
       errors.push(...buildResult.errors);
@@ -209,23 +271,32 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       };
     }
 
-    // Step 16: Collect build assets (NEW)
+    // Step 19: Collect build assets (NEW)
+    const t16 = time('Collect build assets');
+    t16.start();
     const assets = await collectBuildAssets(buildResult.outDir);
+    t16.end();
 
-    // Step 17: Execute postBuild hooks (NEW)
+    // Step 20: Execute postBuild hooks (NEW)
     if (pluginManager) {
       console.log('🔌 Processing plugin postBuild hooks...');
+      const t17 = time('Post-build hooks');
+      t17.start();
       await pluginManager.execPostBuildHooks(
         buildResult.outDir,
         routeManifest,
         assets
       );
+      t17.end();
       console.log('   Post-build hooks completed\n');
     }
 
-    // Step 18: Copy Marko tags directory to output (after build so it doesn't get cleaned)
+    // Step 21: Copy Marko tags directory to output (after build so it doesn't get cleaned)
     console.log('📦 Copying Marko tags directory...');
+    const t18 = time('Copy tags directory');
+    t18.start();
     await copyTagsDirectory(process.cwd(), buildResult.outDir, config, debug);
+    t18.end();
     console.log('   Tags directory copied\n');
 
     console.log('\n✅ Build completed successfully!');
@@ -239,6 +310,15 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       }
     }
     console.log(`   Pages: ${totalPages}`);
+
+    // Print timing summary
+    console.log('\n⏱️  Build timing:');
+    const sortedTimings = Array.from(timings.entries()).sort((a, b) => b[1] - a[1]);
+    for (const [label, time] of sortedTimings) {
+      const seconds = (time / 1000).toFixed(2);
+      const bar = '█'.repeat(Math.min(Math.floor(time / 100), 20));
+      console.log(`   ${bar} ${label}: ${seconds}s`);
+    }
 
     return {
       success: true,
@@ -268,8 +348,20 @@ export function modulesToManifest(modules: ContentModule[]): ContentManifest {
   const manifest: ContentManifest = {} as ContentManifest;
 
   for (const module of modules) {
-    // Add module files directly to manifest under module ID
-    manifest[module.id] = module.files;
+    // Get TOC enhancement if present
+    const tocMap = module.getEnhancement<Map<string, any>>('toc');
+
+    // Add module files with enhancements to manifest
+    const files = module.files.map(file => {
+      const fileData: any = { ...file };
+      // Add TOC if available for this file's urlPath
+      if (tocMap && tocMap.has(file.urlPath)) {
+        fileData.toc = tocMap.get(file.urlPath);
+      }
+      return fileData;
+    });
+
+    manifest[module.id] = files;
   }
 
   return manifest;

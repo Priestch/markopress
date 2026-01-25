@@ -18,78 +18,101 @@ import type { MarkdownOptions, ProcessedMarkdown, Header, MarkdownEnv } from './
 // Cache highlighter instance
 let highlighterInstance: Awaited<ReturnType<typeof createHighlighter>> | null = null;
 
+// Track languages that have been loaded for lazy loading
+const loadedLanguages = new Set<string>();
+let loadLanguagePromise: Promise<void> | null = null;
+
 /**
- * Common languages that cover most use cases
- * Loading all 300+ languages adds ~5 seconds to build time
+ * Essential languages to load immediately (covers ~80% of use cases)
+ * Everything else loads on-demand to speed up initial build
  */
-const COMMON_LANGUAGES = [
+const ESSENTIAL_LANGUAGES = [
   'javascript',
   'typescript',
   'js',
   'ts',
-  'jsx',
-  'tsx',
-  'python',
-  'py',
-  'rust',
-  'rs',
-  'go',
-  'java',
-  'c',
-  'cpp',
-  'cs',
-  'csharp',
-  'php',
-  'ruby',
-  'rb',
   'bash',
-  'sh',
-  'shell',
-  'html',
-  'css',
-  'scss',
-  'json',
-  'yaml',
-  'yml',
-  'toml',
   'markdown',
   'md',
-  'sql',
-  'dart',
-  'kotlin',
-  'swift',
-  'xml',
-  'vue',
-  'svelte',
 ] as const;
 
 /**
- * Get or create Shiki highlighter
+ * Language alias map (shorthand -> full name)
  */
-async function getHighlighterInstance(
-  languages?: 'common' | 'all' | readonly string[]
-): Promise<Awaited<ReturnType<typeof createHighlighter>>> {
+const LANGUAGE_ALIASES: Record<string, string> = {
+  'js': 'javascript',
+  'ts': 'typescript',
+  'py': 'python',
+  'rs': 'rust',
+  'sh': 'bash',
+  'shell': 'bash',
+  'yml': 'yaml',
+  'cs': 'csharp',
+  'cpp': 'c++',
+};
+
+/**
+ * Resolve language alias to canonical name
+ */
+function resolveLanguageAlias(lang: string): string {
+  return LANGUAGE_ALIASES[lang] || lang;
+}
+
+/**
+ * Get or create Shiki highlighter with lazy loading support
+ *
+ * Lazy loading strategy:
+ * 1. Start with only essential languages (js, ts, bash, md)
+ * 2. Load additional languages via preloadLanguages() as needed
+ * 3. Cache loaded languages to avoid re-loading
+ */
+async function getHighlighterInstance(): Promise<Awaited<ReturnType<typeof createHighlighter>>> {
   if (!highlighterInstance) {
-    let langs: readonly string[];
-
-    if (languages === 'all') {
-      // Load all bundled languages (slow!)
-      const { bundledLanguages } = await import('shiki/langs');
-      langs = Object.keys(bundledLanguages);
-    } else if (Array.isArray(languages)) {
-      // Custom language list
-      langs = languages;
-    } else {
-      // Default to common languages (fast)
-      langs = Array.from(COMMON_LANGUAGES);
-    }
-
+    // Start with essential languages (covers ~80% of use cases)
+    // Additional languages are loaded via preloadLanguages() after scanning content
     highlighterInstance = await createHighlighter({
       themes: ['github-light', 'github-dark'],
-      langs: Array.from(langs),
+      langs: Array.from(ESSENTIAL_LANGUAGES),
     });
+
+    // Initialize loaded languages tracking
+    ESSENTIAL_LANGUAGES.forEach(lang => loadedLanguages.add(resolveLanguageAlias(lang)));
   }
   return highlighterInstance;
+}
+
+/**
+ * Pre-load a list of languages in parallel
+ * Called after scanning all files to load only the languages actually used
+ */
+export async function preloadLanguages(languages: string[]): Promise<void> {
+  if (!highlighterInstance) {
+    // Create base highlighter with essential languages first
+    await getHighlighterInstance();
+  }
+
+  // Load all needed languages in parallel
+  const loadPromises: Promise<void>[] = [];
+  for (const lang of languages) {
+    const resolved = resolveLanguageAlias(lang);
+    if (!loadedLanguages.has(resolved)) {
+      loadPromises.push(
+        (async () => {
+          try {
+            const { bundledLanguages } = await import('shiki/langs');
+            if (resolved in bundledLanguages) {
+              await highlighterInstance!.loadLanguage(bundledLanguages[resolved as keyof typeof bundledLanguages]);
+              loadedLanguages.add(resolved);
+            }
+          } catch {
+            // Language not available, ignore
+          }
+        })()
+      );
+    }
+  }
+
+  await Promise.all(loadPromises);
 }
 
 /**
@@ -104,7 +127,7 @@ export async function getMarkdownIt(
   options: MarkdownOptions = {},
   env: MarkdownEnv = {}
 ): Promise<MarkdownIt> {
-  const highlighter = await getHighlighterInstance(options.highlightLanguages);
+  const highlighter = await getHighlighterInstance();
 
   // Create enhanced highlighter with line features
   const enhancedHighlight = createEnhancedHighlighter(highlighter, {
@@ -191,8 +214,8 @@ export async function parseMarkdown(
   // Render to HTML
   const html = md.render(content, env);
 
-  // Extract headers
-  const headers = extractHeaders(content);
+  // Extract headers only if TOC is enabled for this module
+  const headers = env.extractToc ? extractHeaders(content) : [];
 
   return {
     frontmatter,

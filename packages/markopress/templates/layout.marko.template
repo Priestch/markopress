@@ -61,13 +61,6 @@
       <main id="main-content" class="main-content">
         <${input.content}/>
       </main>
-
-      <if=$global.toc>
-        <aside class="toc-aside desktop-only">
-          <theme-aside-top toc=$global.toc/>
-          <theme-aside-bottom toc=$global.toc/>
-        </aside>
-      </if>
     </div>
 
     <!-- Footer -->

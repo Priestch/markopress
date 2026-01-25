@@ -39,12 +39,18 @@ export async function scanContent(options: ContentScannerOptions): Promise<Conte
   const manifest: ContentManifest = {} as ContentManifest;
 
   // Scan ALL configured directories dynamically
-  for (const [moduleId, dirPath] of Object.entries(dirs)) {
-    if (!dirPath) continue;
+  for (const [moduleId, dirConfig] of Object.entries(dirs)) {
+    if (!dirConfig) continue;
+
+    // Extract directory path and options
+    const dirPath = typeof dirConfig === 'string'
+      ? dirConfig
+      : (dirConfig.dir ?? `content/${moduleId}`);  // Default to content/{moduleId} if dir not specified
+    const toc = typeof dirConfig === 'string' ? undefined : dirConfig.toc;
 
     // Determine content file type based on module ID
     const fileType = getFileType(moduleId);
-    const files = await scanDirectory(dirPath, rootDir, markdownOptions, moduleId, fileType);
+    const files = await scanDirectory(dirPath, rootDir, markdownOptions, moduleId, fileType, toc);
     manifest[moduleId] = files;
   }
 
@@ -75,10 +81,16 @@ export async function scanContentModules(
   const modules: ContentModule[] = [];
 
   // Scan each configured content directory as a separate module
-  for (const [key, dirPath] of Object.entries(dirs)) {
-    if (!dirPath) continue;
+  for (const [key, dirConfig] of Object.entries(dirs)) {
+    if (!dirConfig) continue;
 
-    const files = await scanDirectory(dirPath, rootDir, markdownOptions, key, undefined, sharedContext);
+    // Extract directory path and options
+    const dirPath = typeof dirConfig === 'string'
+      ? dirConfig
+      : (dirConfig.dir ?? `content/${key}`);  // Default to content/{moduleId} if dir not specified
+    const toc = typeof dirConfig === 'string' ? undefined : dirConfig.toc;
+
+    const files = await scanDirectory(dirPath, rootDir, markdownOptions, key, undefined, toc, sharedContext);
 
     // Create module metadata
     const metadata: ModuleMetadata = {
@@ -95,6 +107,12 @@ export async function scanContentModules(
       metadata
     );
 
+    // Store TOC option as an enhancement for plugins to access
+    // Using a different key to avoid collision with the TOC plugin's Map
+    if (toc !== undefined) {
+      module.enhance('extractToc', toc);
+    }
+
     modules.push(module);
   }
 
@@ -110,6 +128,7 @@ async function scanDirectory(
   markdownOptions?: MarkdownOptions,
   moduleId?: string,
   type?: 'page' | 'doc' | 'blog' | 'custom',
+  extractToc?: boolean,
   sharedContext?: ScanContext
 ): Promise<ContentFile[]> {
   const fullDirPath = path.resolve(rootDir, dirPath);
@@ -135,6 +154,7 @@ async function scanDirectory(
         const processed = await parseMarkdown(content, markdownOptions, {
           rootDir,
           filePath,
+          extractToc,
         });
 
         // Skip draft posts
@@ -186,7 +206,7 @@ async function scanDirectory(
           const processed = await parseMarkdown(
             content,
             markdownOptions,
-            { rootDir, filePath },
+            { rootDir, filePath, extractToc },
             sharedMd
           );
 
