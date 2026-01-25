@@ -68,6 +68,15 @@ export interface ThemeConfig {
 
 export interface MarkdownConfig {
   lineNumbers?: boolean;
+
+  /**
+   * Syntax highlighting languages to load.
+   * - 'common': Load 38 common languages (default, faster)
+   * - 'all': Load all 300+ languages (slower, ~5s)
+   * - string[]: Custom list of language names
+   */
+  highlightLanguages?: 'common' | 'all' | readonly string[];
+
   theme?: {
     light?: string;
     dark?: string;
