@@ -7,12 +7,8 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { loadConfig } from '../config/index.js';
-import { scanContentModules } from '../content/scanner.js';
-import type { ContentModule } from '../content/module.js';
-import type { ContentFile } from '../content/types.js';
 import { PluginManager } from '../plugin/manager.js';
 import { generateRoutes, copyThemeCSS, copyThemeComponents, generateCatchAllRoutes } from '../build/index.js';
-import { modulesToManifest } from '../build/index.js';
 
 interface DevServerOptions {
   port?: number;
@@ -42,36 +38,10 @@ export async function startDevServer(options: DevServerOptions = {}) {
     await pluginManager.execLoadContentHooks();
   }
 
-  // Scan content modules
-  console.log('📂 Scanning content modules...');
-  const modules = await scanContentModules({
-    rootDir: config.root,
-    dirs: config.content,
-    markdownOptions: config.markdown,
-  });
+  // Empty manifest for dynamic rendering
+  const manifest: Record<string, any> = {};
+  const modules: any[] = [];
 
-  // Log module information
-  for (const module of modules) {
-    console.log(`   Found ${module.id} module: ${module.files.length} files`);
-  }
-  console.log('');
-
-  // Execute enhanceModules hooks
-  if (pluginManager) {
-    console.log('🔌 Processing plugin enhanceModules hooks...');
-    await pluginManager.execEnhanceModulesHooks(modules);
-    console.log('   Modules enhanced\n');
-  }
-
-  // Generate manifest from modules for backward compatibility
-  const manifest = modulesToManifest(modules);
-
-  // Execute contentLoaded hooks to process content
-  if (pluginManager) {
-    await pluginManager.execContentLoadedHooks(manifest);
-  }
-
-  // Generate routes
   console.log('📝 Generating routes from content...');
   const routesDir = path.join(config.root, 'src', 'routes');
   const routeMode = options.useCatchAllRoutes ?? config.build.useCatchAllRoutes;
@@ -79,22 +49,8 @@ export async function startDevServer(options: DevServerOptions = {}) {
   // Ensure routes directory exists
   await fs.mkdir(routesDir, { recursive: true });
 
-  // Build initial route manifest from dynamic manifest
+  // Initialize empty route manifest
   let routeManifest: Record<string, any> = {};
-
-  // Process all modules dynamically
-  for (const [moduleId, files] of Object.entries(manifest)) {
-    // Skip non-array entries (like 'all' collection)
-    if (!Array.isArray(files)) continue;
-
-    for (const file of files as ContentFile[]) {
-      routeManifest[file.urlPath] = {
-        path: file.urlPath,
-        title: file.processed.frontmatter.title || 'Untitled',
-        ...file.processed.frontmatter
-      };
-    }
-  }
 
   // Execute extendRoutes hooks
   if (pluginManager) {

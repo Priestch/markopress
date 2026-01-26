@@ -1,54 +1,61 @@
-import manifest from '{{MANIFEST_PATH}}';
+import { renderMarkdown } from 'markopress/markdown';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import { config } from '{{CONFIG_PATH}}';
 
 export async function GET(context, next) {
   const slug = context.params.slug || 'index';
   const contentType = '{{CONTENT_TYPE}}'; // 'pages', 'blog', 'guides', etc.
 
-  // Look up content from manifest
-  const content = manifest[contentType][slug];
+  // Set theme config from markopress.config.js
+  context.navbar = config.theme.options.navbar || [];
+  context.lang = config.site.lang || 'en-US';
 
-  if (!content) {
-    // Let it fall through to 404
-    return next();
-  }
+  // Build file path
+  // For 'pages' module, files are in content/pages/
+  // For other modules, files are in content/{contentType}/
+  const contentDir = contentType === 'pages' ? 'pages' : contentType;
+  const filePath = path.join(process.cwd(), 'content', contentDir, `${slug}.md`);
 
-  // Set context for template
-  context.title = content.title;
-  context.description = content.description;
-  context.content = content.html;
-  context.slug = slug;
+  try {
+    // Check if file exists
+    await fs.access(filePath);
 
-  // TOC (table of contents) - available for all content types
-  if (content.toc) {
-    context.toc = content.toc;
-  }
+    // Read markdown source
+    const source = await fs.readFile(filePath, 'utf-8');
 
-  // Blog-specific fields
-  if (content.date) {
-    context.date = content.date;
-  }
-  if (content.author) {
-    context.author = content.author;
-  }
-  if (content.tags) {
-    context.tags = content.tags;
-  }
+    // Render markdown at request time
+    const rendered = await renderMarkdown(source);
 
-  // Sidebar (for docs/guides)
-  if (manifest.sidebar && Object.keys(manifest.sidebar).length > 0) {
-    // Determine which sidebar to use based on the path
-    let sidebarKey = null;
-    for (const key of Object.keys(manifest.sidebar)) {
-      if (context.url.pathname.startsWith(key)) {
-        sidebarKey = key;
-        break;
-      }
+    // Set context for template
+    context.title = rendered.frontmatter.title || slug;
+    context.description = rendered.frontmatter.description || '';
+    context.content = rendered.html;
+    context.slug = slug;
+
+    // TOC (table of contents) - extracted from headers
+    if (rendered.headers && rendered.headers.length > 0) {
+      context.toc = rendered.headers;
     }
-    if (sidebarKey) {
-      context.sidebar = manifest.sidebar[sidebarKey] || [];
-    }
-  }
 
-  // Navbar
-  context.navbar = manifest.navbar || [];
+    // Blog-specific fields
+    if (rendered.frontmatter.date) {
+      context.date = rendered.frontmatter.date;
+    }
+    if (rendered.frontmatter.author) {
+      context.author = rendered.frontmatter.author;
+    }
+    if (rendered.frontmatter.tags) {
+      context.tags = rendered.frontmatter.tags;
+    }
+
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      // File not found - let it fall through to 404
+      return next();
+    }
+    // Other errors - log and rethrow
+    console.error(`Error rendering ${contentType}/${slug}:`, error);
+    throw error;
+  }
 }

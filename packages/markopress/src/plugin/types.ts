@@ -7,7 +7,7 @@ import type { ResolvedConfig } from '../config/index.js';
 import type { ProcessedMarkdown } from '../markdown/index.js';
 import type { ContentFile } from '../content/types.js';
 import type { ContentManifest as SystemContentManifest } from '../content/types.js';
-import type { ContentModule } from '../content/module.js';
+import type { ContentModule } from '../content/registry.js';
 
 /**
  * Route configuration for plugin-generated routes

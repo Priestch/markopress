@@ -25,18 +25,6 @@ export default defineConfig({
         { text: 'Guides', link: '/guides/getting-started' },
         { text: 'Blog', link: '/blog' },
       ],
-      // sidebar removed temporarily to test plugin system
-      // sidebar: {
-      //   '/docs/': [
-      //     {
-      //       text: 'Guide',
-      //       items: [
-      //         { text: 'Getting Started', link: '/docs/getting-started' },
-      //         { text: 'Configuration', link: '/docs/configuration' },
-      //       ],
-      //     },
-      //   ],
-      // },
       footer: {
         message: 'Released under the MIT License.',
         copyright: 'Copyright © 2024-present MarkoPress',

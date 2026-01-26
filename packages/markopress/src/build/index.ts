@@ -6,16 +6,15 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import pLimit from 'p-limit';
-import { scanContent, scanContentModules, type ScanContext } from '../content/scanner.js';
 import { loadConfig } from '../config/loader.js';
 import type { ContentManifest, ContentFile } from '../content/types.js';
-import type { ContentModule } from '../content/module.js';
 import type { ResolvedConfig } from '../config/types.js';
 import { getDesignSystem, getDarkModeOverride, type DesignSystem } from '@markopress/theme-default/design-systems';
-import { generateContentManifest } from './manifest-generator.js';
 import { globalTagValidator, formatValidationError } from '../markdown/tag-validator.js';
 import { PluginManager } from '../plugin/manager.js';
+
+// Stub type for backward compatibility (modules removed, now rendered at request time)
+export type ContentModule = any;
 
 export interface BuildOptions {
   useCatchAllRoutes?: boolean;
@@ -85,54 +84,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       console.log('   Plugin content loaded\n');
     }
 
-    // Step 3: Scan content modules with parallel processing
-    console.log('📂 Scanning content modules...');
-    const t3 = time('Content scanning');
-    t3.start();
-    const scanContext: ScanContext = {
-      limit: pLimit(50), // Process up to 50 files concurrently
-      md: null,
-    };
-    const modules = await scanContentModules(
-      {
-        rootDir: process.cwd(),
-        dirs: config.content,
-        markdownOptions: config.markdown,
-      },
-      scanContext
-    );
-    t3.end();
+    // Step 3: Create empty manifest for backward compatibility
+    // Content is now rendered at request time, not build time
+    const manifest: ContentManifest = {};
+    const modules: any[] = [];
 
-    // Log module information
-    for (const module of modules) {
-      console.log(`   Found ${module.id} module: ${module.files.length} files`);
-    }
-    console.log('');
-
-    // Step 4: Execute enhanceModules hooks (NEW)
-    if (pluginManager) {
-      console.log('🔌 Processing plugin enhanceModules hooks...');
-      const t4 = time('Plugin enhanceModules hooks');
-      t4.start();
-      await pluginManager.execEnhanceModulesHooks(modules);
-      t4.end();
-      console.log('   Modules enhanced\n');
-    }
-
-    // Step 5: Generate manifest from modules for backward compatibility
-    const manifest = modulesToManifest(modules);
-
-    // Step 6: Execute contentLoaded hooks (for backward compatibility)
-    if (pluginManager) {
-      console.log('🔌 Processing plugin contentLoaded hooks...');
-      const t6 = time('Plugin contentLoaded hooks');
-      t6.start();
-      await pluginManager.execContentLoadedHooks(manifest);
-      t6.end();
-      console.log('   Plugin content processed\n');
-    }
-
-    // Step 7: Initialize tag validator if Marko tags enabled
+    // Step 4: Initialize tag validator if Marko tags enabled
     if (config.markdown.markoTags?.enabled) {
       const tagsDir = path.join(process.cwd(), config.markdown.markoTags.tagsDir || 'src/.markopress/tags');
       console.log('🔍 Scanning tags directory...');
@@ -145,27 +102,27 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       globalTagValidator.reset();
     }
 
-    // Step 8: Ensure routes directory exists
+    // Step 5: Ensure routes directory exists
     // Note: Routes must be in src/routes/ for @marko/run compatibility
     const routesDir = path.join(process.cwd(), 'src', 'routes');
     await fs.mkdir(routesDir, { recursive: true });
 
-    // Step 9: Generate initial route manifest
-    let routeManifest = buildInitialRouteManifest(manifest);
+    // Step 6: Initialize empty route manifest for plugins to extend
+    let routeManifest: Record<string, any> = {};
 
-    // Step 10: Execute extendRoutes hooks
+    // Step 7: Execute extendRoutes hooks
     if (pluginManager) {
-      const t8 = time('Extend routes hooks');
-      t8.start();
+      const t5 = time('Extend routes hooks');
+      t5.start();
       routeManifest = await pluginManager.execExtendRoutesHooks(routeManifest);
-      t8.end();
+      t5.end();
       console.log('🔌 Extended routes manifest:', Object.keys(routeManifest).length);
     }
 
-    // Step 11: Generate routes for content
+    // Step 8: Generate routes for content
     console.log('📝 Generating routes from content...');
-    const t9 = time('Route generation');
-    t9.start();
+    const t6 = time('Route generation');
+    t6.start();
     const routeMode = useCatchAllRoutes ?? config.build.useCatchAllRoutes;
     if (routeMode) {
       await generateCatchAllRoutes(manifest, routesDir, config, modules, debug);
@@ -174,10 +131,10 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       await generateRoutes(manifest, routesDir, config, modules, debug);
       console.log('   Using static routes');
     }
-    t9.end();
+    t6.end();
     console.log('   Routes generated\n');
 
-    // Step 12: Convert routeManifest entries with handler/component to plugin routes
+    // Step 9: Convert routeManifest entries with handler/component to plugin routes
     // This allows plugins to add custom routes via extendRoutes hook
     const manifestRoutes: any[] = [];
     for (const [path, route] of Object.entries(routeManifest)) {
@@ -189,37 +146,37 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
     console.log(`🔌 Total manifest routes: ${Object.keys(routeManifest).length}, Plugin routes: ${manifestRoutes.length}`);
 
-    // Step 13: Generate plugin routes
+    // Step 10: Generate plugin routes
     if (pluginManager) {
       const pluginRoutes = pluginManager.getPluginRoutes();
       const allPluginRoutes = [...pluginRoutes, ...manifestRoutes];
       if (allPluginRoutes.length > 0) {
         console.log(`🔌 Generating ${allPluginRoutes.length} plugin routes...`);
-        const t10 = time('Plugin route generation');
-        t10.start();
+        const t7 = time('Plugin route generation');
+        t7.start();
         await generatePluginRoutes(allPluginRoutes, routesDir, config, debug);
-        t10.end();
+        t7.end();
         console.log('   Plugin routes generated\n');
       }
     }
 
-    // Step 14: Execute allContentLoaded hooks (NEW)
+    // Step 11: Execute allContentLoaded hooks
     if (pluginManager) {
       console.log('🔌 Processing plugin allContentLoaded hooks...');
-      const t11 = time('AllContentLoaded hooks');
-      t11.start();
+      const t8 = time('AllContentLoaded hooks');
+      t8.start();
       await pluginManager.execAllContentLoadedHooks(routeManifest);
-      t11.end();
+      t8.end();
       console.log('   All content processed\n');
     }
 
-    // Step 15: Validate Marko tags if enabled
+    // Step 12: Validate Marko tags if enabled
     if (config.markdown.markoTags?.enabled) {
       console.log('🔍 Validating Marko tags...');
-      const t12 = time('Tag validation');
-      t12.start();
+      const t9 = time('Tag validation');
+      t9.start();
       const validation = globalTagValidator.validate();
-      t12.end();
+      t9.end();
 
       if (!validation.success) {
         const errorMessage = formatValidationError(validation.missingTags);
@@ -237,29 +194,29 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       console.log('   All tags validated ✓\n');
     }
 
-    // Step 16: Copy theme components to src/components
+    // Step 13: Copy theme components to src/components
     console.log('📦 Copying theme components...');
-    const t13 = time('Theme components copy');
-    t13.start();
+    const t10 = time('Theme components copy');
+    t10.start();
     await copyThemeComponents(process.cwd(), config, debug);
-    t13.end();
+    t10.end();
     console.log('   Theme components copied\n');
 
-    // Step 17: Copy theme CSS to public directory
+    // Step 14: Copy theme CSS to public directory
     console.log('🎨 Copying theme CSS...');
-    const t14 = time('Theme CSS copy');
-    t14.start();
+    const t11 = time('Theme CSS copy');
+    t11.start();
     await copyThemeCSS(process.cwd(), config, debug);
-    t14.end();
+    t11.end();
     console.log('   Theme CSS copied\n');
 
-    // Step 18: Build with @marko/run
+    // Step 15: Build with @marko/run
     console.log('🔨 Building with @marko/run...');
-    const t15 = time('@marko/run build');
-    t15.start();
+    const t12 = time('@marko/run build');
+    t12.start();
     const resolvedOutDir = outDir || config.build.outDir;
     const buildResult = await runMarkoRunBuild(resolvedOutDir, debug);
-    t15.end();
+    t12.end();
 
     if (!buildResult.success) {
       errors.push(...buildResult.errors);
@@ -271,45 +228,37 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       };
     }
 
-    // Step 19: Collect build assets (NEW)
-    const t16 = time('Collect build assets');
-    t16.start();
+    // Step 16: Collect build assets
+    const t13 = time('Collect build assets');
+    t13.start();
     const assets = await collectBuildAssets(buildResult.outDir);
-    t16.end();
+    t13.end();
 
-    // Step 20: Execute postBuild hooks (NEW)
+    // Step 17: Execute postBuild hooks
     if (pluginManager) {
       console.log('🔌 Processing plugin postBuild hooks...');
-      const t17 = time('Post-build hooks');
-      t17.start();
+      const t14 = time('Post-build hooks');
+      t14.start();
       await pluginManager.execPostBuildHooks(
         buildResult.outDir,
         routeManifest,
         assets
       );
-      t17.end();
+      t14.end();
       console.log('   Post-build hooks completed\n');
     }
 
-    // Step 21: Copy Marko tags directory to output (after build so it doesn't get cleaned)
+    // Step 18: Copy Marko tags directory to output (after build so it doesn't get cleaned)
     console.log('📦 Copying Marko tags directory...');
-    const t18 = time('Copy tags directory');
-    t18.start();
+    const t15 = time('Copy tags directory');
+    t15.start();
     await copyTagsDirectory(process.cwd(), buildResult.outDir, config, debug);
-    t18.end();
+    t15.end();
     console.log('   Tags directory copied\n');
 
     console.log('\n✅ Build completed successfully!');
     console.log(`   Output: ${buildResult.outDir}`);
-
-    // Calculate total pages from all modules
-    let totalPages = 0;
-    for (const [key, files] of Object.entries(manifest)) {
-      if (Array.isArray(files)) {
-        totalPages += files.length;
-      }
-    }
-    console.log(`   Pages: ${totalPages}`);
+    console.log(`   Pages: Generated dynamically at request time`);
 
     // Print timing summary
     console.log('\n⏱️  Build timing:');
@@ -323,7 +272,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     return {
       success: true,
       outDir: buildResult.outDir,
-      pages: totalPages,
+      pages: 0, // Pages generated dynamically at request time
       errors,
     };
   } catch (error) {
@@ -338,60 +287,6 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       errors,
     };
   }
-}
-
-/**
- * Convert content modules to dynamic manifest
- * Each module becomes a top-level key in the manifest
- */
-export function modulesToManifest(modules: ContentModule[]): ContentManifest {
-  const manifest: ContentManifest = {} as ContentManifest;
-
-  for (const module of modules) {
-    // Get TOC enhancement if present
-    const tocMap = module.getEnhancement<Map<string, any>>('toc');
-
-    // Add module files with enhancements to manifest
-    const files = module.files.map(file => {
-      const fileData: any = { ...file };
-      // Add TOC if available for this file's urlPath
-      if (tocMap && tocMap.has(file.urlPath)) {
-        fileData.toc = tocMap.get(file.urlPath);
-      }
-      return fileData;
-    });
-
-    manifest[module.id] = files;
-  }
-
-  return manifest;
-}
-
-/**
- * Build initial route manifest from content
- * Works with dynamic manifest structure
- */
-function buildInitialRouteManifest(manifest: ContentManifest) {
-  const routes: Record<string, any> = {};
-
-  // Process all modules dynamically
-  for (const [moduleId, files] of Object.entries(manifest)) {
-    // Skip non-array entries (like 'all' collection)
-    if (!Array.isArray(files)) continue;
-
-    for (const file of files as ContentFile[]) {
-      routes[file.urlPath] = {
-        path: file.urlPath,
-        meta: {
-          title: file.processed.frontmatter.title,
-          type: file.type || 'custom',
-          moduleId: file.moduleId,
-        },
-      };
-    }
-  }
-
-  return routes;
 }
 
 /**
@@ -498,6 +393,9 @@ export async function generateRoutes(
       }
     }
   }
+
+  // Generate config file for handlers
+  await generateConfigFile(routesDir, config, debug);
 
   // Generate root layout that wraps all pages with <${input.content}/>
   await generateRootLayout(routesDir, config, debug);
@@ -645,6 +543,8 @@ async function cleanupEmptyDirectories(dirPath: string): Promise<void> {
 
 /**
  * Generate a static page route
+ * NOTE: This function is deprecated in favor of catch-all routes with request-time rendering.
+ * Kept for backward compatibility with useCatchAllRoutes: false
  */
 async function generatePageRoute(
   page: ContentFile,
@@ -653,51 +553,16 @@ async function generatePageRoute(
   modules: ContentModule[],
   debug: boolean
 ): Promise<void> {
-  // For root path, use +page.marko. For others, use directory/+page.marko
-  const routeDirPath = page.urlPath === '/' ? '' : page.urlPath.slice(1);
-  const routeDir = path.join(routesDir, routeDirPath, '+page');
-
-  // Create directory if needed
-  await fs.mkdir(path.dirname(routeDir), { recursive: true });
-
-  const title = String(page.processed.frontmatter.title || 'Page');
-  const description = String(page.processed.frontmatter.description || '');
-  const content = page.processed.html || '';
-
-  // Get TOC from pages module enhancement
-  const pagesModule = modules.find(m => m.id === 'pages');
-  const toc = pagesModule?.getEnhancement<Map<string, any>>('toc')?.get(page.urlPath);
-
-  // Generate the handler file (+handler.js)
-  const handlerFile = path.join(path.dirname(routeDir), '+handler.js');
-  const navbar = config.theme?.options?.navbar || [];
-  const head = config.site?.head || [];
-  const handlerCode = `export async function GET(context, next) {
-  context.title = ${JSON.stringify(title)};
-  context.description = ${JSON.stringify(description)};
-  context.navbar = ${JSON.stringify(navbar)};
-  context.content = ${JSON.stringify(content)};
-  context.toc = ${JSON.stringify(toc || [])};
-  context.head = ${JSON.stringify(head)};
-}
-`;
-
-  await fs.writeFile(handlerFile, handlerCode);
-
-  // Generate the Marko template using template file
-  const templateFile = routeDir + '.marko';
-  const template = await loadTemplate('page.marko.template', {});
-
-  await fs.writeFile(templateFile, template);
-
+  // Static routes are deprecated - use catch-all routes instead
   if (debug) {
-    console.log(`   Generated: ${templateFile}`);
+    console.log(`   Warning: Static routes deprecated, use catch-all routes`);
   }
 }
 
 /**
  * Generate a single documentation route
- * Works with any module (docs, guides, tutorials, etc.)
+ * NOTE: This function is deprecated in favor of catch-all routes with request-time rendering.
+ * Kept for backward compatibility with useCatchAllRoutes: false
  */
 async function generateDocRoute(
   doc: ContentFile,
@@ -706,78 +571,16 @@ async function generateDocRoute(
   modules: ContentModule[],
   debug: boolean
 ): Promise<void> {
-  // Preserve full path structure
-  // e.g., "/guides/getting-started" -> "guides/getting-started"
-  const routePath = doc.urlPath.slice(1); // Remove leading slash
-  const routeDir = path.join(routesDir, routePath, '+page');
-
-  await fs.mkdir(path.dirname(routeDir), { recursive: true });
-
-  const title = String(doc.processed.frontmatter.title || 'Doc');
-  const description = String(doc.processed.frontmatter.description || '');
-  const content = doc.processed.html || '';
-
-  // Determine module ID from urlPath
-  // e.g., "/guides/getting-started" -> "guides"
-  const pathParts = doc.urlPath.split('/').filter(Boolean);
-  const moduleId = pathParts[0] || 'docs';
-
-  // Get sidebar from module enhancement or config
-  let currentSidebar: Array<{ text: string; link: string; items?: Array<{ text: string; link: string }> }> = [];
-
-  // Try to get sidebar from the module that contains this file
-  const targetModule = modules.find(m => m.id === moduleId);
-  const moduleSidebar = targetModule?.getEnhancement<Array<{ text: string; link: string; items?: any }>>('sidebar');
-
-  if (moduleSidebar) {
-    currentSidebar = moduleSidebar;
-  } else {
-    // Fallback to config-based sidebar
-    const sidebarConfig = config.theme?.options?.sidebar || {};
-    for (const [prefix, items] of Object.entries(sidebarConfig)) {
-      if (doc.urlPath.startsWith(prefix)) {
-        const sidebarItems = items as any;
-        if (Array.isArray(sidebarItems)) {
-          currentSidebar = sidebarItems;
-        }
-        break;
-      }
-    }
-  }
-
-  // Get TOC from module enhancement
-  const toc = targetModule?.getEnhancement<Map<string, any>>('toc')?.get(doc.urlPath);
-
-  // Generate handler file (+handler.js) with sidebar and TOC data
-  const handlerFile = path.join(path.dirname(routeDir), '+handler.js');
-  const navbar = config.theme?.options?.navbar || [];
-  const head = config.site?.head || [];
-  const handlerCode = `export async function GET(context, next) {
-  context.title = ${JSON.stringify(title)};
-  context.description = ${JSON.stringify(description)};
-  context.navbar = ${JSON.stringify(navbar)};
-  context.sidebar = ${JSON.stringify(currentSidebar)};
-  context.toc = ${JSON.stringify(toc || [])};
-  context.content = ${JSON.stringify(content)};
-  context.head = ${JSON.stringify(head)};
-}
-`;
-
-  await fs.writeFile(handlerFile, handlerCode);
-
-  // Generate the Marko template using template file
-  const templateFile = routeDir + '.marko';
-  const template = await loadTemplate('doc.marko.template', {});
-
-  await fs.writeFile(templateFile, template);
-
+  // Static routes are deprecated - use catch-all routes instead
   if (debug) {
-    console.log(`   Generated: ${templateFile}`);
+    console.log(`   Warning: Static routes deprecated, use catch-all routes`);
   }
 }
 
 /**
  * Generate a single blog route
+ * NOTE: This function is deprecated in favor of catch-all routes with request-time rendering.
+ * Kept for backward compatibility with useCatchAllRoutes: false
  */
 async function generateBlogRoute(
   post: ContentFile,
@@ -786,49 +589,48 @@ async function generateBlogRoute(
   modules: ContentModule[],
   debug: boolean
 ): Promise<void> {
-  // Preserve full path structure after /blog/
-  // e.g., "/blog/2024/01/test-post" -> "blog/2024/01/test-post"
-  const routePath = post.urlPath.slice(1); // Remove leading slash
-  const routeDir = path.join(routesDir, routePath, '+page');
-
-  await fs.mkdir(path.dirname(routeDir), { recursive: true });
-
-  const title = String(post.processed.frontmatter.title || 'Blog Post');
-  const description = String(post.processed.frontmatter.description || '');
-  const date = String(post.processed.frontmatter.date || '');
-  const author = String(post.processed.frontmatter.author || '');
-  const content = post.processed.html || '';
-
-  // Get TOC from blog module enhancement
-  const blogModule = modules.find(m => m.id === 'blog');
-  const toc = blogModule?.getEnhancement<Map<string, any>>('toc')?.get(post.urlPath);
-
-  // Generate handler file (+handler.js)
-  const handlerFile = path.join(path.dirname(routeDir), '+handler.js');
-  const navbar = config.theme?.options?.navbar || [];
-  const head = config.site?.head || [];
-  const handlerCode = `export async function GET(context, next) {
-  context.title = ${JSON.stringify(title)};
-  context.description = ${JSON.stringify(description)};
-  context.navbar = ${JSON.stringify(navbar)};
-  context.date = ${JSON.stringify(date)};
-  context.author = ${JSON.stringify(author)};
-  context.content = ${JSON.stringify(content)};
-  context.toc = ${JSON.stringify(toc || [])};
-  context.head = ${JSON.stringify(head)};
+  // Static routes are deprecated - use catch-all routes instead
+  if (debug) {
+    console.log(`   Warning: Static routes deprecated, use catch-all routes`);
+  }
 }
+
+/**
+ * Generate config file for handlers to import
+ * This makes theme options (navbar, footer, etc.) available to route handlers
+ */
+async function generateConfigFile(
+  routesDir: string,
+  config: ResolvedConfig,
+  debug: boolean
+): Promise<void> {
+  const configFile = path.join(routesDir, '_config.js');
+
+  // Extract relevant config for handlers
+  const handlerConfig = {
+    site: {
+      title: config.site?.title || 'MarkoPress',
+      description: config.site?.description || '',
+      lang: config.site?.lang || 'en-US',
+    },
+    theme: {
+      options: {
+        navbar: config.theme?.options?.navbar || [],
+        footer: config.theme?.options?.footer || null,
+        sidebar: config.theme?.options?.sidebar || null,
+      },
+    },
+  };
+
+  // Export as ES module
+  const content = `// Auto-generated by MarkoPress - Do not edit
+export const config = ${JSON.stringify(handlerConfig, null, 2)};
 `;
 
-  await fs.writeFile(handlerFile, handlerCode);
-
-  // Generate the Marko template using template file
-  const templateFile = routeDir + '.marko';
-  const template = await loadTemplate('blog-post.marko.template', {});
-
-  await fs.writeFile(templateFile, template);
+  await fs.writeFile(configFile, content);
 
   if (debug) {
-    console.log(`   Generated: ${templateFile}`);
+    console.log(`   Generated: ${configFile}`);
   }
 }
 
@@ -1577,29 +1379,29 @@ export async function generateCatchAllRoutes(
   modules: ContentModule[],
   debug: boolean
 ): Promise<void> {
-  console.log('   Using catch-all dynamic routes approach...');
+  console.log('   Using catch-all dynamic routes...');
+  console.log('   Content will be rendered at request time');
 
-  // Step 1: Generate content manifest JSON
-  await generateContentManifest(manifest, routesDir, config, modules);
-  if (debug) console.log('   Generated content-manifest.json');
+  // Generate catch-all routes for each content directory from config
+  const contentDirs = config.content || {};
 
-  // Step 2: Generate catch-all routes for each module dynamically
-  for (const [moduleId, files] of Object.entries(manifest)) {
-    // Skip non-array entries
-    if (!Array.isArray(files)) continue;
+  for (const [moduleId, dirConfig] of Object.entries(contentDirs)) {
+    if (!dirConfig) continue;
 
-    const contentFiles = files as ContentFile[];
-    if (contentFiles.length === 0) continue;
+    // Skip non-directory entries
+    if (typeof dirConfig === 'object' && dirConfig !== null && !('dir' in dirConfig)) {
+      continue;
+    }
 
     if (moduleId === 'pages') {
       // Generate catch-all route for pages (root-level, no module prefix)
       const pagesDir = path.join(routesDir, '$$slug');
       await fs.mkdir(pagesDir, { recursive: true });
 
-      // Handler
+      // Handler - no manifest needed, content rendered at request time
       const pagesHandler = await loadTemplate('catch-all-handler.js.template', {
         CONTENT_TYPE: 'pages',
-        MANIFEST_PATH: '../content-manifest.json',
+        CONFIG_PATH: '../_config.js',
       });
       await fs.writeFile(path.join(pagesDir, '+handler.js'), pagesHandler);
 
@@ -1609,18 +1411,16 @@ export async function generateCatchAllRoutes(
       });
       await fs.writeFile(path.join(pagesDir, '+page.marko'), pagesPage);
 
-      if (debug) console.log(`   Generated pages catch-all route (${contentFiles.length} files)`);
+      if (debug) console.log(`   Generated pages catch-all route`);
     } else {
-      // Generate catch-all route for non-pages modules (docs, blog, guides, etc.)
+      // Generate catch-all route for non-pages modules (blog, guides, etc.)
       const moduleDir = path.join(routesDir, moduleId, '$$slug');
       await fs.mkdir(moduleDir, { recursive: true });
 
-      // Handler - use correct manifest path based on nesting
-      const manifestPath = moduleId === 'blog' ? '../../content-manifest.json' : '../../content-manifest.json';
-
+      // Handler - no manifest needed
       const handlerTemplate = await loadTemplate('catch-all-handler.js.template', {
         CONTENT_TYPE: moduleId,
-        MANIFEST_PATH: manifestPath,
+        CONFIG_PATH: '../../_config.js',
       });
       await fs.writeFile(path.join(moduleDir, '+handler.js'), handlerTemplate);
 
@@ -1630,10 +1430,13 @@ export async function generateCatchAllRoutes(
       });
       await fs.writeFile(path.join(moduleDir, '+page.marko'), pageTemplate);
 
-      if (debug) console.log(`   Generated ${moduleId} catch-all route (${contentFiles.length} files)`);
+      if (debug) console.log(`   Generated ${moduleId} catch-all route`);
     }
   }
 
-  // Step 3: Generate root layout that wraps all pages
+  // Step 3: Generate config file for handlers
+  await generateConfigFile(routesDir, config, debug);
+
+  // Step 4: Generate root layout that wraps all pages
   await generateRootLayout(routesDir, config, debug);
 }

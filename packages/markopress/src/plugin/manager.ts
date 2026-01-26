@@ -14,7 +14,7 @@ import type {
   RouteConfig,
 } from './types.js';
 import type { ContentFile } from '../content/types.js';
-import type { ContentModule } from '../content/module.js';
+import type { ContentModule } from '../content/registry.js';
 import type { ResolvedConfig } from '../config/index.js';
 import MarkdownIt from 'markdown-it';
 import { AllContentImpl, ContentActionsImpl } from './context.js';
