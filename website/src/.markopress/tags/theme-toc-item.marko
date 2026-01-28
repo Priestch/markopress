@@ -1,0 +1,15 @@
+<let/href= ("#" + input.item.id)>
+<let/hasChildren= !!(input.item.children && input.item.children.length)>
+
+<li class="theme-toc-item">
+  <a href=href class="toc-link">
+    ${input.item.text}
+  </a>
+  <if=hasChildren>
+    <ul class="toc-list toc-list--nested">
+      <for|child| of=input.item.children>
+        <theme-toc-item item=child></theme-toc-item>
+      </for>
+    </ul>
+  </if>
+</li>

@@ -10,6 +10,7 @@ import { createHighlighter } from 'shiki';
 import { setupContainers, setupDetails } from './containers.js';
 import { createEnhancedHighlighter } from './code.js';
 import { preprocessIncludesWithRegions } from './includes.js';
+import { createMarkdownComponentsPlugin, getBuiltinComponents } from './components.js';
 import { preserveTagsPlugin } from './preserve-tags.js';
 import { globalTagValidator } from './tag-validator.js';
 // Cache highlighter instance
@@ -99,7 +100,10 @@ async function setupMarkdownIt(options, env) {
     setupContainers(md);
     // Add collapsible details container
     setupDetails(md);
-    // Add preserve Marko tags plugin if enabled
+    // Add markdown components plugin (new :::component syntax)
+    const componentList = options.markdownComponents || getBuiltinComponents();
+    md.use(createMarkdownComponentsPlugin({ components: componentList }));
+    // Add preserve Marko tags plugin if enabled (legacy support)
     if (options.markoTags?.enabled) {
         md.use(preserveTagsPlugin, {
             tagsDir: options.markoTags?.tagsDir || 'tags/',

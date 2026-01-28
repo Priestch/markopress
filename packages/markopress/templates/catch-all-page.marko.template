@@ -2,7 +2,9 @@
   <div class="content-layout">
     <div class="content-body">
       <h1>${$global.title}</h1>
-      $!{$global.content}
+      <${$global.contentComponent || {}}>
+        <div>No content</div>
+      </${$global.contentComponent || {}}>
     </div>
 
     <toc headers=$global.toc/>

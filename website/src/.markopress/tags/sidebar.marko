@@ -1,0 +1,220 @@
+/*!
+ * Sidebar Component
+ * Hierarchical navigation with collapsible groups
+ */
+
+<let/openGroups=new Set((input.initialOpenGroups || []))/>
+
+<style/styles>
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+
+  .sectionHeader {
+    padding: var(--sidebar-category-padding, var(--spacing-sm) 0);
+    font-size: var(--sidebar-category-font-size, 0.75rem);
+    font-weight: var(--sidebar-category-font-weight, 600);
+    text-transform: var(--sidebar-category-text-transform, uppercase);
+    color: var(--text-2, #6b7280);
+    letter-spacing: 0.05em;
+  }
+
+  .nav {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sidebar-item-gap, var(--spacing-xs));
+  }
+
+  .item {
+    list-style: none;
+  }
+
+  .link {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--sidebar-item-padding, var(--spacing-sm) var(--spacing-md));
+    font-size: var(--sidebar-item-font-size, 0.875rem);
+    font-weight: var(--sidebar-item-font-weight, 400);
+    color: var(--text-2, #6b7280);
+    text-decoration: none;
+    border-radius: var(--sidebar-item-border-radius, 4px);
+    transition: all var(--transition-fast, 0.15s);
+    line-height: var(--sidebar-item-height, 1.4);
+    height: var(--sidebar-item-height, auto);
+  }
+
+  .link:hover {
+    color: var(--text-1);
+    background: var(--sidebar-hover-background, var(--bg-soft));
+  }
+
+  .link.active {
+    color: var(--color-primary-1);
+    background: var(--sidebar-active-background, var(--accent-bg));
+    font-weight: var(--sidebar-item-font-weight, 500);
+    border-left: var(--sidebar-active-border, 2px solid var(--color-primary-1));
+    padding-left: calc(var(--sidebar-item-padding, var(--spacing-sm) var(--spacing-md)) - 2px);
+  }
+
+  .icon {
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
+
+  .text {
+    flex: 1;
+  }
+
+  .group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .groupHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sidebar-item-padding, var(--spacing-sm) var(--spacing-md));
+    font-size: var(--sidebar-item-font-size, 0.875rem);
+    font-weight: 500;
+    color: var(--text-1, #1f2937);
+    cursor: pointer;
+    border-radius: var(--sidebar-item-border-radius, 4px);
+    transition: background-color var(--transition-fast, 0.15s);
+    user-select: none;
+    height: var(--sidebar-item-height, auto);
+  }
+
+  .groupHeader:hover {
+    background: var(--sidebar-hover-background, var(--bg-soft));
+  }
+
+  .groupTitle {
+    flex: 1;
+  }
+
+  .groupIcon {
+    flex-shrink: 0;
+    transition: transform var(--transition-fast, 0.15s);
+  }
+
+  .groupIcon.rotated {
+    transform: rotate(90deg);
+  }
+
+  .groupItems {
+    list-style: none;
+    padding-left: var(--spacing-lg);
+    margin-top: var(--spacing-xs);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sidebar-item-gap, var(--spacing-xs));
+    border-left: 1px solid var(--border-divider);
+  }
+
+  .groupItems .link {
+    font-size: var(--sidebar-item-font-size, 0.875rem);
+    color: var(--text-2, #6b7280);
+  }
+</style>
+
+<script>
+  const isActive = (href) => {
+    if (typeof window !== 'undefined') {
+      return window.location.pathname === href;
+    }
+    return false;
+  };
+</script>
+
+<div class=styles.content role="navigation" aria-label="Sidebar navigation">
+  <!-- Sidebar Sections -->
+  <for|section| of=(input.sections || [])>
+    <div class=styles.section>
+      <!-- Section Header -->
+      <if=section.text>
+        <div class=styles.sectionHeader>${section.text}</div>
+      </if>
+
+      <!-- Section Items -->
+      <ul class=styles.nav>
+        <for|item| of=section.items>
+          <if=item.items && item.items.length>
+            <!-- Item with children (collapsible group) -->
+            <li class=styles.group>
+              <div
+                class=styles.groupHeader
+                onClick(e) {
+                  if (openGroups.has(item.text)) {
+                    openGroups.delete(item.text);
+                  } else {
+                    openGroups.add(item.text);
+                  }
+                }
+                role="button"
+                tabindex="0"
+                aria-expanded=openGroups.has(item.text)>
+                <span class=styles.groupTitle>${item.text}</span>
+                <let/rotatedClass=openGroups.has(item.text) ? styles.groupIcon + ' ' + styles.rotated : styles.groupIcon/>
+                <svg
+                  class=rotatedClass
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </div>
+
+              <if=openGroups.has(item.text)>
+                <ul class=styles.groupItems>
+                  <for|subitem| of=item.items>
+                    <let/subitemClass=isActive(subitem.link) ? styles.link + ' ' + styles.active : styles.link/>
+                    <li class=styles.item>
+                      <a
+                        class=subitemClass
+                        href=subitem.link>
+                        <if=subitem.icon>
+                          <span class=styles.icon>${subitem.icon}</span>
+                        </if>
+                        <span class=styles.text>${subitem.text}</span>
+                      </a>
+                    </li>
+                  </for>
+                </ul>
+              </if>
+            </li>
+          </if>
+
+          <if=!item.items || item.items.length === 0>
+            <!-- Regular item (no children) -->
+            <let/itemClass=isActive(item.link) ? styles.link + ' ' + styles.active : styles.link/>
+            <li class=styles.item>
+              <a
+                class=itemClass
+                href=item.link>
+                <if=item.icon>
+                  <span class=styles.icon>${item.icon}</span>
+                </if>
+                <span class=styles.text>${item.text}</span>
+              </a>
+            </li>
+          </if>
+        </for>
+      </ul>
+    </div>
+  </for>
+</div>

@@ -31,8 +31,16 @@ export async function renderMarkdown(
 ): Promise<ProcessedMarkdown> {
   // Lazy init MarkdownIt (one-time cost)
   if (!mdInstance) {
-    mdInstance = await getMarkdownIt(options);
-    mdOptions = options;
+    // Always enable markoTags for component support
+    const opts = {
+      ...options,
+      markoTags: {
+        enabled: true,
+        ...options?.markoTags
+      }
+    };
+    mdInstance = await getMarkdownIt(opts);
+    mdOptions = opts;
   }
 
   // Parse frontmatter

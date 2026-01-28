@@ -160,7 +160,15 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       }
     }
 
-    // Step 11: Execute allContentLoaded hooks
+    // Step 11: Generate Vite config for markdown content plugin
+    console.log('⚙️ Generating Vite config...');
+    const t10 = time('Vite config generation');
+    t10.start();
+    await generateViteConfig(process.cwd(), debug);
+    t10.end();
+    console.log('   Vite config generated\n');
+
+    // Step 12: Execute allContentLoaded hooks
     if (pluginManager) {
       console.log('🔌 Processing plugin allContentLoaded hooks...');
       const t8 = time('AllContentLoaded hooks');
@@ -194,15 +202,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       console.log('   All tags validated ✓\n');
     }
 
-    // Step 13: Copy theme components to src/components
-    console.log('📦 Copying theme components...');
-    const t10 = time('Theme components copy');
-    t10.start();
-    await copyThemeComponents(process.cwd(), config, debug);
-    t10.end();
-    console.log('   Theme components copied\n');
-
-    // Step 14: Copy theme CSS to public directory
+    // Step 13: Copy theme CSS to public directory
     console.log('🎨 Copying theme CSS...');
     const t11 = time('Theme CSS copy');
     t11.start();
@@ -396,6 +396,9 @@ export async function generateRoutes(
 
   // Generate config file for handlers
   await generateConfigFile(routesDir, config, debug);
+
+  // Generate vite.config.js for markdown content virtual module support
+  await generateViteConfig(config.root, debug);
 
   // Generate root layout that wraps all pages with <${input.content}/>
   await generateRootLayout(routesDir, config, debug);
@@ -739,6 +742,45 @@ export function validateThemeName(name: string): void {
 }
 
 /**
+ * Generate Vite config that extends @marko/run with markdown content plugin
+ */
+export async function generateViteConfig(
+  rootDir: string,
+  debug: boolean
+): Promise<void> {
+  const viteConfigPath = path.join(rootDir, 'vite.config.js');
+  const viteConfigContent = `import { defineConfig } from 'vite';
+import marko from '@marko/run/vite';
+import { markdownContentPlugin } from 'markopress/build';
+
+export default defineConfig({
+  plugins: [
+    marko(),
+    markdownContentPlugin(),
+  ],
+});
+`;
+
+  try {
+    // Check if file already exists and has our plugin
+    const existing = await fs.readFile(viteConfigPath, 'utf-8');
+    if (existing.includes('markdownContentPlugin')) {
+      if (debug) {
+        console.log('   Vite config already has markdownContentPlugin');
+      }
+      return;
+    }
+  } catch {
+    // File doesn't exist, create it
+  }
+
+  await fs.writeFile(viteConfigPath, viteConfigContent);
+  if (debug) {
+    console.log(`   Created vite.config.js with markdownContentPlugin`);
+  }
+}
+
+/**
  * Copy theme CSS to public directory
  */
 export async function copyThemeCSS(
@@ -828,92 +870,6 @@ export async function copyThemeCSS(
     } catch {
       // Try next path
     }
-  }
-}
-
-/**
- * Convert PascalCase to kebab-case
- * ThemeNavbarEnd -> theme-navbar-end
- */
-function pascalToKebab(str: string): string {
-  return str
-    .replace(/([a-z])([A-Z])/g, '$1-$2')
-    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
-    .toLowerCase();
-}
-
-/**
- * Copy theme components to src/routes/components for <components/xxx> tag resolution
- * This copies theme tags so they can be used with <components/xxx-name/> syntax
- * Files are renamed from PascalCase to kebab-case to match tag usage
- */
-export async function copyThemeComponents(
-  rootDir: string,
-  config: ResolvedConfig,
-  debug: boolean
-): Promise<void> {
-  const themeName = config.theme?.name || '@markopress/theme-default';
-
-  // Security: Validate theme name to prevent path traversal
-  try {
-    validateThemeName(themeName);
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`Security: ${errorMessage}`);
-  }
-
-  // Theme components should be in dist/tags of the theme package
-  const possiblePaths = [
-    // pnpm workspace: root node_modules
-    path.join(rootDir, '..', 'node_modules', themeName, 'dist', 'tags'),
-    // Local node_modules
-    path.join(rootDir, 'node_modules', themeName, 'dist', 'tags'),
-    // Direct packages path (for monorepo)
-    path.join(rootDir, '..', 'packages', 'theme-default', 'dist', 'tags'),
-  ];
-
-  let themeTagsDir: string | null = null;
-
-  for (const tagsPath of possiblePaths) {
-    try {
-      await fs.access(tagsPath);
-      themeTagsDir = tagsPath;
-      break;
-    } catch {
-      // Try next path
-    }
-  }
-
-  if (!themeTagsDir) {
-    // Theme components directory doesn't exist, skip copying
-    if (debug) {
-      console.log(`   No theme components directory found`);
-    }
-    return;
-  }
-
-  // Create destination directory in src/routes/tags
-  // Marko discovers tags from a tags/ directory
-  const destDir = path.join(rootDir, 'src', 'routes', 'tags');
-  await fs.mkdir(destDir, { recursive: true });
-
-  // Get all .marko files from theme tags directory
-  const files = await fs.readdir(themeTagsDir);
-  const markoFiles = files.filter(f => f.endsWith('.marko'));
-
-  // Copy each .marko file to src/routes/components
-  // Convert PascalCase filenames to kebab-case for tag resolution
-  for (const file of markoFiles) {
-    const srcPath = path.join(themeTagsDir, file);
-    const nameWithoutExt = file.slice(0, -('.marko'.length));
-    const kebabName = pascalToKebab(nameWithoutExt);
-    const destPath = path.join(destDir, kebabName + '.marko');
-    await fs.copyFile(srcPath, destPath);
-  }
-
-  if (debug && markoFiles.length > 0) {
-    console.log(`   Copied ${markoFiles.length} theme component(s) from: ${themeTagsDir}`);
-    console.log(`   Output: ${destDir}`);
   }
 }
 
@@ -1402,6 +1358,7 @@ export async function generateCatchAllRoutes(
       const pagesHandler = await loadTemplate('catch-all-handler.js.template', {
         CONTENT_TYPE: 'pages',
         CONFIG_PATH: '../_config.js',
+        VITE_PLUGIN_PATH: 'markopress/build',
       });
       await fs.writeFile(path.join(pagesDir, '+handler.js'), pagesHandler);
 
@@ -1421,6 +1378,7 @@ export async function generateCatchAllRoutes(
       const handlerTemplate = await loadTemplate('catch-all-handler.js.template', {
         CONTENT_TYPE: moduleId,
         CONFIG_PATH: '../../_config.js',
+        VITE_PLUGIN_PATH: 'markopress/build',
       });
       await fs.writeFile(path.join(moduleDir, '+handler.js'), handlerTemplate);
 
@@ -1437,6 +1395,9 @@ export async function generateCatchAllRoutes(
   // Step 3: Generate config file for handlers
   await generateConfigFile(routesDir, config, debug);
 
-  // Step 4: Generate root layout that wraps all pages
+  // Step 4: Generate vite.config.js for markdown content virtual module support
+  await generateViteConfig(config.root, debug);
+
+  // Step 5: Generate root layout that wraps all pages
   await generateRootLayout(routesDir, config, debug);
 }

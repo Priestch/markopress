@@ -2,6 +2,7 @@ import { renderMarkdown } from 'markopress/markdown';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { config } from '{{CONFIG_PATH}}';
+import { loadMarkdownModule, registerMarkdownContent } from '{{VITE_PLUGIN_PATH}}';
 
 export async function GET(context, next) {
   const slug = context.params.slug || 'index';
@@ -27,10 +28,17 @@ export async function GET(context, next) {
     // Render markdown at request time
     const rendered = await renderMarkdown(source);
 
+    // Register the markdown content as a virtual Marko component
+    const contentId = `${contentType}/${slug}`;
+    await registerMarkdownContent(contentId, rendered.html);
+
+    // Import the virtual module (handled by vite plugin)
+    const contentComponent = (await loadMarkdownModule(`virtual:markdown-content/${contentId}`)).default;
+
     // Set context for template
     context.title = rendered.frontmatter.title || slug;
     context.description = rendered.frontmatter.description || '';
-    context.content = rendered.html;
+    context.contentComponent = contentComponent;
     context.slug = slug;
 
     // TOC (table of contents) - extracted from headers

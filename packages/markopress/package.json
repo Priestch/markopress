@@ -33,6 +33,9 @@
       "import": "./dist/theme/index.js",
       "types": "./dist/theme/index.d.ts"
     },
+    "./build": {
+      "import": "./dist/build/vite-markdown-plugin.js"
+    },
     "./vite": {
       "import": "./dist/vite/index.js",
       "types": "./dist/vite/index.d.ts"

@@ -7,9 +7,12 @@
   <if=$global.description>
     <meta name="description" content=$global.description>
   </if>
-  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/_markopress/theme/theme-default.css">
+  <link rel="stylesheet" href="/_markopress/theme/styles.css">
 </head>
 <body>
+  <let/mobileMenuOpen=false/>
+
   <div class="app-container">
     <!-- Navbar -->
     <nav class="navbar">
@@ -28,28 +31,18 @@
         </if>
 
         <!-- Header Actions -->
-        <div class="navbar-actions">
-          <!-- Dark Mode Toggle -->
-          <button class="btn-icon" aria-label="Toggle dark mode" on-click=toggleDarkMode>
-            <span ref="sun-icon" class="icon-sun">☀️</span>
-            <span ref="moon-icon" class="icon-moon">🌙</span>
-          </button>
-
-          <!-- Mobile Menu Toggle -->
-          <button class="btn-icon mobile-menu-toggle" aria-label="Toggle menu" on-click=toggleMobileMenu>
-            <span ref="menu-icon" class="icon-menu">☰</span>
-            <span ref="close-icon" class="icon-close">✕</span>
-          </button>
-        </div>
+        <theme-navbar-end mobileMenuOpen=mobileMenuOpen setMobileMenuOpen=(v) => { mobileMenuOpen = v; }/>
       </div>
 
       <!-- Mobile Menu -->
       <if=$global.navbar>
-        <nav ref="mobile-sidebar" class="navbar-mobile-menu">
-          <for|item| of=$global.navbar>
-            <a href=item.link class="nav-link">${item.text}</a>
-          </for>
-        </nav>
+        <if=mobileMenuOpen>
+          <nav class="navbar-mobile-menu is-open">
+            <for|item| of=$global.navbar>
+              <a href=item.link class="nav-link">${item.text}</a>
+            </for>
+          </nav>
+        </if>
       </if>
     </nav>
 
@@ -58,16 +51,14 @@
       <if=$global.sidebar>
         <!-- Sidebar for docs -->
         <aside class="sidebar desktop-only">
-          <nav class="sidebar-nav">
-            <for|item| of=$global.sidebar>
-              <a href=item.link class="sidebar-link">${item.text}</a>
-            </for>
-          </nav>
+          <theme-sidebar-top/>
+          <sidebar sections=$global.sidebar/>
+          <theme-sidebar-bottom/>
         </aside>
       </if>
 
       <!-- Page content -->
-      <main class="main-content">
+      <main id="main-content" class="main-content">
         <${input.content}/>
       </main>
     </div>
@@ -80,92 +71,14 @@
     </footer>
   </div>
 
-  <script>
-    class Layout {
-      state = {
-        darkMode: false,
-        mobileMenuOpen: false,
-      };
-
-      onMount() {
-        // Check for saved theme preference
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-          this.state.darkMode = true;
-          document.documentElement.classList.add('dark');
-        }
-
-        // Check system preference
-        if (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          this.state.darkMode = true;
-          document.documentElement.classList.add('dark');
-        }
-
-        this.updateUI();
-      }
-
-      toggleDarkMode() {
-        this.state.darkMode = !this.state.darkMode;
-        document.documentElement.classList.toggle('dark', this.state.darkMode);
-        localStorage.setItem('theme', this.state.darkMode ? 'dark' : 'light');
-        this.updateUI();
-      }
-
-      toggleMobileMenu() {
-        this.state.mobileMenuOpen = !this.state.mobileMenuOpen;
-        this.updateUI();
-      }
-
-      updateUI() {
-        // Update dark mode icons
-        const sunIcon = this.getEl('sun-icon');
-        const moonIcon = this.getEl('moon-icon');
-        if (sunIcon && moonIcon) {
-          sunIcon.style.display = this.state.darkMode ? 'inline' : 'none';
-          moonIcon.style.display = this.state.darkMode ? 'none' : 'inline';
-        }
-
-        // Update mobile menu icons
-        const menuIcon = this.getEl('menu-icon');
-        const closeIcon = this.getEl('close-icon');
-        if (menuIcon && closeIcon) {
-          menuIcon.style.display = this.state.mobileMenuOpen ? 'none' : 'inline';
-          closeIcon.style.display = this.state.mobileMenuOpen ? 'inline' : 'none';
-        }
-
-        // Update mobile menu visibility
-        const sidebar = this.getEl('mobile-sidebar');
-        if (sidebar) {
-          sidebar.style.display = this.state.mobileMenuOpen ? 'block' : 'none';
-        }
-      }
-    }
-  </script>
-
   <style>
-    .icon-sun, .icon-moon, .icon-menu, .icon-close {
+    .icon-menu, .icon-close {
       font-size: 1.2rem;
       line-height: 1;
     }
 
-    .icon-moon, .icon-close {
-      display: none;
-    }
-
-    .dark .icon-sun {
-      display: inline;
-    }
-
-    .dark .icon-moon {
-      display: none;
-    }
-
     .desktop-only {
       display: block;
-    }
-
-    .navbar-mobile-menu {
-      display: none;
     }
 
     @media (max-width: 768px) {
@@ -188,6 +101,10 @@
       display: none;
       padding: 1rem;
       border-top: 1px solid var(--border-default, #e5e7eb);
+    }
+
+    .navbar-mobile-menu.is-open {
+      display: block;
     }
 
     .navbar-mobile-menu .nav-link {

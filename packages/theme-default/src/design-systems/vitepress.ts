@@ -301,9 +301,9 @@ export const vitepressDark: Partial<DesignSystem> = {
 
     // Text colors (Dark mode)
     text: {
-      '1': '#dfdfd6',
-      '2': '#98989f',
-      '3': '#6a6a71',
+      '1': '#e2e2e3',
+      '2': '#c0c0c4',
+      '3': '#a1a1a6',
     },
 
     // Border colors (Dark mode)
