@@ -619,22 +619,23 @@ async function generateConfigFile(
 ): Promise<void> {
   const configFile = path.join(routesDir, '_config.js');
 
-  // Extract relevant config for handlers
+  // Export the full config (except root which we add separately)
+  // Include all fields needed by handlers and templates
   const handlerConfig = {
     root: config.root,
-    content: config.content,
     site: {
       title: config.site?.title || 'MarkoPress',
       description: config.site?.description || '',
       lang: config.site?.lang || 'en-US',
+      head: config.site?.head || [],
     },
+    content: config.content,
     theme: {
-      options: {
-        navbar: config.theme?.options?.navbar || [],
-        footer: config.theme?.options?.footer || null,
-        sidebar: config.theme?.options?.sidebar || null,
-      },
+      name: config.theme?.name || '@markopress/theme-default',
+      options: config.theme?.options || {},
     },
+    markdown: config.markdown || {},
+    build: config.build || {},
   };
 
   // Export as ES module
