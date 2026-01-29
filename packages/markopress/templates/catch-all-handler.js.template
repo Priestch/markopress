@@ -12,12 +12,19 @@ export async function GET(context, next) {
   context.navbar = config.theme.options.navbar || [];
   context.lang = config.site.lang || 'en-US';
 
-  // Build file path
-  // For 'pages' module, files are in content/pages/
-  // For other modules, files are in content/{contentType}/
-  // Content paths are resolved relative to config.root (e.g., ../content from app root)
-  const contentDir = contentType === 'pages' ? 'pages' : contentType;
-  const filePath = path.join(config.root, 'content', contentDir, `${slug}.md`);
+  // Build file path from content config
+  // Content paths in config are relative to config.root (e.g., ../content/pages)
+  // Get the content directory for this module
+  const contentConfig = config.content[contentType];
+  const contentDir = typeof contentConfig === 'string' ? contentConfig : contentConfig?.dir;
+
+  if (!contentDir) {
+    // No content directory configured for this type
+    return next();
+  }
+
+  // Resolve the full file path (contentDir is relative to config.root)
+  const filePath = path.join(config.root, contentDir, `${slug}.md`);
 
   try {
     // Check if file exists

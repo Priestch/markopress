@@ -8,7 +8,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { loadConfig } from '../config/index.js';
 import { PluginManager } from '../plugin/manager.js';
-import { generateRoutes, copyThemeCSS, generateCatchAllRoutes } from '../build/index.js';
+import { generateRoutes, copyThemeCSS, generateCatchAllRoutes, copyThemeComponents } from '../build/index.js';
 
 interface DevServerOptions {
   port?: number;
@@ -79,6 +79,11 @@ export async function startDevServer(options: DevServerOptions = {}) {
   console.log('🎨 Copying theme CSS...');
   await copyThemeCSS(config.root, config, false);
   console.log('   Theme CSS copied\n');
+
+  // Copy theme components to routes/tags for Marko discovery
+  console.log('📦 Copying theme components...');
+  await copyThemeComponents(config.root, config, false);
+  console.log('   Theme components copied\n');
 
   // Start @marko/run dev server
   console.log('🔨 Starting @marko/run dev server...\n');

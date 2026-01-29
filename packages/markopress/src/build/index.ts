@@ -212,13 +212,21 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     t11.end();
     console.log('   Theme CSS copied\n');
 
+    // Step 14: Copy theme components to routes/tags for Marko auto-discovery
+    console.log('📦 Copying theme components...');
+    const t12 = time('Theme components copy');
+    t12.start();
+    await copyThemeComponents(root, config, debug);
+    t12.end();
+    console.log('   Theme components copied\n');
+
     // Step 15: Build with @marko/run
     console.log('🔨 Building with @marko/run...');
-    const t12 = time('@marko/run build');
-    t12.start();
+    const t13 = time('@marko/run build');
+    t13.start();
     const resolvedOutDir = outDir || config.build.outDir;
     const buildResult = await runMarkoRunBuild(resolvedOutDir, debug, root);
-    t12.end();
+    t13.end();
 
     if (!buildResult.success) {
       errors.push(...buildResult.errors);
@@ -231,31 +239,31 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     }
 
     // Step 16: Collect build assets
-    const t13 = time('Collect build assets');
-    t13.start();
+    const t14 = time('Collect build assets');
+    t14.start();
     const assets = await collectBuildAssets(buildResult.outDir);
-    t13.end();
+    t14.end();
 
     // Step 17: Execute postBuild hooks
     if (pluginManager) {
       console.log('🔌 Processing plugin postBuild hooks...');
-      const t14 = time('Post-build hooks');
-      t14.start();
+      const t15 = time('Post-build hooks');
+      t15.start();
       await pluginManager.execPostBuildHooks(
         buildResult.outDir,
         routeManifest,
         assets
       );
-      t14.end();
+      t15.end();
       console.log('   Post-build hooks completed\n');
     }
 
     // Step 18: Copy Marko tags directory to output (after build so it doesn't get cleaned)
     console.log('📦 Copying Marko tags directory...');
-    const t15 = time('Copy tags directory');
-    t15.start();
+    const t17 = time('Copy tags directory');
+    t17.start();
     await copyTagsDirectory(root, buildResult.outDir, config, debug);
-    t15.end();
+    t17.end();
     console.log('   Tags directory copied\n');
 
     console.log('\n✅ Build completed successfully!');
@@ -614,6 +622,7 @@ async function generateConfigFile(
   // Extract relevant config for handlers
   const handlerConfig = {
     root: config.root,
+    content: config.content,
     site: {
       title: config.site?.title || 'MarkoPress',
       description: config.site?.description || '',
@@ -873,6 +882,81 @@ export async function copyThemeCSS(
     } catch {
       // Try next path
     }
+  }
+}
+
+/**
+ * Copy theme components to routes/tags directory for Marko auto-discovery
+ * This makes theme components (like <theme-navbar-end>, <toc>, etc.) available
+ * without requiring explicit imports in templates
+ */
+export async function copyThemeComponents(
+  rootDir: string,
+  config: ResolvedConfig,
+  debug: boolean
+): Promise<void> {
+  const themeName = config.theme?.name || '@markopress/theme-default';
+
+  // Target directory: src/routes/tags/ where Marko auto-discovers components
+  const routesDir = path.join(rootDir, 'src', 'routes');
+  const tagsDir = path.join(routesDir, 'tags');
+
+  // Ensure tags directory exists
+  await fs.mkdir(tagsDir, { recursive: true });
+
+  // Possible locations for theme components (dist/tags is where marko.json points)
+  const possiblePaths = [
+    // pnpm workspace: root node_modules
+    path.join(rootDir, '..', 'node_modules', themeName, 'dist', 'tags'),
+    // Local node_modules
+    path.join(rootDir, 'node_modules', themeName, 'dist', 'tags'),
+    // Direct packages path (for monorepo development)
+    path.join(rootDir, '..', 'packages', 'theme-default', 'dist', 'tags'),
+    // Source path (for monorepo development without build)
+    path.join(rootDir, '..', 'packages', 'theme-default', 'src', 'components'),
+  ];
+
+  let sourceTagsDir: string | null = null;
+
+  for (const dirPath of possiblePaths) {
+    try {
+      // Check if any .marko files exist in this directory
+      const files = await fs.readdir(dirPath);
+      const hasMarkoFiles = files.some(f => f.endsWith('.marko'));
+      if (hasMarkoFiles) {
+        sourceTagsDir = dirPath;
+        break;
+      }
+    } catch {
+      // Directory doesn't exist, continue
+    }
+  }
+
+  if (!sourceTagsDir) {
+    if (debug) {
+      console.warn(`   Warning: Could not find theme components, skipping`);
+    }
+    return;
+  }
+
+  // Copy all .marko files from source to tags directory
+  const files = await fs.readdir(sourceTagsDir);
+  let copiedCount = 0;
+
+  for (const file of files) {
+    if (!file.endsWith('.marko')) continue;
+
+    const srcPath = path.join(sourceTagsDir, file);
+    const destPath = path.join(tagsDir, file);
+
+    // Copy file
+    await fs.copyFile(srcPath, destPath);
+    copiedCount++;
+  }
+
+  if (debug) {
+    console.log(`   Copied ${copiedCount} theme components from: ${sourceTagsDir}`);
+    console.log(`   Output: ${tagsDir}`);
   }
 }
 

@@ -102,8 +102,13 @@ export async function loadConfigFromFile(
   root: string,
   env: ConfigEnv
 ): Promise<{ file: string; config: UserConfig } | null> {
-  // Check .markopress/config.* for configuration (at root level)
+  // Check for config files at the root level
+  // When root is already the app root (e.g., website/.markopress), look for config.*
+  // When root is the project root (e.g., website/), look for .markopress/config.*
   const configFiles = [
+    'config.ts',
+    'config.js',
+    'config.mjs',
     '.markopress/config.ts',
     '.markopress/config.js',
     '.markopress/config.mjs',
