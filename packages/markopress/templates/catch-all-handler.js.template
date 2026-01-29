@@ -8,10 +8,6 @@ export async function GET(context, next) {
   const slug = context.params.slug || 'index';
   const contentType = '{{CONTENT_TYPE}}'; // 'pages', 'blog', 'guides', etc.
 
-  // Set theme config from markopress.config.js
-  context.navbar = config.theme.options.navbar || [];
-  context.lang = config.site.lang || 'en-US';
-
   // Build file path from content config
   // Content paths in config are relative to config.root (e.g., ../content/pages)
   // Get the content directory for this module
@@ -27,11 +23,13 @@ export async function GET(context, next) {
   const filePath = path.join(config.root, contentDir, `${slug}.md`);
 
   try {
-    // Check if file exists
-    await fs.access(filePath);
+    // Check if file exists and read it
+    const source = await fs.readFile(filePath, 'utf-8').catch(() => null);
 
-    // Read markdown source
-    const source = await fs.readFile(filePath, 'utf-8');
+    if (!source) {
+      // File not found - return 404
+      return new Response('Not Found', { status: 404, statusText: 'Not Found' });
+    }
 
     // Render markdown at request time
     const rendered = await renderMarkdown(source);
@@ -42,6 +40,12 @@ export async function GET(context, next) {
 
     // Import the virtual module (handled by vite plugin)
     const contentComponent = (await loadMarkdownModule(`virtual:markdown-content/${contentId}`)).default;
+
+    // Set theme config from markopress.config.js (only after file is found)
+    context.navbar = config.theme.options.navbar || [];
+    context.lang = config.site.lang || 'en-US';
+    context.siteHead = config.site.head || [];
+    context.footer = config.theme.options.footer || null;
 
     // Set context for template
     context.title = rendered.frontmatter.title || slug;
@@ -66,12 +70,8 @@ export async function GET(context, next) {
     }
 
   } catch (error) {
-    if (error.code === 'ENOENT') {
-      // File not found - let it fall through to 404
-      return next();
-    }
-    // Other errors - log and rethrow
+    // Log error and return 404
     console.error(`Error rendering ${contentType}/${slug}:`, error);
-    throw error;
+    return new Response('Not Found', { status: 404, statusText: 'Not Found' });
   }
 }

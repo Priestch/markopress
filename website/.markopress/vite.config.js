@@ -7,4 +7,7 @@ export default defineConfig({
     marko(),
     markdownContentPlugin(),
   ],
+  build: {
+    outDir: 'dist',
+  },
 });

@@ -12,6 +12,7 @@ import type { ResolvedConfig } from '../config/types.js';
 import { getDesignSystem, getDarkModeOverride, type DesignSystem } from '@markopress/theme-default/design-systems';
 import { globalTagValidator, formatValidationError } from '../markdown/tag-validator.js';
 import { PluginManager } from '../plugin/manager.js';
+import { loadMarkdownModule, registerMarkdownContent } from './vite-markdown-plugin.js';
 
 // Stub type for backward compatibility (modules removed, now rendered at request time)
 export type ContentModule = any;
@@ -771,6 +772,9 @@ export default defineConfig({
     marko(),
     markdownContentPlugin(),
   ],
+  build: {
+    outDir: 'dist',
+  },
 });
 `;
 
@@ -891,6 +895,17 @@ export async function copyThemeCSS(
  * This makes theme components (like <theme-navbar-end>, <toc>, etc.) available
  * without requiring explicit imports in templates
  */
+async function getAllMarkoFiles(dir: string): Promise<string[]> {
+  const dirents = await fs.readdir(dir, { withFileTypes: true });
+  const files = await Promise.all(
+    dirents.map((dirent) => {
+      const res = path.resolve(dir, dirent.name);
+      return dirent.isDirectory() ? getAllMarkoFiles(res) : res;
+    })
+  );
+  return Array.prototype.concat(...files).filter(file => file.endsWith('.marko'));
+}
+
 export async function copyThemeComponents(
   rootDir: string,
   config: ResolvedConfig,
@@ -898,36 +913,33 @@ export async function copyThemeComponents(
 ): Promise<void> {
   const themeName = config.theme?.name || '@markopress/theme-default';
 
-  // Target directory: src/routes/tags/ where Marko auto-discovers components
-  const routesDir = path.join(rootDir, 'src', 'routes');
-  const tagsDir = path.join(routesDir, 'tags');
+  // Target directory: src/tags/ where Marko can find from both routes and generated files
+  const srcDir = path.join(rootDir, 'src');
+  const tagsDir = path.join(srcDir, 'tags');
 
   // Ensure tags directory exists
   await fs.mkdir(tagsDir, { recursive: true });
 
-  // Possible locations for theme components (dist/tags is where marko.json points)
+  // Possible locations for theme components
   const possiblePaths = [
+    // Source path (for monorepo development without build)
+    path.join(rootDir, '..', 'packages', 'theme-default', 'src', 'components'),
     // pnpm workspace: root node_modules
     path.join(rootDir, '..', 'node_modules', themeName, 'dist', 'tags'),
     // Local node_modules
     path.join(rootDir, 'node_modules', themeName, 'dist', 'tags'),
     // Direct packages path (for monorepo development)
     path.join(rootDir, '..', 'packages', 'theme-default', 'dist', 'tags'),
-    // Source path (for monorepo development without build)
-    path.join(rootDir, '..', 'packages', 'theme-default', 'src', 'components'),
   ];
 
   let sourceTagsDir: string | null = null;
 
   for (const dirPath of possiblePaths) {
     try {
-      // Check if any .marko files exist in this directory
-      const files = await fs.readdir(dirPath);
-      const hasMarkoFiles = files.some(f => f.endsWith('.marko'));
-      if (hasMarkoFiles) {
-        sourceTagsDir = dirPath;
-        break;
-      }
+      // Check if directory exists
+      await fs.access(dirPath);
+      sourceTagsDir = dirPath;
+      break;
     } catch {
       // Directory doesn't exist, continue
     }
@@ -940,19 +952,32 @@ export async function copyThemeComponents(
     return;
   }
 
-  // Copy all .marko files from source to tags directory
-  const files = await fs.readdir(sourceTagsDir);
+  // Get all .marko files recursively
+  const allMarkoFiles = await getAllMarkoFiles(sourceTagsDir);
   let copiedCount = 0;
 
-  for (const file of files) {
-    if (!file.endsWith('.marko')) continue;
+  for (const file of allMarkoFiles) {
+    const relativePath = path.relative(sourceTagsDir, file);
+    const destPath = path.join(tagsDir, relativePath);
 
-    const srcPath = path.join(sourceTagsDir, file);
-    const destPath = path.join(tagsDir, file);
+    let exists = false;
+    try {
+      await fs.access(destPath);
+      exists = true;
+    } catch {
+      // file does not exist
+    }
 
-    // Copy file
-    await fs.copyFile(srcPath, destPath);
-    copiedCount++;
+    if (exists) {
+      if (debug) {
+        console.log(`   Skipped component (user override exists): ${relativePath}`);
+      }
+    } else {
+      // File doesn't exist, so copy it
+      await fs.mkdir(path.dirname(destPath), { recursive: true });
+      await fs.copyFile(file, destPath);
+      copiedCount++;
+    }
   }
 
   if (debug) {
@@ -1490,3 +1515,7 @@ export async function generateCatchAllRoutes(
   // Step 5: Generate root layout that wraps all pages
   await generateRootLayout(routesDir, config, debug);
 }
+
+// Re-export markdown plugin utilities for use in generated handlers
+export { loadMarkdownModule, registerMarkdownContent };
+export { markdownContentPlugin } from './vite-markdown-plugin.js';

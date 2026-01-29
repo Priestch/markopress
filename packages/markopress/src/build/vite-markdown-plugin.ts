@@ -18,7 +18,7 @@ export function markdownContentPlugin() {
   const virtualModuleId = 'virtual:markdown-content';
   const resolvedVirtualModuleId = '\0' + virtualModuleId;
   let rootDir = process.cwd();
-  let generatedDir = toPosixPath(path.join(rootDir, 'src', '.markopress', '.generated', 'markdown'));
+  let generatedDir = toPosixPath(path.join(rootDir, 'src', '.generated', 'markdown'));
 
   const debug = (msg: string, data: unknown) => {
     try {
@@ -37,7 +37,7 @@ export function markdownContentPlugin() {
 
     configResolved(config: { root?: string }) {
       rootDir = config.root || process.cwd();
-      generatedDir = toPosixPath(path.join(rootDir, 'src', '.markopress', '.generated', 'markdown'));
+      generatedDir = toPosixPath(path.join(rootDir, 'src', '.generated', 'markdown'));
     },
 
     resolveId(id: string, importer?: string) {

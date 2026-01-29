@@ -8,6 +8,7 @@
     <meta name="description" content=$global.description>
   </if>
   <theme-head-top/>
+  <meta name="theme-color" content="#3c8772">
   <link rel="stylesheet" href="/_markopress/theme/theme-{{THEME_STYLE}}.css">
   <link rel="stylesheet" href="/_markopress/theme/styles.css">
   <theme-head-bottom/>

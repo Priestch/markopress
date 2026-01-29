@@ -31,7 +31,7 @@ website/
 ### From the website directory
 
 ```bash
-cd website
+cd website/.markopress
 markopress dev
 # or
 pnpm dev
@@ -48,15 +48,16 @@ pnpm dev
 ```
 
 The dev server will automatically:
-1. Resolve `.markopress/` as the app root
+1. Resolve the app root (current directory is `.markopress/`)
 2. Find content in `../content/` relative to the app root
-3. Generate routes in `.markopress/src/routes/`
+3. Generate routes in `src/routes/`
 4. Start the @marko/run dev server
 
 ## Build
 
 ```bash
-# From website directory
+# From .markopress directory
+cd website/.markopress
 markopress build
 # or
 pnpm build
@@ -70,7 +71,8 @@ pnpm build
 ## Preview Production Build
 
 ```bash
-# From website directory
+# From .markopress directory
+cd website/.markopress
 markopress preview
 # or
 pnpm preview
@@ -114,7 +116,7 @@ description: Page description
 Content goes here...
 ```
 
-2. Run `markopress dev` - the page will be available at `/my-page`
+2. From `.markopress/`, run `markopress dev` - the page will be available at `/my-page`
 
 ### Create a new guide
 
