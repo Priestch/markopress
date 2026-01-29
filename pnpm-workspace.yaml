@@ -3,8 +3,8 @@
 packages:
   # Core packages
   - 'packages/*'
-  # Website package
-  - 'website'
+  # Website package (hidden app root)
+  - 'website/.markopress'
 
 # Enable workspace protocol
 # This allows packages to reference each other using workspace: prefix

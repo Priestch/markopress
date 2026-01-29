@@ -20,6 +20,7 @@ export interface BuildOptions {
   useCatchAllRoutes?: boolean;
   outDir?: string;
   debug?: boolean;
+  root?: string;
 }
 
 export interface BuildResult {
@@ -33,7 +34,8 @@ export interface BuildResult {
  * Build the MarkoPress site for production
  */
 export async function build(options: BuildOptions = {}): Promise<BuildResult> {
-  const { outDir, debug = false, useCatchAllRoutes } = options;
+  const { outDir, debug = false, useCatchAllRoutes, root: optionRoot } = options;
+  const root = optionRoot || process.cwd();
   const errors: string[] = [];
   const timings = new Map<string, number>();
   const startTimes = new Map<string, number>();
@@ -59,7 +61,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     // Step 0: Load configuration
     const t0 = time('Config loading');
     t0.start();
-    const config = await loadConfig(process.cwd(), { mode: 'production', command: 'build' });
+    const config = await loadConfig(root, { mode: 'production', command: 'build' });
     t0.end();
 
     // Step 1: Initialize plugin manager
@@ -91,7 +93,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
     // Step 4: Initialize tag validator if Marko tags enabled
     if (config.markdown.markoTags?.enabled) {
-      const tagsDir = path.join(process.cwd(), config.markdown.markoTags.tagsDir || 'src/.markopress/tags');
+      const tagsDir = path.join(root, config.markdown.markoTags.tagsDir || 'src/.markopress/tags');
       console.log('🔍 Scanning tags directory...');
       const t7 = time('Tag validation setup');
       t7.start();
@@ -104,7 +106,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
     // Step 5: Ensure routes directory exists
     // Note: Routes must be in src/routes/ for @marko/run compatibility
-    const routesDir = path.join(process.cwd(), 'src', 'routes');
+    const routesDir = path.join(root, 'src', 'routes');
     await fs.mkdir(routesDir, { recursive: true });
 
     // Step 6: Initialize empty route manifest for plugins to extend
@@ -164,7 +166,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     console.log('⚙️ Generating Vite config...');
     const t10 = time('Vite config generation');
     t10.start();
-    await generateViteConfig(process.cwd(), debug);
+    await generateViteConfig(root, debug);
     t10.end();
     console.log('   Vite config generated\n');
 
@@ -206,7 +208,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     console.log('🎨 Copying theme CSS...');
     const t11 = time('Theme CSS copy');
     t11.start();
-    await copyThemeCSS(process.cwd(), config, debug);
+    await copyThemeCSS(root, config, debug);
     t11.end();
     console.log('   Theme CSS copied\n');
 
@@ -215,7 +217,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const t12 = time('@marko/run build');
     t12.start();
     const resolvedOutDir = outDir || config.build.outDir;
-    const buildResult = await runMarkoRunBuild(resolvedOutDir, debug);
+    const buildResult = await runMarkoRunBuild(resolvedOutDir, debug, root);
     t12.end();
 
     if (!buildResult.success) {
@@ -252,7 +254,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     console.log('📦 Copying Marko tags directory...');
     const t15 = time('Copy tags directory');
     t15.start();
-    await copyTagsDirectory(process.cwd(), buildResult.outDir, config, debug);
+    await copyTagsDirectory(root, buildResult.outDir, config, debug);
     t15.end();
     console.log('   Tags directory copied\n');
 
@@ -611,6 +613,7 @@ async function generateConfigFile(
 
   // Extract relevant config for handlers
   const handlerConfig = {
+    root: config.root,
     site: {
       title: config.site?.title || 'MarkoPress',
       description: config.site?.description || '',
@@ -1277,7 +1280,8 @@ function escapeJsString(str: string): string {
  */
 async function runMarkoRunBuild(
   outDir: string | undefined,
-  debug: boolean
+  debug: boolean,
+  root: string
 ): Promise<{ success: boolean; outDir: string; errors: string[] }> {
   return new Promise((resolve) => {
     const args = ['build'];
@@ -1292,7 +1296,7 @@ async function runMarkoRunBuild(
 
     const buildProcess = spawn('npx', ['marko-run', ...args], {
       stdio: 'inherit',
-      cwd: process.cwd(),
+      cwd: root,
     });
 
     buildProcess.on('close', (code) => {
@@ -1302,7 +1306,7 @@ async function runMarkoRunBuild(
 
         resolve({
           success: true,
-          outDir: path.join(process.cwd(), outputDir),
+          outDir: path.join(root, outputDir),
           errors: [],
         });
       } else {

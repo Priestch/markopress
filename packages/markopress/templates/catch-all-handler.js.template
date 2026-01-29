@@ -15,8 +15,9 @@ export async function GET(context, next) {
   // Build file path
   // For 'pages' module, files are in content/pages/
   // For other modules, files are in content/{contentType}/
+  // Content paths are resolved relative to config.root (e.g., ../content from app root)
   const contentDir = contentType === 'pages' ? 'pages' : contentType;
-  const filePath = path.join(process.cwd(), 'content', contentDir, `${slug}.md`);
+  const filePath = path.join(config.root, 'content', contentDir, `${slug}.md`);
 
   try {
     // Check if file exists

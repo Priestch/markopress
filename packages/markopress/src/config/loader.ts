@@ -23,9 +23,9 @@ const DEFAULT_CONFIG: Omit<ResolvedConfig, 'root'> = {
     head: [],
   },
   content: {
-    pages: 'content/pages',
+    pages: '../content/pages',
     // No default 'docs' - users should use generic module names
-    blog: 'content/blog',
+    blog: '../content/blog',
   },
   theme: {
     name: '@markopress/theme-default',

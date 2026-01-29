@@ -6,12 +6,12 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "website"
+    "website/.markopress"
   ],
   "scripts": {
-    "dev": "npm run docs:dev --workspace=website",
-    "build": "npm run docs:build --workspace=website",
-    "preview": "npm run docs:preview --workspace=website",
+    "dev": "npm run docs:dev --workspace=@markopress/website",
+    "build": "npm run docs:build --workspace=@markopress/website",
+    "preview": "npm run docs:preview --workspace=@markopress/website",
     "docs:dev": "pnpm --filter @markopress/website dev",
     "docs:build": "pnpm --filter @markopress/website build",
     "docs:preview": "pnpm --filter @markopress/website preview",

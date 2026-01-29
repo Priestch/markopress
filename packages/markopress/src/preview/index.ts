@@ -7,16 +7,19 @@ import { spawn } from 'node:child_process';
 import type { PreviewOptions } from '../build/types.js';
 
 export async function preview(options: PreviewOptions = {}): Promise<never> {
-  const { port = 4173, host = 'localhost' } = options;
+  const { port = 4173, host = 'localhost', root } = options;
 
   console.log('🚀 Starting MarkoPress preview server...\n');
   console.log(`   Server: http://${host}:${port}`);
   console.log('   Press Ctrl+C to stop\n');
 
+  // Use resolved root or fall back to process.cwd()
+  const cwd = root || process.cwd();
+
   // Use @marko/run preview command
   const previewProcess = spawn('npx', ['marko-run', 'preview', '--port', String(port)], {
     stdio: 'inherit',
-    cwd: process.cwd(),
+    cwd,
   });
 
   previewProcess.on('error', (error) => {

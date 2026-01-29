@@ -6,6 +6,7 @@ export interface BuildOptions {
   useCatchAllRoutes?: boolean;
   outDir?: string;
   debug?: boolean;
+  root?: string;
 }
 
 export interface BuildResult {
@@ -18,4 +19,5 @@ export interface BuildResult {
 export interface PreviewOptions {
   port?: number;
   host?: string;
+  root?: string;
 }

@@ -1,12 +1,17 @@
 # Dependencies
 node_modules
+.markopress/node_modules
 
 # Build output
 dist
+.markopress/dist
 .src/
 
 # MarkoPress generated
 src/routes
+.markopress/.marko-run
+.markopress/.vite
+.markopress/.tsbuildinfo
 
 # Public assets copied during build
 public/_markopress/

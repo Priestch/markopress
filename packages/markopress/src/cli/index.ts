@@ -4,9 +4,13 @@
  */
 
 import { Command } from 'commander';
+import { resolveAppRoot } from '../config/app-root.js';
 import { startDevServer } from '../dev/index.js';
 import { build } from '../build/index.js';
 import { preview } from '../preview/index.js';
+
+// Resolve the app root (e.g., website/.markopress)
+const appRoot = resolveAppRoot();
 
 interface DevOptions {
   port: string;
@@ -50,6 +54,7 @@ program
       host: options.host,
       open: options.open,
       useCatchAllRoutes: options.catchAll,
+      root: appRoot,
     });
   });
 
@@ -64,6 +69,7 @@ program
       debug: options.debug,
       outDir: options.output,
       useCatchAllRoutes: options.catchAll,
+      root: appRoot,
     });
 
     if (!result.success) {
@@ -82,6 +88,7 @@ program
     await preview({
       port: parseInt(options.port),
       host: options.host,
+      root: appRoot,
     });
   });
 

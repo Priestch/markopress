@@ -16,6 +16,7 @@ interface DevServerOptions {
   open?: boolean;
   base?: string;
   useCatchAllRoutes?: boolean;
+  root?: string;
 }
 
 /**
@@ -24,8 +25,11 @@ interface DevServerOptions {
 export async function startDevServer(options: DevServerOptions = {}) {
   console.log('🚀 Starting MarkoPress dev server...\n');
 
+  // Use resolved root or fall back to process.cwd()
+  const root = options.root || process.cwd();
+
   // Load configuration
-  const config = await loadConfig(process.cwd(), { mode: 'development', command: 'dev' });
+  const config = await loadConfig(root, { mode: 'development', command: 'dev' });
   console.log(`✓ Config loaded from ${config.root}`);
 
   // Initialize plugin manager

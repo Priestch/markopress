@@ -134,9 +134,9 @@ Content goes here...
 
 ## Theming
 
-The website uses `@markopress/theme-default` with the Docusaurus style. To customize:
+The website uses `@markopress/theme-default` with the default style. To customize:
 
-1. Override components in `public/`
+1. Override components in `.markopress/theme/components/`
 2. Modify CSS variables in `markopress.config.js`
 3. See theme docs for details
 

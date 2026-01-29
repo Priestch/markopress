@@ -1,0 +1,16 @@
+# Dependencies and caches
+node_modules
+.vite
+.marko-run
+
+# Build output (may live here if outDir not set to parent)
+dist
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+.vscode
+.idea
+*.swp
+*.swo
+*~

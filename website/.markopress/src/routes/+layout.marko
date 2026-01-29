@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang=$global.lang||"en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${$global.title || 'MarkoPress Site'}</title>
+  <if=$global.description>
+    <meta name="description" content=$global.description>
+  </if>
+  <link rel="stylesheet" href="/_markopress/theme/theme-default.css">
+  <link rel="stylesheet" href="/_markopress/theme/styles.css">
+</head>
+<body>
+  <let/mobileMenuOpen=false/>
+
+  <div class="app-container">
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <a href="/" class="navbar-brand">
+          <span class="navbar-title">MarkoPress Site</span>
+        </a>
+
+        <!-- Desktop Nav -->
+        <if=$global.navbar>
+          <nav class="navbar-nav desktop-only">
+            <for|item| of=$global.navbar>
+              <a href=item.link class="nav-link">${item.text}</a>
+            </for>
+          </nav>
+        </if>
+
+        <!-- Header Actions -->
+        <theme-navbar-end mobileMenuOpen=mobileMenuOpen setMobileMenuOpen=(v) => { mobileMenuOpen = v; }/>
+      </div>
+
+      <!-- Mobile Menu -->
+      <if=$global.navbar>
+        <if=mobileMenuOpen>
+          <nav class="navbar-mobile-menu is-open">
+            <for|item| of=$global.navbar>
+              <a href=item.link class="nav-link">${item.text}</a>
+            </for>
+          </nav>
+        </if>
+      </if>
+    </nav>
+
+    <!-- Main content area with optional sidebar -->
+    <div class="main-wrapper">
+      <if=$global.sidebar>
+        <!-- Sidebar for docs -->
+        <aside class="sidebar desktop-only">
+          <theme-sidebar-top/>
+          <sidebar sections=$global.sidebar/>
+          <theme-sidebar-bottom/>
+        </aside>
+      </if>
+
+      <!-- Page content -->
+      <main id="main-content" class="main-content">
+        <${input.content}/>
+      </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-container">
+        <p>&copy; 2024 MarkoPress Site. Built with MarkoPress.</p>
+      </div>
+    </footer>
+  </div>
+
+  <style>
+    .icon-menu, .icon-close {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .desktop-only {
+      display: block;
+    }
+
+    @media (max-width: 768px) {
+      .desktop-only {
+        display: none;
+      }
+    }
+
+    .btn-icon {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.5rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .navbar-mobile-menu {
+      display: none;
+      padding: 1rem;
+      border-top: 1px solid var(--border-default, #e5e7eb);
+    }
+
+    .navbar-mobile-menu.is-open {
+      display: block;
+    }
+
+    .navbar-mobile-menu .nav-link {
+      display: block;
+      padding: 0.5rem 0;
+      color: inherit;
+      text-decoration: none;
+    }
+  </style>
+</body>
+</html>

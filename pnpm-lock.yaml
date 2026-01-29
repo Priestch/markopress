@@ -130,23 +130,23 @@ importers:
         specifier: ^5.3.0
         version: 5.9.3
 
-  website:
+  website/.markopress:
     dependencies:
       '@markopress/plugin-feature-blog-index':
         specifier: workspace:*
-        version: link:../packages/plugin-feature-blog-index
+        version: link:../../packages/plugin-feature-blog-index
       '@markopress/plugin-feature-sidenav':
         specifier: workspace:*
-        version: link:../packages/plugin-feature-sidenav
+        version: link:../../packages/plugin-feature-sidenav
       '@markopress/plugin-feature-toc':
         specifier: workspace:*
-        version: link:../packages/plugin-feature-toc
+        version: link:../../packages/plugin-feature-toc
       '@markopress/theme-default':
         specifier: workspace:*
-        version: link:../packages/theme-default
+        version: link:../../packages/theme-default
       markopress:
         specifier: workspace:*
-        version: link:../packages/markopress
+        version: link:../../packages/markopress
 
 packages:
 

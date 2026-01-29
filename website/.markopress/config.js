@@ -11,9 +11,9 @@ export default defineConfig({
     ],
   },
   content: {
-    pages: 'content/pages',           // No TOC (default)
-    guides: { dir: 'content/guides', toc: true },  // Enable TOC for guides
-    blog: 'content/blog',             // No TOC for blog posts
+    pages: '../content/pages',           // No TOC (default)
+    guides: { dir: '../content/guides', toc: true },  // Enable TOC for guides
+    blog: '../content/blog',             // No TOC for blog posts
   },
   theme: {
     name: '@markopress/theme-default',
