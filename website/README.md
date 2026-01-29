@@ -4,18 +4,27 @@ This is the official website for MarkoPress, built using MarkoPress itself.
 
 ## Structure
 
+MarkoPress uses a **content-first** layout where implementation details are hidden under `.markopress/`:
+
 ```
 website/
-├── content/           # Website content
+├── content/           # Primary authoring surface
 │   ├── pages/         # General pages (Home, Features, About, etc.)
 │   ├── guides/        # User guides and documentation
 │   └── blog/          # Blog posts
-├── public/            # Static assets
-├── src/               # Generated routes (built from content)
-├── tags/              # Custom Marko tags for content
-├── markopress.config.js
-└── package.json
+├── public/            # Static assets (images, audio, video)
+├── .markopress/       # Hidden app root (implementation)
+│   ├── src/           # Generated routes, layouts, components
+│   ├── public/        # Framework/theme assets
+│   ├── config.js      # MarkoPress configuration
+│   └── package.json   # Package definition
+└── package.json       # Workspace placeholder
 ```
+
+**Key points:**
+- Users work primarily with `content/` and `public/` directories
+- All Marko/MarkoPress implementation lives under `.markopress/`
+- The CLI automatically resolves paths - run commands from `website/`
 
 ## Development
 
@@ -23,6 +32,8 @@ website/
 
 ```bash
 cd website
+markopress dev
+# or
 pnpm dev
 ```
 
@@ -36,10 +47,18 @@ pnpm docs:dev
 pnpm dev
 ```
 
+The dev server will automatically:
+1. Resolve `.markopress/` as the app root
+2. Find content in `../content/` relative to the app root
+3. Generate routes in `.markopress/src/routes/`
+4. Start the @marko/run dev server
+
 ## Build
 
 ```bash
 # From website directory
+markopress build
+# or
 pnpm build
 
 # From monorepo root
@@ -52,6 +71,8 @@ pnpm build
 
 ```bash
 # From website directory
+markopress preview
+# or
 pnpm preview
 
 # From monorepo root
@@ -93,7 +114,7 @@ description: Page description
 Content goes here...
 ```
 
-2. Run `pnpm dev` - the page will be available at `/my-page`
+2. Run `markopress dev` - the page will be available at `/my-page`
 
 ### Create a new guide
 
@@ -132,19 +153,27 @@ Content goes here...
 
 2. The post will appear on `/blog` automatically
 
-## Theming
+## Advanced Customization
 
-The website uses `@markopress/theme-default` with the default style. To customize:
+For advanced customization, you can work directly with the `.markopress/` directory:
 
-1. Override components in `.markopress/theme/components/`
-2. Modify CSS variables in `markopress.config.js`
-3. See theme docs for details
+### Override Components
+Create `.markopress/src/components/` to override theme components
+
+### Custom Routes
+Add custom routes in `.markopress/src/routes/` (but note that generated routes may overwrite)
+
+### Custom Marko Tags
+Add `.markopress/tags/` for custom Marko components to use in markdown
+
+### Configuration
+Edit `.markopress/config.js` to customize theme, plugins, and content paths
 
 ## Deployment
 
-The website builds to `dist/` which can be deployed to any static hosting service:
+The website builds to `.markopress/dist/` which can be deployed to any static hosting service:
 
-- **Vercel**: `vercel deploy dist`
-- **Netlify**: Drop `dist/` in Netlify dashboard
-- **GitHub Pages**: Push `dist/` to `gh-pages` branch
-- **Cloudflare Pages**: Connect repo and use `dist/` as output directory
+- **Vercel**: `vercel deploy website/.markopress/dist`
+- **Netlify**: Use `website/.markopress/dist` as publish directory
+- **GitHub Pages**: Push `.markopress/dist/` to `gh-pages` branch
+- **Cloudflare Pages**: Connect repo and use `website/.markopress/dist` as output directory
