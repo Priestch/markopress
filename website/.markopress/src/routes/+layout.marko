@@ -23,10 +23,7 @@
           <span class="navbar-title">MarkoPress</span>
         </a>
         <theme-navbar-start/>
-        <if=$global.navbar>
-          <sidebar.items items=$global.navbar/>
-        </if>
-        <theme-navbar-center/>
+        <theme-navbar-center items=$global.navbar/>
         <theme-navbar-end/>
       </div>
     </nav>

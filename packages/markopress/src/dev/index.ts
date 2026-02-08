@@ -80,10 +80,11 @@ export async function startDevServer(options: DevServerOptions = {}) {
   await copyThemeCSS(config.root, config, false);
   console.log('   Theme CSS copied\n');
 
-  // Copy theme components to routes/tags for Marko discovery
-  console.log('📦 Copying theme components...');
-  await copyThemeComponents(config.root, config, false);
-  console.log('   Theme components copied\n');
+  // Theme components are now auto-discovered from the theme package via marko.json
+  // No need to copy them - see: https://markojs.com/docs/custom-tags/#installed-custom-tags
+  // console.log('📦 Copying theme components...');
+  // await copyThemeComponents(config.root, config, false);
+  // console.log('   Theme components copied\n');
 
   // Start @marko/run dev server
   console.log('🔨 Starting @marko/run dev server...\n');

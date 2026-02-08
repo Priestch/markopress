@@ -213,13 +213,14 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     t11.end();
     console.log('   Theme CSS copied\n');
 
-    // Step 14: Copy theme components to routes/tags for Marko auto-discovery
-    console.log('📦 Copying theme components...');
-    const t12 = time('Theme components copy');
-    t12.start();
-    await copyThemeComponents(root, config, debug);
-    t12.end();
-    console.log('   Theme components copied\n');
+    // Step 14: Theme components are auto-discovered via marko.json exports
+    // See: https://markojs.com/docs/custom-tags/#installed-custom-tags
+    // console.log('📦 Copying theme components...');
+    // const t12 = time('Theme components copy');
+    // t12.start();
+    // await copyThemeComponents(root, config, debug);
+    // t12.end();
+    // console.log('   Theme components copied\n');
 
     // Step 15: Build with @marko/run
     console.log('🔨 Building with @marko/run...');
@@ -772,6 +773,11 @@ export default defineConfig({
     marko(),
     markdownContentPlugin(),
   ],
+  resolve: {
+    // Preserve symlinks for pnpm workspace compatibility
+    // This allows Marko to properly discover tags from symlinked packages
+    preserveSymlinks: true,
+  },
   build: {
     outDir: 'dist',
   },

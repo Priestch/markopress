@@ -25,9 +25,7 @@
       </${$global.contentComponent || {}}>
     </div>
     <if=$global.toc>
-      <aside class="toc">
-        <toc headers=$global.toc/>
-      </aside>
+      <toc headers=$global.toc/>
     </if>
   </div>
   <theme-body-bottom/>

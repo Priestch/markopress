@@ -75,7 +75,15 @@ export function markdownContentPlugin() {
 
       debug('load_FOUND_HTML', { contentId, htmlLength: html.length });
 
-      return `<div class="markdown-content">\n${escapeMarkoText(html)}\n</div>`;
+      // Escape the HTML for use in a Marko template
+      // We need to escape $ to prevent Marko from interpreting ${...} as template expressions
+      const escapedHtml = html
+        .replace(/\\/g, '\\\\')
+        .replace(/`/g, '\\`')
+        .replace(/\$/g, '\\$');
+
+      // Return a Marko component that renders the HTML using a static literal
+      return `<div class="markdown-content">\n$!{\`${escapedHtml}\`}\n</div>`;
     },
   };
 }

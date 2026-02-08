@@ -7,6 +7,11 @@ export default defineConfig({
     marko(),
     markdownContentPlugin(),
   ],
+  resolve: {
+    // Preserve symlinks for pnpm workspace compatibility
+    // This allows Marko to properly discover tags from symlinked packages
+    preserveSymlinks: true,
+  },
   build: {
     outDir: 'dist',
   },

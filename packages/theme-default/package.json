@@ -17,7 +17,10 @@
     "./build": {
       "import": "./dist/build/index.js",
       "types": "./dist/build/index.d.ts"
-    }
+    },
+    "./dist/tags/*": "./dist/tags/*",
+    "./marko.json": "./marko.json",
+    "./package.json": "./package.json"
   },
   "scripts": {
     "build": "npm run build:css && tsc",
