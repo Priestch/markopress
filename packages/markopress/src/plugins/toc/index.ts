@@ -5,9 +5,9 @@
  * Works with any content module dynamically
  */
 
-import type { MarkoPressPlugin } from 'markopress/plugin';
-import type { ContentModule } from 'markopress/content';
-import type { ProcessedMarkdown } from 'markopress/markdown';
+import type { MarkoPressPlugin } from '../../plugin/types.js';
+import type { ContentModule } from '../../content/registry.js';
+import type { ProcessedMarkdown } from '../../markdown/types.js';
 
 export interface TocOptions {
   /**
@@ -46,13 +46,13 @@ export default function tocPlugin(options: TocOptions = {}): MarkoPressPlugin {
   const { minDepth = 2, maxDepth = 3, module: targetModule } = options;
 
   const pluginConfig: MarkoPressPlugin = {
-    name: '@markopress/plugin-feature-toc',
+    name: 'toc',
 
     async enhanceModules(modules: ContentModule[]) {
-      modules.forEach(module => {
+      modules.forEach((module: any) => {
         // Check if this module has TOC extraction enabled via config
         // TOC is only extracted if explicitly enabled (toc: true)
-        const extractToc = module.getEnhancement<boolean>('extractToc');
+        const extractToc = module.getEnhancement?.('extractToc');
 
         if (extractToc !== true) {
           return; // Skip TOC generation unless explicitly enabled
@@ -61,7 +61,7 @@ export default function tocPlugin(options: TocOptions = {}): MarkoPressPlugin {
         // Create a Map to store TOC for each file
         const tocMap = new Map<string, TocItem[]>();
 
-        module.files.forEach(file => {
+        module.files.forEach((file: any) => {
           const toc = buildTocFromHeaders(
             file.processed.headers,
             minDepth,
@@ -105,7 +105,7 @@ function buildTocFromHeaders(
     // If this header is within the depth range, include it
     if (header.level >= minDepth && header.level <= maxDepth) {
       const item: TocItem = {
-        slug: header.slug || header.id,
+        slug: header.slug,
         title: header.title,
         level: header.level,
       };

@@ -34,16 +34,15 @@ export default defineConfig({
   markdown: {
     markoTags: {
       enabled: true,
-      // tagsDir: '.markopress/tags',
     },
   },
   build: {
     useCatchAllRoutes: true,  // Use dynamic routes with $!{} syntax for HTML rendering
   },
   plugins: [
-    '@markopress/plugin-feature-blog-index',
-    ['@markopress/plugin-feature-sidenav', { module: 'guides' }],
-    '@markopress/plugin-feature-toc',
+    'blog-index',
+    ['sidenav', { module: 'guides' }],
+    'toc',
     // Search and RSS coming later
   ],
 });

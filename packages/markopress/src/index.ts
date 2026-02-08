@@ -20,8 +20,9 @@ export {
   getSlotPath,
 } from './theme/index.js';
 
-// Build exports (for programmatic use)
-export * from './build/index.js';
+// Build exports (for programmatic use) - excluding ContentModule to avoid conflict
+export type { BuildOptions, BuildResult } from './build/index.js';
+export { build, generateRoutes, generateCatchAllRoutes } from './build/index.js';
 export * from './preview/index.js';
 export * from './dev/index.js';
 

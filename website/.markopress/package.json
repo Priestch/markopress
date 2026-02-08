@@ -14,10 +14,7 @@
   },
   "dependencies": {
     "markopress": "workspace:*",
-    "@markopress/theme-default": "workspace:*",
-    "@markopress/plugin-feature-blog-index": "workspace:*",
-    "@markopress/plugin-feature-sidenav": "workspace:*",
-    "@markopress/plugin-feature-toc": "workspace:*"
+    "@markopress/theme-default": "workspace:*"
   },
   "engines": {
     "node": ">=18.0.0"

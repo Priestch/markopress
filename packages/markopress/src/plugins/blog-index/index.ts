@@ -4,14 +4,45 @@
  * Generates a blog index page listing all blog posts
  */
 
+import type { MarkoPressPlugin } from '../../plugin/types.js';
+import type { ContentModule } from '../../content/registry.js';
+
+export interface BlogIndexOptions {
+  postsPerPage?: number;
+  showExcerpts?: boolean;
+  showDates?: boolean;
+  showAuthors?: boolean;
+  path?: string;
+}
+
 // Store data for extendRoutes to access
-let blogPostsData = null;
-let blogConfigData = null;
+let blogPostsData: ReturnType<typeof transformBlogPosts> | null = null;
+let blogConfigData: Required<Omit<BlogIndexOptions, 'path'>> | null = null;
+
+/**
+ * Transform blog module files to blog post data
+ */
+function transformBlogPosts(module: ContentModule) {
+  return [...module.files]
+    .sort((a, b) => {
+      const dateA = new Date(a.processed.frontmatter.date || 0);
+      const dateB = new Date(b.processed.frontmatter.date || 0);
+      return dateB.getTime() - dateA.getTime();
+    })
+    .map(post => ({
+      title: post.processed.frontmatter.title as string | undefined,
+      description: post.processed.frontmatter.description as string | undefined,
+      date: post.processed.frontmatter.date as string | undefined,
+      author: post.processed.frontmatter.author as string | undefined,
+      excerpt: post.processed.excerpt as string | undefined,
+      link: post.urlPath,
+    }));
+}
 
 /**
  * Create blog index plugin
  */
-export default function blogIndexPlugin(options = {}) {
+export default function blogIndexPlugin(options: BlogIndexOptions = {}): MarkoPressPlugin {
   const {
     postsPerPage = 10,
     showExcerpts = true,
@@ -23,31 +54,17 @@ export default function blogIndexPlugin(options = {}) {
   const config = { postsPerPage, showExcerpts, showDates, showAuthors };
 
   return {
-    name: '@markopress/plugin-feature-blog-index',
+    name: 'blog-index',
     modules: ['blog'],
 
-    async enhanceModules(modules) {
+    async enhanceModules(modules: any[]) {
       const blogModule = modules.find(m => m.id === 'blog');
       if (!blogModule) {
         return;
       }
 
-      // Sort posts by date (newest first)
-      const sortedPosts = [...blogModule.files].sort((a, b) => {
-        const dateA = new Date(a.processed.frontmatter.date || 0);
-        const dateB = new Date(b.processed.frontmatter.date || 0);
-        return dateB.getTime() - dateA.getTime();
-      });
-
       // Transform to blog post data
-      const blogPosts = sortedPosts.map(post => ({
-        title: post.processed.frontmatter.title,
-        description: post.processed.frontmatter.description,
-        date: post.processed.frontmatter.date,
-        author: post.processed.frontmatter.author,
-        excerpt: post.processed.excerpt,
-        link: post.urlPath,
-      }));
+      const blogPosts = transformBlogPosts(blogModule);
 
       // Store for extendRoutes to use
       blogPostsData = blogPosts;
@@ -65,12 +82,11 @@ export default function blogIndexPlugin(options = {}) {
       // Add blog index route
       routes[path] = {
         path,
-        handler: `export async function GET(context, next) {
-  context.title = 'Blog';
-  context.blogPosts = ${JSON.stringify(blogPostsData)};
-  context.blogConfig = ${JSON.stringify(blogConfigData)};
-}`,
         component: generateBlogIndexComponent(),
+        meta: {
+          blogPosts: blogPostsData,
+          blogConfig: blogConfigData,
+        },
       };
 
       return routes;

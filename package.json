@@ -15,6 +15,7 @@
     "docs:dev": "pnpm --filter @markopress/website dev",
     "docs:build": "pnpm --filter @markopress/website build",
     "docs:preview": "pnpm --filter @markopress/website preview",
+    "release": "node scripts/release.js",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "prepare": "husky"
   },

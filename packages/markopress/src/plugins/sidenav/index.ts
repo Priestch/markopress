@@ -5,9 +5,9 @@
  * Now supports dynamic module targeting
  */
 
-import type { MarkoPressPlugin } from 'markopress/plugin';
-import type { ContentModule } from 'markopress/content';
-import type { ContentFile } from 'markopress/content';
+import type { MarkoPressPlugin } from '../../plugin/types.js';
+import type { ContentModule } from '../../content/registry.js';
+import type { ContentFile } from '../../content/types.js';
 
 export interface SidenavOptions {
   /**
@@ -47,11 +47,11 @@ export default function sidenavPlugin(options: SidenavOptions = {}): MarkoPressP
   const targetModules = Array.isArray(targetModule) ? targetModule : [targetModule];
 
   return {
-    name: '@markopress/plugin-feature-sidenav',
+    name: 'sidenav',
     modules: targetModules,
 
     async enhanceModules(modules: ContentModule[]) {
-      for (const mod of modules) {
+      for (const mod of modules as any[]) {
         // Use manual items if provided, otherwise auto-generate
         const sidebar = items || (autoGenerate ? buildSidebarFromFiles(mod.files, mod.id) : []);
         mod.enhance('sidebar', sidebar);

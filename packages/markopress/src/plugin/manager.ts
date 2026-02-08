@@ -144,16 +144,30 @@ export class PluginManager {
   }
 
   /**
+   * Resolve plugin name to import path
+   * Built-in plugins are resolved from markopress/plugins/*
+   * External plugins are resolved by package name
+   */
+  private resolvePluginPath(name: string): string {
+    // Built-in plugins - simple names like 'sidenav', 'toc', 'blog-index'
+    const builtInPlugins = ['sidenav', 'toc', 'blog-index'];
+    if (builtInPlugins.includes(name)) {
+      return `../plugins/${name}/index.js`;
+    }
+    return name;
+  }
+
+  /**
    * Load plugin module without executing it
    */
   private async loadPluginModule(config: PluginConfig): Promise<MarkoPressPlugin | null> {
     try {
       if (typeof config === 'string') {
-        const module = await import(config);
+        const module = await import(this.resolvePluginPath(config));
         return module.default;
       } else if (Array.isArray(config)) {
         const [name] = config;
-        const module = await import(name);
+        const module = await import(this.resolvePluginPath(name));
         return module.default;
       } else {
         return config;
@@ -173,8 +187,8 @@ export class PluginManager {
       let plugin: MarkoPressPlugin;
 
       if (typeof pluginConfig === 'string') {
-        // Load from package name
-        const module = await import(pluginConfig);
+        // Load from package name (resolve built-in or external)
+        const module = await import(this.resolvePluginPath(pluginConfig));
         // Check if default export is a function (plugin factory)
         plugin = typeof module.default === 'function'
           ? await module.default()
@@ -182,7 +196,7 @@ export class PluginManager {
       } else if (Array.isArray(pluginConfig)) {
         // Load with options
         const [name, options] = pluginConfig;
-        const module = await import(name);
+        const module = await import(this.resolvePluginPath(name));
         plugin = typeof module.default === 'function'
           ? await module.default(options)
           : module.default;

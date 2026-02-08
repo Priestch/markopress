@@ -39,6 +39,10 @@
     "./vite": {
       "import": "./dist/vite/index.js",
       "types": "./dist/vite/index.d.ts"
+    },
+    "./plugins/*": {
+      "import": "./dist/plugins/*.js",
+      "types": "./dist/plugins/*.d.ts"
     }
   },
   "scripts": {
@@ -47,7 +51,8 @@
     "typecheck": "pnpm exec tsc --noEmit src/**/*.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "release": "node scripts/release.js"
   },
   "dependencies": {
     "chokidar": "^3.5.3",
@@ -78,6 +83,10 @@
     "@types/markdown-it": "^14.0.0",
     "@types/node": "^20.10.0",
     "@vitest/ui": "^4.0.17",
+    "execa": "^9.6.1",
+    "picocolors": "^1.1.1",
+    "prompts": "^2.4.2",
+    "semver": "^7.7.4",
     "typescript": "^5.3.0",
     "vite": "^7.3.1",
     "vitest": "^4.0.17"

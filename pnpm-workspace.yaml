@@ -22,9 +22,6 @@ catalogs:
     # These will be available as workspace: references
     markopress: "workspace:*"
     "@markopress/theme-default": "workspace:*"
-    "@markopress/plugin-feature-blog-index": "workspace:*"
-    "@markopress/plugin-feature-sidenav": "workspace:*"
-    "@markopress/plugin-feature-toc": "workspace:*"
     "@markopress/website": "workspace:*"
 
 # Workspace settings
