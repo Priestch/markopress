@@ -1,6 +1,6 @@
 {
   "name": "@markopress/theme-default",
-  "version": "1.0.1",
+  "version": "0.0.0",
   "description": "Default theme for MarkoPress",
   "type": "module",
   "main": "./dist/index.js",
