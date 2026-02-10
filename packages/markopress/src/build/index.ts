@@ -6,6 +6,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import matter from 'gray-matter';
 import { loadConfig } from '../config/loader.js';
 import type { ContentManifest, ContentFile } from '../content/types.js';
 import type { ResolvedConfig } from '../config/types.js';
@@ -87,10 +88,112 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       console.log('   Plugin content loaded\n');
     }
 
-    // Step 3: Create empty manifest for backward compatibility
-    // Content is now rendered at request time, not build time
+    // Step 3: Create ContentModule objects from content configuration
+    // This allows plugins to enhance modules with metadata (sidebar, toc, etc.)
     const manifest: ContentManifest = {};
     const modules: any[] = [];
+    for (const [moduleId, contentConfig] of Object.entries(config.content)) {
+      const moduleConfig = typeof contentConfig === 'string'
+        ? { dir: contentConfig }
+        : contentConfig;
+
+      if (!moduleConfig?.dir) continue;
+
+      // Create a minimal ContentModule object with enhancement support
+      const enhancements = new Map<string, unknown>();
+      const module = {
+        id: moduleId,
+        dir: moduleConfig.dir,
+        config: moduleConfig,
+        // Plugin enhancement API
+        enhance(key: string, data: unknown) {
+          enhancements.set(key, data);
+        },
+        getEnhancement<T = unknown>(key: string): T | undefined {
+          return enhancements.get(key) as T;
+        },
+        // Will be populated with file data during build
+        files: [] as any[],
+        // Store enhancements for serialization
+        _enhancements: enhancements,
+      };
+
+      // Scan content directory for markdown files
+      const contentDir = path.resolve(root, moduleConfig.dir);
+      try {
+        const entries = await fs.readdir(contentDir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.isFile() && entry.name.endsWith('.md')) {
+            const filePath = path.join(contentDir, entry.name);
+            const content = await fs.readFile(filePath, 'utf-8');
+
+            // Parse frontmatter with gray-matter so quoted strings are normalized.
+            let frontmatter: Record<string, unknown> = {};
+            try {
+              frontmatter = matter(content).data as Record<string, unknown>;
+            } catch {
+              // Ignore parse errors and continue with empty metadata.
+            }
+
+            module.files.push({
+              id: entry.name.replace('.md', ''),
+              slug: entry.name.replace('.md', ''),
+              filePath,
+              urlPath: entry.name.replace('.md', '') === 'index' ? `/${moduleId}` : `/${moduleId}/${entry.name.replace('.md', '')}`,
+              processed: {
+                frontmatter,
+              },
+            });
+          }
+        }
+      } catch {
+        // Directory doesn't exist, skip
+      }
+
+      modules.push(module);
+    }
+
+    // Step 4: Execute enhanceModules hooks
+    // This lets plugins like sidenav enhance modules with sidebar data
+    if (pluginManager && modules.length > 0) {
+      console.log('🔌 Enhancing modules with plugin metadata...');
+      const t2a = time('Module enhancement');
+      t2a.start();
+
+      // Debug: Log modules and their files
+      for (const module of modules) {
+        console.log(`   Module: ${module.id} (${module.files.length} files)`);
+        if (module.files.length > 0) {
+          console.log(`     First file has processed: ${!!module.files[0].processed}`);
+        }
+      }
+
+      await pluginManager.execEnhanceModulesHooks(modules);
+      t2a.end();
+      console.log(`   Enhanced ${modules.length} module(s)\n`);
+
+      // Write module enhancements to a JSON file for request-time access
+      const generatedDir = path.join(root, 'src', '.generated');
+      await fs.mkdir(generatedDir, { recursive: true });
+
+      const moduleEnhancements: Record<string, Record<string, unknown>> = {};
+      for (const module of modules) {
+        const enhancements: Record<string, unknown> = {};
+        const entries = module._enhancements.entries() as Array<[string, unknown]>;
+        for (const [key, value] of entries) {
+          enhancements[key] = value;
+        }
+        if (Object.keys(enhancements).length > 0) {
+          moduleEnhancements[module.id] = enhancements;
+        }
+      }
+
+      const enhancementsPath = path.join(generatedDir, 'module-enhancements.json');
+      await fs.writeFile(enhancementsPath, JSON.stringify(moduleEnhancements, null, 2), 'utf-8');
+      console.log(`   Wrote module enhancements to src/.generated/module-enhancements.json\n`);
+    }
+
+    // Step 5: Initialize tag validator if Marko tags enabled
 
     // Step 4: Initialize tag validator if Marko tags enabled
     if (config.markdown.markoTags?.enabled) {

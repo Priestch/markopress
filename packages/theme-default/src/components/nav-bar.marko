@@ -4,15 +4,7 @@
  */
 
 <let/openDropdown=null/>
-
-<script>
-  const isActive = (href) => {
-    if (typeof window !== 'undefined') {
-      return window.location.pathname === href;
-    }
-    return false;
-  };
-</script>
+<let/currentPath=(typeof window !== 'undefined' && window.location && window.location.pathname) || ''/>
 
 <nav class="navbar-nav-inner">
   <for|item| of=(input.items || [])>
@@ -35,19 +27,19 @@
         <if=openDropdown === item.text>
           <div class="dropdown-menu">
             <for|subitem| of=item.items>
-              <a class="dropdown-item active-${isActive(subitem.link)}" href=subitem.link>
+              <a class={"dropdown-item": true, active: currentPath === subitem.link} href=subitem.link>
                 ${subitem.text}
               </a>
             </for>
           </div>
         </if>
       </div>
-    <!-- Regular Link -->
-    <else>
-      <a class="nav-link active-${isActive(item.link)}" href=item.link>
+    </if>
+    <if=!item.items>
+      <a class={"nav-link": true, active: currentPath === item.link} href=item.link>
         ${item.text}
       </a>
-    </else>
+    </if>
   </for>
 
   <!-- Language Switcher (if provided) -->
@@ -67,7 +59,7 @@
       <if=openDropdown === 'lang'>
         <div class="dropdown-menu">
           <for|locale| of=input.locales>
-            <a class="dropdown-item active-${locale.active}" href=locale.link>
+            <a class={"dropdown-item": true, active: locale.active} href=locale.link>
               ${locale.label}
             </a>
           </for>
@@ -119,7 +111,7 @@
     background: var(--bg-tertiary);
   }
 
-  .nav-link.active-true {
+  .nav-link.active {
     color: var(--accent-primary);
     background: var(--accent-bg);
   }
@@ -174,7 +166,7 @@
     background: var(--bg-tertiary);
   }
 
-  .dropdown-item.active-true {
+  .dropdown-item.active {
     color: var(--accent-primary);
     background: var(--accent-bg);
   }

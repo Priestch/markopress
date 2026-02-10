@@ -46,9 +46,9 @@
     }
   },
   "scripts": {
-    "build": "pnpm exec tsc --outDir dist --rootDir src --module Node16 --target ESNext --moduleResolution node16 --esModuleInterop --skipLibCheck --strict --declaration --declarationMap --sourceMap src/**/*.ts",
-    "dev": "pnpm exec tsc --outDir dist --rootDir src --module Node16 --target ESNext --moduleResolution node16 --esModuleInterop --skipLibCheck --strict --declaration --declarationMap --sourceMap src/**/*.ts --watch",
-    "typecheck": "pnpm exec tsc --noEmit src/**/*.ts",
+    "build": "pnpm exec tsc",
+    "dev": "pnpm exec tsc --watch",
+    "typecheck": "pnpm exec tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",

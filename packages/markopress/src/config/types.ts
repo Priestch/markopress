@@ -10,9 +10,7 @@ export interface SiteConfig {
   head?: HeadTag[];
 }
 
-export type HeadTag =
-  | [string, Record<string, string>]
-  | [string, Record<string, string>, string];
+export type HeadTag = (string | Record<string, string>)[];
 
 /**
  * Module-specific options

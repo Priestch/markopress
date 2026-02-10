@@ -122,5 +122,9 @@ function buildSidebarFromFiles(files: ContentFile[], moduleId: string): SidenavI
     });
   }
 
-  return sidebar;
+  // Return as a single default section for compatibility with sidebar component
+  return [{
+    text: undefined, // No section title for default section
+    items: sidebar,
+  }];
 }

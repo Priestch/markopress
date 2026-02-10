@@ -4,22 +4,23 @@
  */
 
 <let/openGroups=new Set((input.initialOpenGroups || []))/>
+<let/currentPath=(typeof window !== "undefined" && window.location && window.location.pathname) || ""/>
 
 <style/styles>
   .content {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-lg);
+    gap: var(--space-lg);
   }
 
   .section {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-md);
+    gap: var(--space-md);
   }
 
   .sectionHeader {
-    padding: var(--sidebar-category-padding, var(--spacing-sm) 0);
+    padding: var(--sidebar-category-padding, var(--space-sm) 0);
     font-size: var(--sidebar-category-font-size, 0.75rem);
     font-weight: var(--sidebar-category-font-weight, 600);
     text-transform: var(--sidebar-category-text-transform, uppercase);
@@ -31,7 +32,7 @@
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: var(--sidebar-item-gap, var(--spacing-xs));
+    gap: var(--sidebar-item-gap, var(--space-xs));
   }
 
   .item {
@@ -41,8 +42,8 @@
   .link {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--sidebar-item-padding, var(--spacing-sm) var(--spacing-md));
+    gap: var(--space-sm);
+    padding: var(--sidebar-item-padding, var(--space-sm) var(--space-md));
     font-size: var(--sidebar-item-font-size, 0.875rem);
     font-weight: var(--sidebar-item-font-weight, 400);
     color: var(--text-2, #6b7280);
@@ -83,7 +84,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--sidebar-item-padding, var(--spacing-sm) var(--spacing-md));
+    padding: var(--sidebar-item-padding, var(--space-sm) var(--space-md));
     font-size: var(--sidebar-item-font-size, 0.875rem);
     font-weight: 500;
     color: var(--text-1, #1f2937);
@@ -113,11 +114,11 @@
 
   .groupItems {
     list-style: none;
-    padding-left: var(--spacing-lg);
-    margin-top: var(--spacing-xs);
+    padding-left: var(--space-lg);
+    margin-top: var(--space-xs);
     display: flex;
     flex-direction: column;
-    gap: var(--sidebar-item-gap, var(--spacing-xs));
+    gap: var(--sidebar-item-gap, var(--space-xs));
     border-left: 1px solid var(--border-divider, #e5e7eb);
   }
 
@@ -126,15 +127,6 @@
     color: var(--text-2, #6b7280);
   }
 </style>
-
-<script>
-  const isActive = (href) => {
-    if (typeof window !== 'undefined') {
-      return window.location.pathname === href;
-    }
-    return false;
-  };
-</script>
 
 <div class=styles.content role="navigation" aria-label="Sidebar navigation">
   <!-- Sidebar Sections -->
@@ -181,7 +173,7 @@
               <if=openGroups.has(item.text)>
                 <ul class=styles.groupItems>
                   <for|subitem| of=item.items>
-                    <let/subitemClass=isActive(subitem.link) ? styles.link + ' ' + styles.active : styles.link/>
+                    <let/subitemClass=currentPath === subitem.link ? styles.link + ' ' + styles.active : styles.link/>
                     <li class=styles.item>
                       <a
                         class=subitemClass
@@ -200,7 +192,7 @@
 
           <if=!item.items || item.items.length === 0>
             <!-- Regular item (no children) -->
-            <let/itemClass=isActive(item.link) ? styles.link + ' ' + styles.active : styles.link/>
+            <let/itemClass=currentPath === item.link ? styles.link + ' ' + styles.active : styles.link/>
             <li class=styles.item>
               <a
                 class=itemClass

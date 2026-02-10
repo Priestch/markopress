@@ -12,6 +12,7 @@ src/routes
 .markopress/.marko-run
 .markopress/.vite
 .markopress/.tsbuildinfo
+.markopress/src/.generated/
 
 # Public assets copied during build
 public/_markopress/
@@ -26,4 +27,3 @@ Thumbs.db
 *.swp
 *.swo
 *~
-src/.markopress/.generated/

@@ -625,28 +625,22 @@ a:hover {
   min-height: calc(100vh - var(--navbar-height));
 }
 
+@media (min-width: 1024px) {
+  .main-wrapper.has-sidebar {
+    padding-left: var(--sidebar-width);
+  }
+}
+
 .main-content {
   flex: 1;
   min-width: 0;
   padding: var(--space-xl) var(--space-lg);
-  margin-left: 0;
-  transition: margin-left var(--transition-base);
 }
 
 @media (min-width: 1024px) {
   .main-content {
     max-width: var(--content-max-width);
     margin: 0 auto;
-  }
-}
-
-.sidebar:not(.collapsed) ~ .main-content {
-  margin-left: var(--sidebar-width);
-}
-
-@media (max-width: 1024px) {
-  .sidebar:not(.collapsed) ~ .main-content {
-    margin-left: 0;
   }
 }
 

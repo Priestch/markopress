@@ -4,6 +4,15 @@ import path from 'node:path';
 import { config } from '{{CONFIG_PATH}}';
 import { loadMarkdownModule, registerMarkdownContent } from '{{VITE_PLUGIN_PATH}}';
 
+// Load module enhancements (sidebar, etc.) generated during build
+let moduleEnhancements = {};
+try {
+  const enhancementsPath = path.join(config.root, 'src/.generated/module-enhancements.json');
+  moduleEnhancements = await fs.readFile(enhancementsPath, 'utf-8').then(JSON.parse).catch(() => ({}));
+} catch {
+  // Enhancements file not found, use empty object
+}
+
 export async function GET(context, next) {
   const slug = context.params.slug || 'index';
   const contentType = '{{CONTENT_TYPE}}'; // 'pages', 'blog', 'guides', etc.
@@ -52,6 +61,10 @@ export async function GET(context, next) {
     context.description = rendered.frontmatter.description || '';
     context.contentComponent = contentComponent;
     context.slug = slug;
+
+    // Load module enhancements for this content type (sidebar, etc.)
+    const enhancements = moduleEnhancements[contentType] || {};
+    context.sidebar = enhancements.sidebar || null;
 
     // TOC (table of contents) - extracted from headers
     if (rendered.headers && rendered.headers.length > 0) {
