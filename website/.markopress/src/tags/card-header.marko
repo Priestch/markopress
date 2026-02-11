@@ -1,1 +1,100 @@
-<${input.content}/>
+<style>
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.78rem;
+    position: relative;
+  }
+
+  .card-header--center {
+    text-align: center;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .card-header--compact {
+    padding-top: 0.78rem;
+    padding-bottom: 0.78rem;
+  }
+
+  .card-header__main {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .card-header__eyebrow {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+  }
+
+  .card-header__title {
+    margin: 0;
+    font-size: 1.02rem;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  .card-header__subtitle {
+    margin: 0.34rem 0 0;
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .card-header__content {
+    margin-top: 0.56rem;
+  }
+
+  .card-header__content > :first-child {
+    margin-top: 0;
+  }
+
+  .card-header__content > :last-child {
+    margin-bottom: 0;
+  }
+
+  .card-header__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+</style>
+
+<header
+  class=("card-header"
+    + (input.center ? " card-header--center" : "")
+    + (input.compact ? " card-header--compact" : ""))
+>
+  <div class="card-header__main">
+    <if=input.eyebrow>
+      <p class="card-header__eyebrow">${input.eyebrow}</p>
+    </if>
+
+    <if=input.title>
+      <h3 class="card-header__title">${input.title}</h3>
+    </if>
+
+    <if=input.subtitle>
+      <p class="card-header__subtitle">${input.subtitle}</p>
+    </if>
+
+    <if=input.content>
+      <div class="card-header__content">
+        <${input.content}/>
+      </div>
+    </if>
+  </div>
+
+  <if=input.actions>
+    <div class="card-header__actions">
+      <${input.actions}/>
+    </div>
+  </if>
+</header>

@@ -11,9 +11,9 @@ import { generateThemeCSS } from './generate-css.js';
 import { designSystems } from '../design-systems/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const publicDir = resolve(__dirname, '../../public');
-const componentsDir = resolve(__dirname, '../../src/components');
-const distTagsDir = resolve(__dirname, '../../dist/tags');
+const publicDir = resolve(__dirname, '../public');
+const componentsDir = resolve(__dirname, '../components');
+const distTagsDir = resolve(__dirname, '../tags');
 
 /**
  * Copy Marko components to dist/tags for export
@@ -70,7 +70,7 @@ export async function generateAllThemes() {
   console.log('Generating theme CSS files...\n');
 
   // Read the component styles (includes line numbers, code blocks, etc.)
-  const stylesCssPath = resolve(__dirname, '../../src/styles.css');
+  const stylesCssPath = resolve(__dirname, '../styles.css');
   const componentStyles = await readFile(stylesCssPath, 'utf-8');
 
   for (const style of styles) {

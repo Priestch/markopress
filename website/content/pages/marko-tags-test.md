@@ -6,7 +6,7 @@ title: Marko Tags Test
 
 ## Alert with body content
 
-<alert-box type="warning">
+<alert-box type="success">
   This is a warning alert with **markdown** support!
 </alert-box>
 
@@ -16,7 +16,7 @@ title: Marko Tags Test
 
 ## Card with nested components
 
-<card>
+<card tone="success">
   <card-header>
     <h3>Card Title</h3>
   </card-header>

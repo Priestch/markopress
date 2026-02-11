@@ -6,14 +6,28 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import { loadConfig } from '../config/loader.js';
 import type { ContentManifest, ContentFile } from '../content/types.js';
 import type { ResolvedConfig } from '../config/types.js';
-import { getDesignSystem, getDarkModeOverride, type DesignSystem } from '@markopress/theme-default/design-systems';
+import { getDesignSystem, getDarkModeOverride, type DesignSystem } from '../theme/default/design-systems/index.js';
 import { globalTagValidator, formatValidationError } from '../markdown/tag-validator.js';
 import { PluginManager } from '../plugin/manager.js';
 import { loadMarkdownModule, registerMarkdownContent } from './vite-markdown-plugin.js';
+
+const BUILD_MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
+const MARKOPRESS_PACKAGE_ROOT = path.resolve(BUILD_MODULE_DIR, '..', '..');
+const INTERNAL_DEFAULT_THEME_ROOT = path.join(MARKOPRESS_PACKAGE_ROOT, 'src', 'theme', 'default');
+const INTERNAL_DEFAULT_THEME_NAMES = new Set([
+  '@markopress/theme-default',
+  'theme-default',
+  'default',
+]);
+
+function isInternalDefaultTheme(themeName: string): boolean {
+  return INTERNAL_DEFAULT_THEME_NAMES.has(themeName);
+}
 
 // Stub type for backward compatibility (modules removed, now rendered at request time)
 export type ContentModule = any;
@@ -316,8 +330,8 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     t11.end();
     console.log('   Theme CSS copied\n');
 
-    // Step 14: Theme components are auto-discovered via marko.json exports
-    // See: https://markojs.com/docs/custom-tags/#installed-custom-tags
+    // Step 14: Theme components are auto-discovered from the markopress package
+    // via marko metadata (marko.json + package exports)
     // console.log('📦 Copying theme components...');
     // const t12 = time('Theme components copy');
     // t12.start();
@@ -934,12 +948,13 @@ export async function copyThemeCSS(
 
   // Try multiple locations for the pre-generated theme CSS
   const possiblePaths = [
+    ...(isInternalDefaultTheme(themeName)
+      ? [path.join(INTERNAL_DEFAULT_THEME_ROOT, 'public', cssFileName)]
+      : []),
     // pnpm workspace: root node_modules
     path.join(rootDir, '..', 'node_modules', themeName, 'public', cssFileName),
     // Local node_modules
     path.join(rootDir, 'node_modules', themeName, 'public', cssFileName),
-    // Direct packages path (for monorepo)
-    path.join(rootDir, '..', 'packages', 'theme-default', 'public', cssFileName),
   ];
 
   let themeCSS: string | null = null;
@@ -977,9 +992,11 @@ export async function copyThemeCSS(
   // Also copy the component styles (styles.css) from the theme package
   const stylesCSSFileName = 'styles.css';
   const stylesPossiblePaths = [
+    ...(isInternalDefaultTheme(themeName)
+      ? [path.join(INTERNAL_DEFAULT_THEME_ROOT, stylesCSSFileName)]
+      : []),
     path.join(rootDir, '..', 'node_modules', themeName, 'src', stylesCSSFileName),
     path.join(rootDir, 'node_modules', themeName, 'src', stylesCSSFileName),
-    path.join(rootDir, '..', 'packages', 'theme-default', 'src', stylesCSSFileName),
   ];
 
   for (const cssPath of stylesPossiblePaths) {
@@ -1031,14 +1048,17 @@ export async function copyThemeComponents(
 
   // Possible locations for theme components
   const possiblePaths = [
-    // Source path (for monorepo development without build)
-    path.join(rootDir, '..', 'packages', 'theme-default', 'src', 'components'),
-    // pnpm workspace: root node_modules
+    ...(isInternalDefaultTheme(themeName)
+      ? [path.join(INTERNAL_DEFAULT_THEME_ROOT, 'tags')]
+      : []),
+    // pnpm workspace: root node_modules (dist tags)
     path.join(rootDir, '..', 'node_modules', themeName, 'dist', 'tags'),
-    // Local node_modules
+    // Local node_modules (dist tags)
     path.join(rootDir, 'node_modules', themeName, 'dist', 'tags'),
-    // Direct packages path (for monorepo development)
-    path.join(rootDir, '..', 'packages', 'theme-default', 'dist', 'tags'),
+    // pnpm workspace: root node_modules (source components)
+    path.join(rootDir, '..', 'node_modules', themeName, 'src', 'components'),
+    // Local node_modules (source components)
+    path.join(rootDir, 'node_modules', themeName, 'src', 'components'),
   ];
 
   let sourceTagsDir: string | null = null;

@@ -1,1 +1,40 @@
-<${input.content}/>
+<style>
+  .card-body--dense {
+    padding: 0.72rem 0.88rem;
+  }
+
+  .card-body--spacious {
+    padding: 1.3rem 1.35rem;
+  }
+
+  .card-body--muted {
+    background: color-mix(in srgb, var(--bg-alt, #f9fafb) 86%, transparent);
+  }
+
+  .card-body--divided {
+    border-top: 1px solid var(--border-divider, #e5e7eb);
+  }
+
+  .card-body--measure {
+    max-width: 72ch;
+  }
+
+  .card-body > :first-child {
+    margin-top: 0;
+  }
+
+  .card-body > :last-child {
+    margin-bottom: 0;
+  }
+</style>
+
+<section
+  class=("card-body"
+    + (input.dense ? " card-body--dense" : "")
+    + (input.spacious ? " card-body--spacious" : "")
+    + (input.muted ? " card-body--muted" : "")
+    + (input.divided ? " card-body--divided" : "")
+    + (input.measure ? " card-body--measure" : ""))
+>
+  <${input.content}/>
+</section>

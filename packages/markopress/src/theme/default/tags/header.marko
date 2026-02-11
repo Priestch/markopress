@@ -1,0 +1,49 @@
+/**
+ * Header component
+ */
+
+<let/siteTitle=input.siteTitle || 'MarkoPress'/>
+<let/navItems=input.navItems || []/>
+
+<div class="site-header">
+  <div class="header-container">
+    <a href="/" class="site-title">${siteTitle}</a>
+    <nav class="site-nav">
+      <for|item| in=navItems>
+        <a href=item.link class="nav-link">${item.text}</a>
+      </for>
+    </nav>
+  </div>
+</div>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 0;
+  }
+
+  .header-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .site-title {
+    font-weight: bold;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .site-nav {
+    display: flex;
+    gap: 1.5rem;
+  }
+
+  .nav-link {
+    text-decoration: none;
+    color: inherit;
+  }
+</style>

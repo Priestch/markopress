@@ -74,16 +74,12 @@ export function markdownContentPlugin() {
       }
 
       debug('load_FOUND_HTML', { contentId, htmlLength: html.length });
-
-      // Escape the HTML for use in a Marko template
-      // We need to escape $ to prevent Marko from interpreting ${...} as template expressions
-      const escapedHtml = html
-        .replace(/\\/g, '\\\\')
-        .replace(/`/g, '\\`')
-        .replace(/\$/g, '\\$');
-
-      // Return a Marko component that renders the HTML using a static literal
-      return `<div class="markdown-content">\n$!{\`${escapedHtml}\`}\n</div>`;
+      // Return rendered HTML as Marko template source so kebab-case tags
+      // (e.g. <alert-box>) compile as Marko components instead of raw HTML.
+      const markoSource = escapeMarkoText(html);
+      return `<div class="markdown-content">
+${markoSource}
+</div>`;
     },
   };
 }

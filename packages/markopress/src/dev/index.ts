@@ -8,7 +8,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { loadConfig } from '../config/index.js';
 import { PluginManager } from '../plugin/manager.js';
-import { generateRoutes, copyThemeCSS, generateCatchAllRoutes, copyThemeComponents } from '../build/index.js';
+import { generateRoutes, copyThemeCSS, generateCatchAllRoutes } from '../build/index.js';
 
 interface DevServerOptions {
   port?: number;
@@ -80,11 +80,8 @@ export async function startDevServer(options: DevServerOptions = {}) {
   await copyThemeCSS(config.root, config, false);
   console.log('   Theme CSS copied\n');
 
-  // Theme components are now auto-discovered from the theme package via marko.json
-  // No need to copy them - see: https://markojs.com/docs/custom-tags/#installed-custom-tags
-  // console.log('📦 Copying theme components...');
-  // await copyThemeComponents(config.root, config, false);
-  // console.log('   Theme components copied\n');
+  // Theme components are auto-discovered from the markopress package
+  // via marko metadata (marko.json + package exports)
 
   // Start @marko/run dev server
   console.log('🔨 Starting @marko/run dev server...\n');

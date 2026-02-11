@@ -6,8 +6,3 @@
 dist
 node_modules
 Thumbs.db
-
-# Ignore compiled JS files that shadow TS files in src/
-**/src/**/*.js
-**/src/**/*.js.map
-!**/src/**/*.marko.js

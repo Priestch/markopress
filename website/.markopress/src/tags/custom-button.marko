@@ -1,15 +1,175 @@
 <style>
   .custom-button {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    background: #3c8772;
-    color: white;
+    --btn-bg-a: #3c8772;
+    --btn-bg-b: #2f7462;
+    --btn-border: #2b6456;
+    --btn-fg: #ffffff;
+    --btn-shadow: rgba(15, 23, 42, 0.8);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.62rem 0.98rem;
+    border-radius: 10px;
+    border: 1px solid var(--btn-border);
+    background: linear-gradient(180deg, var(--btn-bg-a), var(--btn-bg-b));
+    color: var(--btn-fg);
     text-decoration: none;
-    border-radius: 4px;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+    box-shadow: 0 10px 24px -16px var(--btn-shadow);
+    transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
+    white-space: nowrap;
+    user-select: none;
   }
+
   .custom-button:hover {
-    background: #2e6a5a;
+    transform: translateY(-1px);
+    filter: brightness(1.03);
+    box-shadow: 0 16px 30px -18px color-mix(in srgb, var(--btn-shadow) 88%, transparent);
+  }
+
+  .custom-button:active {
+    transform: translateY(0);
+    filter: brightness(0.98);
+  }
+
+  .custom-button:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--btn-bg-a) 58%, white);
+    outline-offset: 2px;
+  }
+
+  .custom-button--sm {
+    padding: 0.46rem 0.72rem;
+    font-size: 0.86rem;
+    border-radius: 9px;
+  }
+
+  .custom-button--md {
+    font-size: 0.93rem;
+  }
+
+  .custom-button--lg {
+    padding: 0.74rem 1.12rem;
+    font-size: 1rem;
+    border-radius: 11px;
+  }
+
+  .custom-button--block {
+    display: inline-flex;
+    width: 100%;
+  }
+
+  .custom-button--pill {
+    border-radius: 999px;
+  }
+
+  .custom-button__icon {
+    font-size: 0.92em;
+    line-height: 1;
+  }
+
+  .custom-button__arrow {
+    font-size: 0.88rem;
+    opacity: 0.88;
+  }
+
+  .custom-button__spinner {
+    width: 0.86em;
+    height: 0.86em;
+    border-radius: 999px;
+    border: 2px solid color-mix(in srgb, currentColor 35%, transparent);
+    border-top-color: currentColor;
+    animation: custom-button-spin 0.85s linear infinite;
+  }
+
+  .custom-button--loading {
+    pointer-events: none;
+  }
+
+  .custom-button--secondary {
+    --btn-bg-a: #475569;
+    --btn-bg-b: #334155;
+    --btn-border: #1e293b;
+  }
+
+  .custom-button--danger {
+    --btn-bg-a: #dc2626;
+    --btn-bg-b: #b91c1c;
+    --btn-border: #991b1b;
+  }
+
+  .custom-button--ghost {
+    --btn-bg-a: #ffffff;
+    --btn-bg-b: #f8fafc;
+    --btn-border: #cbd5e1;
+    --btn-fg: #0f172a;
+    --btn-shadow: rgba(15, 23, 42, 0.25);
+  }
+
+  .custom-button--disabled {
+    opacity: 0.62;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  @keyframes custom-button-spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>
-<a href=input.href class="custom-button">${input.label || 'Button'}</a>
+
+<if=input.disabled>
+  <span
+    class=("custom-button custom-button--disabled custom-button--" + (input.variant || "primary")
+      + " custom-button--" + (input.size || "md")
+      + (input.block ? " custom-button--block" : "")
+      + (input.pill ? " custom-button--pill" : ""))
+    role="link"
+    aria-disabled="true"
+    aria-label=(input.ariaLabel || input.label)
+  >
+    <if=input.icon>
+      <span class="custom-button__icon" aria-hidden="true">${input.icon}</span>
+    </if>
+
+    <span class="custom-button__label">${input.label || "Button"}</span>
+
+    <if=input.trailingIcon !== false>
+      <span class="custom-button__arrow" aria-hidden="true">-></span>
+    </if>
+  </span>
+</if>
+
+<if=!input.disabled>
+  <a
+    href=(input.href || "#")
+    target=input.target
+    rel=(input.target === "_blank" ? (input.rel || "noopener noreferrer") : input.rel)
+    class=("custom-button custom-button--" + (input.variant || "primary")
+      + " custom-button--" + (input.size || "md")
+      + (input.block ? " custom-button--block" : "")
+      + (input.pill ? " custom-button--pill" : "")
+      + (input.loading ? " custom-button--loading" : ""))
+    aria-label=(input.ariaLabel || input.label)
+    aria-busy=(input.loading ? "true" : "false")
+  >
+    <if=input.loading>
+      <span class="custom-button__spinner" aria-hidden="true"></span>
+    </if>
+
+    <if=input.icon>
+      <span class="custom-button__icon" aria-hidden="true">${input.icon}</span>
+    </if>
+
+    <span class="custom-button__label">
+      ${input.loading && input.loadingLabel ? input.loadingLabel : (input.label || "Button")}
+    </span>
+
+    <if=input.trailingIcon !== false>
+      <span class="custom-button__arrow" aria-hidden="true">-></span>
+    </if>
+  </a>
+</if>

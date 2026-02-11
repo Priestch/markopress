@@ -4,7 +4,17 @@
 
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import type { ThemeConfig, ResolvedTheme } from './types.js';
+
+const THEME_LOADER_DIR = path.dirname(fileURLToPath(import.meta.url));
+const MARKOPRESS_PACKAGE_ROOT = path.resolve(THEME_LOADER_DIR, '..', '..');
+const INTERNAL_DEFAULT_THEME_ROOT = path.join(MARKOPRESS_PACKAGE_ROOT, 'src', 'theme', 'default');
+const INTERNAL_DEFAULT_THEME_NAMES = new Set([
+  '@markopress/theme-default',
+  'theme-default',
+  'default',
+]);
 
 /**
  * Default theme configuration
@@ -39,8 +49,11 @@ export async function loadTheme(
 ): Promise<ResolvedTheme> {
   let themeRoot: string;
 
-  // Check if it's a local theme
-  if (themeName.startsWith('./') || themeName.startsWith('../') || path.isAbsolute(themeName)) {
+  // Internal default theme is bundled with markopress package.
+  if (INTERNAL_DEFAULT_THEME_NAMES.has(themeName)) {
+    themeRoot = INTERNAL_DEFAULT_THEME_ROOT;
+  } else if (themeName.startsWith('./') || themeName.startsWith('../') || path.isAbsolute(themeName)) {
+    // Check if it's a local theme
     themeRoot = path.resolve(rootDir, themeName);
   } else {
     // Load from node_modules

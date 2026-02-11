@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "A general-purpose static site generator using Marko.js v6",
   "type": "module",
+  "marko": {
+    "src": "src/theme/default"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
@@ -43,7 +46,9 @@
     "./plugins/*": {
       "import": "./dist/plugins/*.js",
       "types": "./dist/plugins/*.d.ts"
-    }
+    },
+    "./marko.json": "./marko.json",
+    "./src/theme/default/tags/*": "./src/theme/default/tags/*"
   },
   "scripts": {
     "build": "pnpm exec tsc",
@@ -95,8 +100,10 @@
     "node": ">=18.0.0"
   },
   "files": [
+    "marko.json",
     "dist",
     "bin",
-    "templates"
+    "templates",
+    "src/theme/default"
   ]
 }

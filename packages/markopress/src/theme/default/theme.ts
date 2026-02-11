@@ -1,3 +1,7 @@
+declare const document: any;
+declare const localStorage: any;
+declare const window: any;
+
 /**
  * MarkoPress Default Theme - Client-side Scripts
  * Handles dark mode, sidebar, and other interactive features

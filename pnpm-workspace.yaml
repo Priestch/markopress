@@ -21,7 +21,6 @@ catalogs:
     # MarkoPress internal packages
     # These will be available as workspace: references
     markopress: "workspace:*"
-    "@markopress/theme-default": "workspace:*"
     "@markopress/website": "workspace:*"
 
 # Workspace settings

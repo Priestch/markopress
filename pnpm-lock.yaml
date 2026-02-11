@@ -107,20 +107,8 @@ importers:
         specifier: ^4.0.17
         version: 4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17)(tsx@4.21.0)
 
-  packages/theme-default:
-    devDependencies:
-      tsx:
-        specifier: ^4.7.0
-        version: 4.21.0
-      typescript:
-        specifier: ^5.3.0
-        version: 5.9.3
-
   website/.markopress:
     dependencies:
-      '@markopress/theme-default':
-        specifier: workspace:*
-        version: link:../../packages/theme-default
       markopress:
         specifier: workspace:*
         version: link:../../packages/markopress
@@ -2894,6 +2882,7 @@ snapshots:
   get-tsconfig@4.13.0:
     dependencies:
       resolve-pkg-maps: 1.0.0
+    optional: true
 
   glob-parent@5.1.2:
     dependencies:
@@ -3250,7 +3239,8 @@ snapshots:
 
   resolve-from@5.0.0: {}
 
-  resolve-pkg-maps@1.0.0: {}
+  resolve-pkg-maps@1.0.0:
+    optional: true
 
   resolve.exports@2.0.3: {}
 
@@ -3466,6 +3456,7 @@ snapshots:
       get-tsconfig: 4.13.0
     optionalDependencies:
       fsevents: 2.3.3
+    optional: true
 
   typescript@5.9.3: {}
 
