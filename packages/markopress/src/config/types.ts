@@ -127,6 +127,9 @@ export interface MarkdownConfig {
 
     /** Directory containing Marko component files (default: '.markopress/tags') */
     tagsDir?: string;
+
+    /** Generate per-page CSS imports for tags (default: false) */
+    perPageCss?: boolean;
   };
 }
 

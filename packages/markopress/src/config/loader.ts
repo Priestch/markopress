@@ -37,6 +37,11 @@ const DEFAULT_CONFIG: Omit<ResolvedConfig, 'root'> = {
       light: 'github-light',
       dark: 'github-dark',
     },
+    markoTags: {
+      enabled: false,
+      tagsDir: '.markopress/tags',
+      perPageCss: false,
+    },
   },
   build: {
     useCatchAllRoutes: false,
