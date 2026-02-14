@@ -85,6 +85,11 @@ const MarkdownConfigSchema = z.object({
     light: z.string().optional(),
     dark: z.string().optional(),
   }).optional(),
+  markoTags: z.object({
+    enabled: z.boolean().optional(),
+    tagsDir: z.string().optional(),
+    perPageCss: z.boolean().optional(),
+  }).optional(),
 });
 
 /**
