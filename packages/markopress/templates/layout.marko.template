@@ -1,3 +1,9 @@
+import "../tags/alert-box.marko";
+import "../tags/card.marko";
+import "../tags/card-body.marko";
+import "../tags/card-header.marko";
+import "../tags/custom-button.marko";
+
 <!DOCTYPE html>
 <html lang=$global.lang||"en">
 <head>
@@ -11,7 +17,6 @@
   <meta name="theme-color" content="#3c8772">
   <link rel="stylesheet" href="/_markopress/theme/theme-{{THEME_STYLE}}.css">
   <link rel="stylesheet" href="/_markopress/theme/styles.css">
-  <link rel="stylesheet" href="/markopress-components.css">
   <theme-head-bottom/>
 </head>
 <body>
