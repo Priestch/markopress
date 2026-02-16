@@ -1,6 +1,6 @@
 {
   "name": "markopress",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "A general-purpose static site generator using Marko.js v6",
   "type": "module",
   "marko": {
