@@ -6,3 +6,8 @@
 dist
 node_modules
 Thumbs.db
+
+# Build output directories (if generated at root)
+/public/
+/src/
+/vite.config.js

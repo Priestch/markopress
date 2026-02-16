@@ -16,3 +16,6 @@ Thumbs.db
 *~
 
 routes
+
+# Auto-generated during build
+public/markopress-components.css

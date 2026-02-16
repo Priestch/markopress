@@ -330,22 +330,30 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     t11.end();
     console.log('   Theme CSS copied\n');
 
-    // Step 14: Theme components are auto-discovered from the markopress package
+    // Step 14: Extract styles from user-defined Marko components
+    console.log('🎨 Extracting styles from Marko components...');
+    const t12 = time('Marko component styles extraction');
+    t12.start();
+    await extractStylesFromMarkoTags(root, config, debug);
+    t12.end();
+    console.log('   Component styles extracted\n');
+
+    // Step 15: Theme components are auto-discovered from the markopress package
     // via marko metadata (marko.json + package exports)
     // console.log('📦 Copying theme components...');
-    // const t12 = time('Theme components copy');
-    // t12.start();
+    // const t13 = time('Theme components copy');
+    // t13.start();
     // await copyThemeComponents(root, config, debug);
-    // t12.end();
+    // t13.end();
     // console.log('   Theme components copied\n');
 
-    // Step 15: Build with @marko/run
+    // Step 16: Build with @marko/run
     console.log('🔨 Building with @marko/run...');
-    const t13 = time('@marko/run build');
-    t13.start();
+    const t14 = time('@marko/run build');
+    t14.start();
     const resolvedOutDir = outDir || config.build.outDir;
     const buildResult = await runMarkoRunBuild(resolvedOutDir, debug, root);
-    t13.end();
+    t14.end();
 
     if (!buildResult.success) {
       errors.push(...buildResult.errors);
@@ -357,32 +365,32 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       };
     }
 
-    // Step 16: Collect build assets
-    const t14 = time('Collect build assets');
-    t14.start();
+    // Step 17: Collect build assets
+    const t15 = time('Collect build assets');
+    t15.start();
     const assets = await collectBuildAssets(buildResult.outDir);
-    t14.end();
+    t15.end();
 
-    // Step 17: Execute postBuild hooks
+    // Step 18: Execute postBuild hooks
     if (pluginManager) {
       console.log('🔌 Processing plugin postBuild hooks...');
-      const t15 = time('Post-build hooks');
-      t15.start();
+      const t16 = time('Post-build hooks');
+      t16.start();
       await pluginManager.execPostBuildHooks(
         buildResult.outDir,
         routeManifest,
         assets
       );
-      t15.end();
+      t16.end();
       console.log('   Post-build hooks completed\n');
     }
 
-    // Step 18: Copy Marko tags directory to output (after build so it doesn't get cleaned)
+    // Step 19: Copy Marko tags directory to output (after build so it doesn't get cleaned)
     console.log('📦 Copying Marko tags directory...');
-    const t17 = time('Copy tags directory');
-    t17.start();
+    const t18 = time('Copy tags directory');
+    t18.start();
     await copyTagsDirectory(root, buildResult.outDir, config, debug);
-    t17.end();
+    t18.end();
     console.log('   Tags directory copied\n');
 
     console.log('\n✅ Build completed successfully!');
@@ -1013,6 +1021,144 @@ export async function copyThemeCSS(
     } catch {
       // Try next path
     }
+  }
+}
+
+/**
+ * Extract styles from user-defined Marko components
+ * Scans the tags directory, extracts <style> blocks from .marko files,
+ * and combines them into a single CSS file for global loading
+ *
+ * This is necessary because request-time virtual markdown modules
+ * do not emit tag-local CSS assets reliably.
+ */
+export async function extractStylesFromMarkoTags(
+  rootDir: string,
+  config: ResolvedConfig,
+  debug: boolean
+): Promise<void> {
+  const tagsDirConfig = config.markdown?.markoTags?.tagsDir || 'src/.markopress/tags';
+  const tagsDir = path.join(rootDir, tagsDirConfig);
+
+  // Check if tags directory exists
+  try {
+    await fs.access(tagsDir);
+  } catch {
+    // Tags directory doesn't exist, skip extraction
+    if (debug) {
+      console.log(`   No tags directory found at: ${tagsDir}`);
+    }
+    return;
+  }
+
+  // Collect all .marko files recursively
+  const markoFiles: string[] = [];
+  async function collectMarkoFiles(dir: string) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await collectMarkoFiles(fullPath);
+      } else if (entry.isFile() && entry.name.endsWith('.marko')) {
+        markoFiles.push(fullPath);
+      }
+    }
+  }
+
+  await collectMarkoFiles(tagsDir);
+
+  if (markoFiles.length === 0) {
+    if (debug) {
+      console.log(`   No .marko files found in: ${tagsDir}`);
+    }
+    return;
+  }
+
+  // Extract styles from each .marko file
+  const cssEntries: string[] = [];
+  cssEntries.push('/* Custom markdown tag styles');
+  cssEntries.push(' * Loaded globally because request-time virtual markdown modules');
+  cssEntries.push(' * do not emit tag-local CSS assets reliably. */');
+  cssEntries.push('');
+
+  for (const filePath of markoFiles) {
+    const relativePath = path.relative(tagsDir, filePath);
+    const componentName = path.dirname(relativePath) === ''
+      ? path.basename(relativePath, '.marko')
+      : path.join(path.dirname(relativePath), path.basename(relativePath, '.marko'));
+
+    try {
+      const content = await fs.readFile(filePath, 'utf-8');
+
+      // Extract <style> blocks using regex
+      // Match both <style>...</style> and <style>...</style> with attributes
+      const styleRegex = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
+      const matches = Array.from(content.matchAll(styleRegex));
+
+      if (matches.length > 0) {
+        cssEntries.push(`/* ${componentName}.marko */`);
+
+        for (const match of matches) {
+          const styleContent = match[1] || '';
+          if (styleContent) {
+            // Split into lines and trim leading/trailing empty lines
+            const lines = styleContent.split('\n');
+
+            // Find first non-empty line
+            let startIndex = 0;
+            while (startIndex < lines.length && lines[startIndex].trim() === '') {
+              startIndex++;
+            }
+
+            // Find last non-empty line
+            let endIndex = lines.length - 1;
+            while (endIndex >= startIndex && lines[endIndex].trim() === '') {
+              endIndex--;
+            }
+
+            // Process the non-empty content
+            for (let i = startIndex; i <= endIndex; i++) {
+              const line = lines[i];
+              // Preserve empty lines within the content
+              if (line.trim() === '') {
+                cssEntries.push('');
+                continue;
+              }
+              // Detect current indentation level and normalize to 2-space increments
+              const indentMatch = line.match(/^(\s*)/);
+              const currentIndent = indentMatch ? indentMatch[1].length : 0;
+              // Normalize: preserve relative indentation but normalize to 2-space base
+              // If source uses 4-space indent, convert to 2-space; if 2-space, keep as-is
+              const normalizedIndent = Math.floor(currentIndent / 2);
+              const newIndent = '  '.repeat(normalizedIndent);
+              const content = line.trim();
+              // Remove :global() wrappers - they're for CSS Modules, not global CSS
+              const strippedGlobal = content.replace(/:global\(([^)]+)\)/g, '$1');
+              cssEntries.push(newIndent + strippedGlobal);
+            }
+          }
+        }
+
+        cssEntries.push('');
+      }
+    } catch (error) {
+      console.warn(`   Warning: Could not read file ${filePath}:`, error);
+    }
+  }
+
+  // Create public directory if it doesn't exist
+  const publicDir = path.join(rootDir, 'public');
+  await fs.mkdir(publicDir, { recursive: true });
+
+  // Write the combined CSS file
+  const outputPath = path.join(publicDir, 'markopress-components.css');
+  const cssContent = cssEntries.join('\n');
+
+  await fs.writeFile(outputPath, cssContent);
+
+  if (debug) {
+    console.log(`   Extracted styles from ${markoFiles.length} Marko component(s)`);
+    console.log(`   Output: ${outputPath}`);
   }
 }
 

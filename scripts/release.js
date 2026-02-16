@@ -6,6 +6,8 @@ import prompts from 'prompts'
 import { execa } from 'execa'
 import semver from 'semver'
 
+const DRY_RUN = process.argv.includes('--dry-run')
+
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const rootDir = resolve(__dirname, '..')
 const packagesDir = join(rootDir, 'packages')
@@ -39,11 +41,21 @@ function getPackages() {
   return packages
 }
 
-const run = (bin, args, opts = {}) =>
-  execa(bin, args, { stdio: 'inherit', ...opts })
+const run = (bin, args, opts = {}) => {
+  if (DRY_RUN) {
+    console.log(c.gray(`[dry-run] ${bin} ${args.join(' ')}`))
+    return { stdout: '', stderr: '' }
+  }
+  return execa(bin, args, { stdio: 'inherit', ...opts })
+}
+
 const step = (msg) => console.log(c.cyan(msg))
 
 async function main() {
+  if (DRY_RUN) {
+    console.log(c.yellow('🧪 DRY RUN MODE - No actual changes will be made\n'))
+  }
+
   const packages = getPackages()
 
   if (packages.length === 0) {
@@ -118,6 +130,29 @@ async function main() {
     return
   }
 
+  // Pre-release checks
+  step('\nRunning pre-release checks...')
+
+  // Check if working directory is clean
+  const { stdout: gitStatus } = await run('git', ['status', '--porcelain'], {
+    cwd: rootDir,
+    stdio: 'pipe'
+  })
+
+  if (gitStatus.trim()) {
+    console.warn(c.yellow('⚠️  Warning: Working directory has uncommitted changes'))
+    const { proceed } = await prompts({
+      type: 'confirm',
+      name: 'proceed',
+      message: 'Continue with release anyway?',
+      initial: false
+    })
+    if (!proceed) {
+      console.log(c.yellow('Release cancelled'))
+      return
+    }
+  }
+
   // Update the package version.
   step('\nUpdating the package version...')
   updatePackage(pkgDir, targetVersion)
@@ -126,10 +161,23 @@ async function main() {
   step('\nBuilding the package...')
   await run('pnpm', ['build'], { cwd: pkgDir })
 
+  // Verify build output exists
+  if (!DRY_RUN) {
+    const distDir = resolve(pkgDir, 'dist')
+    if (!existsSync(distDir)) {
+      throw new Error(`Build failed: ${distDir} does not exist`)
+    }
+    console.log(c.green('✓ Build output verified'))
+  }
+
   // Commit changes to the Git and create a tag.
   step('\nCommitting changes...')
   const pkgName = pkg.name.replace(/^@[^/]+\//, '') // Remove scope for cleaner commit message
+
+  // Stage all changes (root + package)
+  await run('git', ['add', '-A'], { cwd: rootDir })
   await run('git', ['add', 'package.json'], { cwd: pkgDir })
+
   await run('git', ['commit', '-m', `release: ${pkgName}@v${targetVersion}`])
   await run('git', ['tag', `${pkgName}-v${targetVersion}`])
 
