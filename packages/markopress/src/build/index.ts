@@ -755,6 +755,7 @@ async function generateConfigFile(
       description: config.site?.description || '',
       lang: config.site?.lang || 'en-US',
       head: config.site?.head || [],
+      base: config.site?.base || '/',
     },
     content: config.content,
     theme: {
@@ -798,6 +799,7 @@ async function generateRootLayout(
   const template = await loadTemplate('layout.marko.template', {
     SITE_TITLE: siteTitle,
     THEME_STYLE: themeStyle,
+    BASE_PATH: config.site?.base?.replace(/\/$/, '') || '',
   });
 
   await fs.writeFile(layoutFile, template);

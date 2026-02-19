@@ -50,8 +50,17 @@ export async function GET(context, next) {
     // Import the virtual module (handled by vite plugin)
     const contentComponent = (await loadMarkdownModule(`virtual:markdown-content/${contentId}`)).default;
 
+    // Set base path for links (strip trailing slash for prefix use)
+    const base = (config.site.base || '/').replace(/\/$/, '');
+    context.base = base || '/';
+
     // Set theme config from markopress.config.js (only after file is found)
-    context.navbar = config.theme.options.navbar || [];
+    // Prefix navbar links with base path
+    const rawNavbar = config.theme.options.navbar || [];
+    context.navbar = rawNavbar.map(item => ({
+      ...item,
+      link: item.link ? base + item.link : item.link,
+    }));
     context.lang = config.site.lang || 'en-US';
     context.siteHead = config.site.head || [];
     context.footer = config.theme.options.footer || null;
@@ -64,7 +73,19 @@ export async function GET(context, next) {
 
     // Load module enhancements for this content type (sidebar, etc.)
     const enhancements = moduleEnhancements[contentType] || {};
-    context.sidebar = enhancements.sidebar || null;
+    // Prefix sidebar links with base path
+    const rawSidebar = enhancements.sidebar || null;
+    if (rawSidebar && base) {
+      context.sidebar = rawSidebar.map(section => ({
+        ...section,
+        items: (section.items || []).map(item => ({
+          ...item,
+          link: item.link ? base + item.link : item.link,
+        })),
+      }));
+    } else {
+      context.sidebar = rawSidebar;
+    }
 
     // TOC (table of contents) - extracted from headers
     if (rendered.headers && rendered.headers.length > 0) {

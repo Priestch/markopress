@@ -9,9 +9,9 @@
   </if>
   <theme-head-top/>
   <meta name="theme-color" content="#3c8772">
-  <link rel="stylesheet" href="/_markopress/theme/theme-{{THEME_STYLE}}.css">
-  <link rel="stylesheet" href="/_markopress/theme/styles.css">
-  <link rel="stylesheet" href="/markopress-components.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/_markopress/theme/theme-{{THEME_STYLE}}.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/_markopress/theme/styles.css">
+  <link rel="stylesheet" href="{{BASE_PATH}}/markopress-components.css">
   <theme-head-bottom/>
 </head>
 <body>
@@ -20,7 +20,7 @@
     <!-- Navbar -->
     <nav class="navbar">
       <div class="navbar-container">
-        <a href="/" class="navbar-brand">
+        <a href="{{BASE_PATH}}/" class="navbar-brand">
           <span class="navbar-title">{{SITE_TITLE}}</span>
         </a>
         <theme-navbar-start/>

@@ -4,7 +4,7 @@ export default defineConfig({
   site: {
     title: 'MarkoPress',
     description: 'A general-purpose static site generator using Marko.js v6',
-    base: '/',
+    base: process.env.BASE_URL || '/',
     lang: 'en-US',
     head: [
       ['meta', { name: 'theme-color', content: '#3c8772' }],

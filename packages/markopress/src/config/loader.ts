@@ -186,7 +186,8 @@ export function resolveConfig(
 
   // Add theme CSS based on style option
   const style = (theme.options?.style as 'default' | 'vitepress' | 'docusaurus') || 'default';
-  const themeCssPath = `/_markopress/theme/theme-${style}.css`;
+  const base = (site.base || '/').replace(/\/$/, '');
+  const themeCssPath = `${base}/_markopress/theme/theme-${style}.css`;
 
   // Inject theme CSS link into head
   const themeCssHeadTag: HeadTag = ['link', {

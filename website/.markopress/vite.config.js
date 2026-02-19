@@ -3,6 +3,7 @@ import marko from '@marko/run/vite';
 import { markdownContentPlugin } from 'markopress/build';
 
 export default defineConfig({
+  base: process.env.BASE_URL || '/',
   plugins: [
     marko(),
     markdownContentPlugin(),
