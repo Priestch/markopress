@@ -31,6 +31,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Build markopress package
+        run: pnpm --filter markopress build
+
       - name: Build website
         run: pnpm docs:build
         env:
