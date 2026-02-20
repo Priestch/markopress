@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { existsSync } from 'node:fs';
 
 const GLOBAL_COMPONENTS_KEY = '__MARKOPRESS_MARKDOWN_COMPONENTS__';
 const markdownComponents = ((globalThis as unknown) as Record<string, Map<string, string>>)[GLOBAL_COMPONENTS_KEY] ??= new Map();
@@ -65,6 +66,13 @@ export function markdownContentPlugin() {
         return undefined;
       }
 
+      // If the file exists on disk (pre-rendered during build), let Vite handle it normally
+      const cleanPath = id.split('?', 1)[0];
+      if (existsSync(cleanPath)) {
+        debug('load_FILE_EXISTS', { contentId, cleanPath });
+        return undefined;
+      }
+
       debug('load_MATCH', { contentId, storedKeys: Array.from(markdownComponents.keys()) });
 
       const html = markdownComponents.get(contentId);
@@ -104,7 +112,7 @@ function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
-function escapeMarkoText(value: string): string {
+export function escapeMarkoText(value: string): string {
   const input = String(value);
   let output = '';
   let inTag = false;
@@ -126,6 +134,13 @@ function escapeMarkoText(value: string): string {
 
     if (!inTag && char === '$' && input[i + 1] === '{') {
       output += '&#36;{';
+      i++;
+      continue;
+    }
+
+    // Escape // in text content - Marko treats it as a JS comment
+    if (!inTag && char === '/' && input[i + 1] === '/') {
+      output += '&#47;/';
       i++;
       continue;
     }

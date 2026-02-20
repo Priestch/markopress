@@ -1,111 +1,154 @@
-import { renderMarkdown } from 'markopress/markdown';
-import { promises as fs } from 'node:fs';
-import path from 'node:path';
 import { config } from '{{CONFIG_PATH}}';
-import { loadMarkdownModule, registerMarkdownContent } from '{{VITE_PLUGIN_PATH}}';
 
-// Load module enhancements (sidebar, etc.) generated during build
+const IS_BUILD = {{IS_BUILD}};
+
+// === BUILD MODE: pre-compiled .marko files + metadata JSON ===
+// === DEV MODE: request-time rendering via virtual modules ===
+
 let moduleEnhancements = {};
-try {
-  const enhancementsPath = path.join(config.root, 'src/.generated/module-enhancements.json');
-  moduleEnhancements = await fs.readFile(enhancementsPath, 'utf-8').then(JSON.parse).catch(() => ({}));
-} catch {
-  // Enhancements file not found, use empty object
+let allMetadata = {};
+let contentModules = {};
+
+if (IS_BUILD) {
+  // Build mode: load pre-compiled content via import.meta.glob (Vite resolves at build time)
+  contentModules = import.meta.glob('/src/.generated/markdown/{{CONTENT_TYPE}}/*.marko');
+  try {
+    allMetadata = (await import('/src/.generated/content-metadata.js')).default;
+  } catch {
+    allMetadata = {};
+  }
+} else {
+  // Dev mode: load module enhancements for sidebar, etc.
+  try {
+    const { promises: fs } = await import('node:fs');
+    const { default: path } = await import('node:path');
+    const enhancementsPath = path.join(config.root, 'src/.generated/module-enhancements.json');
+    moduleEnhancements = await fs.readFile(enhancementsPath, 'utf-8').then(JSON.parse).catch(() => ({}));
+  } catch {
+    // Enhancements file not found, use empty object
+  }
+}
+
+// Also load module enhancements in build mode
+if (IS_BUILD) {
+  try {
+    moduleEnhancements = (await import('/src/.generated/module-enhancements.js')).default;
+  } catch {
+    moduleEnhancements = {};
+  }
 }
 
 export async function GET(context, next) {
   const slug = context.params.slug || 'index';
-  const contentType = '{{CONTENT_TYPE}}'; // 'pages', 'blog', 'guides', etc.
+  const contentType = '{{CONTENT_TYPE}}';
 
-  // Build file path from content config
-  // Content paths in config are relative to config.root (e.g., ../content/pages)
-  // Get the content directory for this module
-  const contentConfig = config.content[contentType];
-  const contentDir = typeof contentConfig === 'string' ? contentConfig : contentConfig?.dir;
+  // Set base path for links (strip trailing slash for prefix use)
+  const base = (config.site.base || '/').replace(/\/$/, '');
+  context.base = base || '/';
 
-  if (!contentDir) {
-    // No content directory configured for this type
-    return next();
-  }
+  let contentComponent;
+  let frontmatter = {};
+  let headers = [];
 
-  // Resolve the full file path (contentDir is relative to config.root)
-  const filePath = path.join(config.root, contentDir, `${slug}.md`);
+  if (IS_BUILD) {
+    // === BUILD MODE ===
+    // Look up pre-compiled .marko module from glob map
+    const modulePath = `/src/.generated/markdown/${contentType}/${slug}.marko`;
+    const loader = contentModules[modulePath];
 
-  try {
-    // Check if file exists and read it
-    const source = await fs.readFile(filePath, 'utf-8').catch(() => null);
-
-    if (!source) {
-      // File not found - return 404
+    if (!loader) {
       return new Response('Not Found', { status: 404, statusText: 'Not Found' });
     }
 
-    // Render markdown at request time
-    const rendered = await renderMarkdown(source);
+    const mod = await loader();
+    contentComponent = mod.default;
 
-    // Register the markdown content as a virtual Marko component
-    const contentId = `${contentType}/${slug}`;
-    await registerMarkdownContent(contentId, rendered.html);
+    // Look up metadata from pre-generated JSON
+    const metaKey = `${contentType}/${slug}`;
+    const meta = allMetadata[metaKey] || {};
+    frontmatter = meta.frontmatter || {};
+    headers = meta.headers || [];
+  } else {
+    // === DEV MODE ===
+    // Render markdown at request time using virtual modules
+    const { renderMarkdown } = await import('markopress/markdown');
+    const { loadMarkdownModule, registerMarkdownContent } = await import('{{VITE_PLUGIN_PATH}}');
+    const { promises: fs } = await import('node:fs');
+    const { default: path } = await import('node:path');
 
-    // Import the virtual module (handled by vite plugin)
-    const contentComponent = (await loadMarkdownModule(`virtual:markdown-content/${contentId}`)).default;
+    const contentConfig = config.content[contentType];
+    const contentDir = typeof contentConfig === 'string' ? contentConfig : contentConfig?.dir;
 
-    // Set base path for links (strip trailing slash for prefix use)
-    const base = (config.site.base || '/').replace(/\/$/, '');
-    context.base = base || '/';
+    if (!contentDir) {
+      return next();
+    }
 
-    // Set theme config from markopress.config.js (only after file is found)
-    // Prefix navbar links with base path
-    const rawNavbar = config.theme.options.navbar || [];
-    context.navbar = rawNavbar.map(item => ({
-      ...item,
-      link: item.link ? base + item.link : item.link,
+    const filePath = path.join(config.root, contentDir, `${slug}.md`);
+
+    try {
+      const source = await fs.readFile(filePath, 'utf-8').catch(() => null);
+
+      if (!source) {
+        return new Response('Not Found', { status: 404, statusText: 'Not Found' });
+      }
+
+      const rendered = await renderMarkdown(source);
+      frontmatter = rendered.frontmatter;
+      headers = rendered.headers || [];
+
+      const contentId = `${contentType}/${slug}`;
+      await registerMarkdownContent(contentId, rendered.html);
+      contentComponent = (await loadMarkdownModule(`virtual:markdown-content/${contentId}`)).default;
+    } catch (error) {
+      console.error(`Error rendering ${contentType}/${slug}:`, error);
+      return new Response('Not Found', { status: 404, statusText: 'Not Found' });
+    }
+  }
+
+  // === SHARED: Set context for template ===
+  // Prefix navbar links with base path
+  const rawNavbar = config.theme.options.navbar || [];
+  context.navbar = rawNavbar.map(item => ({
+    ...item,
+    link: item.link ? base + item.link : item.link,
+  }));
+  context.lang = config.site.lang || 'en-US';
+  context.siteHead = config.site.head || [];
+  context.footer = config.theme.options.footer || null;
+
+  context.title = frontmatter.title || slug;
+  context.description = frontmatter.description || '';
+  context.contentComponent = contentComponent;
+  context.slug = slug;
+
+  // Load module enhancements for this content type (sidebar, etc.)
+  const enhancements = moduleEnhancements[contentType] || {};
+  const rawSidebar = enhancements.sidebar || null;
+  if (rawSidebar && base) {
+    context.sidebar = rawSidebar.map(section => ({
+      ...section,
+      items: (section.items || []).map(item => ({
+        ...item,
+        link: item.link ? base + item.link : item.link,
+      })),
     }));
-    context.lang = config.site.lang || 'en-US';
-    context.siteHead = config.site.head || [];
-    context.footer = config.theme.options.footer || null;
+  } else {
+    context.sidebar = rawSidebar;
+  }
 
-    // Set context for template
-    context.title = rendered.frontmatter.title || slug;
-    context.description = rendered.frontmatter.description || '';
-    context.contentComponent = contentComponent;
-    context.slug = slug;
+  // TOC (table of contents)
+  if (headers && headers.length > 0) {
+    context.toc = headers;
+  }
 
-    // Load module enhancements for this content type (sidebar, etc.)
-    const enhancements = moduleEnhancements[contentType] || {};
-    // Prefix sidebar links with base path
-    const rawSidebar = enhancements.sidebar || null;
-    if (rawSidebar && base) {
-      context.sidebar = rawSidebar.map(section => ({
-        ...section,
-        items: (section.items || []).map(item => ({
-          ...item,
-          link: item.link ? base + item.link : item.link,
-        })),
-      }));
-    } else {
-      context.sidebar = rawSidebar;
-    }
-
-    // TOC (table of contents) - extracted from headers
-    if (rendered.headers && rendered.headers.length > 0) {
-      context.toc = rendered.headers;
-    }
-
-    // Blog-specific fields
-    if (rendered.frontmatter.date) {
-      context.date = rendered.frontmatter.date;
-    }
-    if (rendered.frontmatter.author) {
-      context.author = rendered.frontmatter.author;
-    }
-    if (rendered.frontmatter.tags) {
-      context.tags = rendered.frontmatter.tags;
-    }
-
-  } catch (error) {
-    // Log error and return 404
-    console.error(`Error rendering ${contentType}/${slug}:`, error);
-    return new Response('Not Found', { status: 404, statusText: 'Not Found' });
+  // Blog-specific fields
+  if (frontmatter.date) {
+    context.date = frontmatter.date;
+  }
+  if (frontmatter.author) {
+    context.author = frontmatter.author;
+  }
+  if (frontmatter.tags) {
+    context.tags = frontmatter.tags;
   }
 }

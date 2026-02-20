@@ -62,7 +62,7 @@ export async function startDevServer(options: DevServerOptions = {}) {
   }
 
   if (routeMode) {
-    await generateCatchAllRoutes(manifest, routesDir, config, modules, false);
+    await generateCatchAllRoutes(manifest, routesDir, config, modules, false, false);
     console.log('   Using catch-all dynamic routes');
   } else {
     await generateRoutes(manifest, routesDir, config, modules, false);
