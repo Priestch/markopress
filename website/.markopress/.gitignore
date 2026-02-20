@@ -15,7 +15,7 @@ Thumbs.db
 *.swo
 *~
 
-routes
-
 # Auto-generated during build
+src/routes
+src/.generated
 public/markopress-components.css

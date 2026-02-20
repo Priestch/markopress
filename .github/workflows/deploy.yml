@@ -41,7 +41,7 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: website/.markopress/dist
+          path: website/.markopress/dist/public
 
   deploy:
     needs: build
