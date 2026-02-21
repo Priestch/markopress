@@ -1,7 +1,33 @@
 {
   "name": "markopress",
   "version": "0.0.1",
-  "description": "A general-purpose static site generator using Marko.js v6",
+  "description": "A fast, modern static site generator built on Marko.js v6 - drop-in alternative to VitePress and Docusaurus with full content compatibility",
+  "keywords": [
+    "static-site-generator",
+    "ssg",
+    "marko",
+    "markojs",
+    "marko.js",
+    "vitepress-alternative",
+    "docusaurus-alternative",
+    "documentation",
+    "docs",
+    "blog",
+    "markdown",
+    "developer-tools",
+    "web-development"
+  ],
+  "homepage": "https://priestch.github.io/markopress/",
+  "bugs": {
+    "url": "https://github.com/Priestch/markopress/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Priestch/markopress.git",
+    "directory": "packages/markopress"
+  },
+  "author": "MarkoPress Team",
+  "license": "MIT",
   "type": "module",
   "marko": {
     "src": "src/theme/default"

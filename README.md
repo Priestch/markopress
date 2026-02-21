@@ -2,7 +2,7 @@
 
 > A general-purpose static site generator powered by Marko.js v6
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/markopress/markopress/build.yml?branch=main)](https://github.com/markopress/markopress/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Priestch/markopress/build.yml?branch=main)](https://github.com/Priestch/markopress/actions)
 [![NPM Version](https://img.shields.io/npm/v/markopress.svg)](https://www.npmjs.com/package/markopress)
 [![License](https://img.shields.io/npm/l/markopress.svg)](LICENSE)
 
@@ -391,8 +391,8 @@ Built with:
 ## 📮 Support
 
 - 💬 [Discord](https://discord.gg/markopress)
-- 🐛 [Issues](https://github.com/markopress/markopress/issues)
-- 📖 [Documentation](https://markopress.dev)
+- 🐛 [Issues](https://github.com/Priestch/markopress/issues)
+- 📖 [Documentation](https://priestch.github.io/markopress/)
 - 🐦 [Twitter](https://twitter.com/markopress)
 
 ---
