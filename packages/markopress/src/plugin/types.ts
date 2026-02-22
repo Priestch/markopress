@@ -115,6 +115,7 @@ export interface PostData extends PageData {
 export interface RouteData {
   path: string;
   component?: string;
+  handler?: string;
   layout?: string;
   meta?: Record<string, unknown>;
 }
