@@ -32,10 +32,10 @@ class {
   <theme-body-top/>
 
   <!-- Skip to main content (accessibility) -->
-  <components.SkipLink/>
+  <skip-link/>
 
   <!-- Reading Progress Indicator -->
-  <components.ReadingProgress/>
+  <reading-progress/>
 
   <div class="docs-layout">
     <!-- Header/Navbar -->
@@ -48,7 +48,7 @@ class {
     <div class="docs-container">
       <aside class="sidebar">
         <theme-sidebar-top/>
-        <components.Sidebar sections=input.sidebar/>
+        <sidebar sections=input.sidebar/>
         <theme-sidebar-bottom/>
       </aside>
       <main id="main-content" class="docs-content">
@@ -59,7 +59,7 @@ class {
         </article>
 
         <!-- Documentation Footer -->
-        <components.DocFooter
+        <doc-footer
           editUrl=state.editUrl
           lastUpdated=state.lastUpdated
           prev=state.prevPage
@@ -69,11 +69,11 @@ class {
       </main>
       <aside class="toc">
         <theme-aside-top/>
-        <components.TOC headers=state.headers/>
+        <toc headers=state.headers/>
         <theme-aside-bottom/>
       </aside>
     </div>
-    <components.Footer/>
+    <footer/>
   </div>
 
   <theme-body-bottom/>

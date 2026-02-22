@@ -126,7 +126,7 @@ Get the latest tutorials, tips, and updates delivered to your inbox weekly.
   <p class="newsletter-note">Join 5,000+ subscribers. No spam, unsubscribe anytime.</p>
 </form>
 
-<style>`
+<style>
   .newsletter-form {
     max-width: 500px;
     margin: 3rem 0;
@@ -160,7 +160,7 @@ Get the latest tutorials, tips, and updates delivered to your inbox weekly.
     font-size: 0.875rem;
     color: var(--text-secondary);
   }
-`</style>
+</style>
 
 ## About This Blog
 

@@ -92,7 +92,7 @@ Prefer to send a message? Fill out the form below and we'll get back to you with
 
 </form>
 
-<style>`
+<style>
   .contact-form {
     max-width: 600px;
     margin: 2rem 0;
@@ -155,7 +155,7 @@ Prefer to send a message? Fill out the form below and we'll get back to you with
   .form-disclaimer a {
     color: var(--accent-color);
   }
-`</style>
+</style>
 
 ## Office Locations
 
@@ -325,7 +325,7 @@ Subscribe to our newsletter for the latest news, tips, and updates:
 
 </form>
 
-<style>`
+<style>
   .newsletter-form {
     max-width: 500px;
     margin: 2rem 0;
@@ -366,7 +366,7 @@ Subscribe to our newsletter for the latest news, tips, and updates:
       flex-direction: column;
     }
   }
-`</style>
+</style>
 
 ---
 

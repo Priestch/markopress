@@ -97,7 +97,7 @@ class {
   </style>
 
   <!-- Component Styles -->
-  <link rel="stylesheet" href="/components.css">
+  <link rel="stylesheet" href="/markopress-components.css">
 
   <theme-head-bottom/>
 </head>
@@ -131,7 +131,7 @@ class {
       <!-- Mobile Menu -->
       <if=state.mobileMenuOpen>
         <div class="navbar-mobile-menu">
-          <components.NavBar/>
+          <nav-bar/>
         </div>
       </if>
     </header>
@@ -149,7 +149,7 @@ class {
 
           <!-- Sidebar Content -->
           <theme-sidebar-top/>
-          <components.Sidebar/>
+          <sidebar/>
           <theme-sidebar-bottom/>
         </div>
       </aside>
@@ -189,7 +189,7 @@ class {
         <div class="toc-container">
           <theme-aside-top/>
           <h2 class="toc-title">On This Page</h2>
-          <components.TOC/>
+          <toc/>
           <theme-aside-bottom/>
         </div>
       </aside>
@@ -197,7 +197,7 @@ class {
 
     <!-- Footer -->
     <footer class="footer">
-      <components.Footer/>
+      <footer/>
     </footer>
   </div>
 

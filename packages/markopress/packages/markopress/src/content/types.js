@@ -1,4 +1,0 @@
-/**
- * Content system types
- */
-export {};

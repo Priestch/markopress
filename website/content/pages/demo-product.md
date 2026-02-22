@@ -7,7 +7,7 @@ description: "Unlock the full power of MarkoPress with advanced features and pri
 
 Everything you need to build professional-grade static sites with MarkoPress.
 
-<style>`
+<style>
   .hero-section {
     text-align: center;
     padding: 4rem 2rem;
@@ -267,7 +267,7 @@ Everything you need to build professional-grade static sites with MarkoPress.
       grid-template-columns: 1fr;
     }
   }
-`</style>
+</style>
 
 <div class="hero-section">
   <h1 class="hero-title">Build Faster with MarkoPress Pro</h1>

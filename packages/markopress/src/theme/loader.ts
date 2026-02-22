@@ -22,22 +22,14 @@ const INTERNAL_DEFAULT_THEME_NAMES = new Set([
 const DEFAULT_THEME: ThemeConfig = {
   name: '@markopress/theme-default',
   layouts: {
-    home: 'layouts/home.marko',
+    home: 'layouts/home-page.marko',
     page: 'layouts/page.marko',
     docs: 'layouts/docs.marko',
     blog: 'layouts/blog.marko',
-    post: 'layouts/post.marko',
-    tag: 'layouts/tag.marko',
-    category: 'layouts/category.marko',
+    content: 'layouts/content-page.marko',
   },
-  slots: {
-    header: { component: 'components/header.marko' },
-    footer: { component: 'components/footer.marko' },
-    sidebar: { component: 'components/sidebar.marko' },
-    toc: { component: 'components/toc.marko' },
-    nav: { component: 'components/nav.marko' },
-  },
-  styles: ['styles/main.css'],
+  slots: {},
+  styles: ['styles.css'],
 };
 
 /**

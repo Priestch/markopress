@@ -3,8 +3,8 @@
  * Converts design tokens into CSS custom properties
  */
 
-import type { DesignSystem, ColorTokens, TypographyTokens, SpacingTokens, EffectTokens, LayoutTokens } from '../design-systems/types.js';
-import { getDarkModeOverride as getDarkOverride, type DesignSystemName } from '../design-systems/index.js';
+import type { DesignSystem, ColorTokens, TypographyTokens, SpacingTokens, EffectTokens, LayoutTokens } from '../../src/theme/default/design-systems/types.js';
+import { getDarkModeOverride as getDarkOverride, type DesignSystemName } from '../../src/theme/default/design-systems/index.js';
 
 /**
  * Generate CSS variables from design system

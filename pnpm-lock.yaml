@@ -17,10 +17,10 @@ importers:
     devDependencies:
       '@marko/run':
         specifier: ^0.9.3
-        version: 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0)
+        version: 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0)
       '@marko/run-adapter-static':
         specifier: ^2.0.4
-        version: 2.0.4(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0))
+        version: 2.0.4(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0))
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.28
@@ -75,7 +75,7 @@ importers:
     devDependencies:
       '@marko/run':
         specifier: ^0.9.4
-        version: 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0)
+        version: 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0)
       '@types/markdown-it':
         specifier: ^14.0.0
         version: 14.1.2
@@ -97,15 +97,18 @@ importers:
       semver:
         specifier: ^7.7.4
         version: 7.7.4
+      terser:
+        specifier: ^5.31.0
+        version: 5.46.0
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
       vite:
         specifier: ^7.3.1
-        version: 7.3.1(@types/node@20.19.28)(tsx@4.21.0)
+        version: 7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0)
       vitest:
         specifier: ^4.0.17
-        version: 4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17)(tsx@4.21.0)
+        version: 4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17)(terser@5.46.0)(tsx@4.21.0)
 
   website/.markopress:
     dependencies:
@@ -425,6 +428,9 @@ packages:
   '@jridgewell/resolve-uri@3.1.2':
     resolution: {integrity: sha512-bRISgCIjP20/tbWSPWMEi54QVPRZExkuD9lJL+UIxUKtwVJA8wW1Trb1jMs1RFXo1CBTNZ/5hpC9QvmKWdopKw==}
     engines: {node: '>=6.0.0'}
+
+  '@jridgewell/source-map@0.3.11':
+    resolution: {integrity: sha512-ZMp1V8ZFcPG5dIWnQLr3NSI1MiCU7UETdS/A0G8V/XWHvJv3ZsFqutJn1Y5RPmAPX6F3BiE397OqveU/9NCuIA==}
 
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
@@ -826,6 +832,11 @@ packages:
   '@vitest/utils@4.0.17':
     resolution: {integrity: sha512-RG6iy+IzQpa9SB8HAFHJ9Y+pTzI+h8553MrciN9eC6TFBErqrQaTas4vG+MVj8S4uKk8uTT2p0vgZPnTdxd96w==}
 
+  acorn@8.16.0:
+    resolution: {integrity: sha512-UVJyE9MttOsBQIDKw1skb9nAwQuR5wuGD3+82K6JgJlm/Y+KI92oNsMNGZCYdDsVtRHSak0pcV5Dno5+4jh9sw==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
+
   ansi-regex@5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
     engines: {node: '>=8'}
@@ -920,6 +931,9 @@ packages:
   commander@12.1.0:
     resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
     engines: {node: '>=18'}
+
+  commander@2.20.3:
+    resolution: {integrity: sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==}
 
   complain@1.6.1:
     resolution: {integrity: sha512-WsiVAbAPcPSwyC5k8g/PLceaW0MXJUw61KqBd9uiyDOSuDIC6Ho/EbyhdFjeV6wq44R2g/b8IFpvV/1ZyXiqUQ==}
@@ -1679,6 +1693,11 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
+  terser@5.46.0:
+    resolution: {integrity: sha512-jTwoImyr/QbOWFFso3YoU3ik0jBBDJ6JTOQiy/J2YxVJdZCc+5u7skhNwiOR3FQIygFqVUPHl7qbbxtjW2K3Qg==}
+    engines: {node: '>=10'}
+    hasBin: true
+
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
@@ -2180,6 +2199,11 @@ snapshots:
 
   '@jridgewell/resolve-uri@3.1.2': {}
 
+  '@jridgewell/source-map@0.3.11':
+    dependencies:
+      '@jridgewell/gen-mapping': 0.3.13
+      '@jridgewell/trace-mapping': 0.3.31
+
   '@jridgewell/sourcemap-codec@1.5.5': {}
 
   '@jridgewell/trace-mapping@0.3.31':
@@ -2217,9 +2241,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@marko/run-adapter-static@2.0.4(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0))':
+  '@marko/run-adapter-static@2.0.4(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0))':
     dependencies:
-      '@marko/run': 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0)
+      '@marko/run': 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0)
       compression: 1.8.1(supports-color@10.2.2)
       htmlparser2: 10.0.0
       sirv: 1.0.19
@@ -2227,14 +2251,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@marko/run-explorer@2.0.2(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0))':
+  '@marko/run-explorer@2.0.2(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0))':
     dependencies:
-      '@marko/run': 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0)
+      '@marko/run': 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0)
 
-  '@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0)':
+  '@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0)':
     dependencies:
-      '@marko/run-explorer': 2.0.2(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(tsx@4.21.0))
-      '@marko/vite': 5.4.2(@marko/compiler@5.39.47)(vite@7.3.1(@types/node@20.19.28)(tsx@4.21.0))
+      '@marko/run-explorer': 2.0.2(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0))
+      '@marko/vite': 5.4.2(@marko/compiler@5.39.47)(vite@7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0))
       browserslist: 4.28.1
       cli-table3: 0.6.5
       compression: 1.8.1(supports-color@10.2.2)
@@ -2250,7 +2274,7 @@ snapshots:
       sade: 1.8.1
       serve-static: 1.16.3(supports-color@10.2.2)
       supports-color: 10.2.2
-      vite: 7.3.1(@types/node@20.19.28)(tsx@4.21.0)
+      vite: 7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0)
       warp10: 2.1.0
     transitivePeerDependencies:
       - '@marko/compiler'
@@ -2267,7 +2291,7 @@ snapshots:
       - tsx
       - yaml
 
-  '@marko/vite@5.4.2(@marko/compiler@5.39.47)(vite@7.3.1(@types/node@20.19.28)(tsx@4.21.0))':
+  '@marko/vite@5.4.2(@marko/compiler@5.39.47)(vite@7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0))':
     dependencies:
       '@chialab/cjs-to-esm': 0.19.0
       '@marko/compiler': 5.39.47
@@ -2279,7 +2303,7 @@ snapshots:
       relative-import-path: 1.0.0
       resolve: 1.22.11
       resolve.exports: 2.0.3
-      vite: 7.3.1(@types/node@20.19.28)(tsx@4.21.0)
+      vite: 7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0)
 
   '@napi-rs/magic-string-android-arm-eabi@0.3.4':
     optional: true
@@ -2537,13 +2561,13 @@ snapshots:
       chai: 6.2.2
       tinyrainbow: 3.0.3
 
-  '@vitest/mocker@4.0.17(vite@7.3.1(@types/node@20.19.28)(tsx@4.21.0))':
+  '@vitest/mocker@4.0.17(vite@7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0))':
     dependencies:
       '@vitest/spy': 4.0.17
       estree-walker: 3.0.3
       magic-string: 0.30.21
     optionalDependencies:
-      vite: 7.3.1(@types/node@20.19.28)(tsx@4.21.0)
+      vite: 7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0)
 
   '@vitest/pretty-format@4.0.17':
     dependencies:
@@ -2571,12 +2595,14 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vitest: 4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17)(tsx@4.21.0)
+      vitest: 4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17)(terser@5.46.0)(tsx@4.21.0)
 
   '@vitest/utils@4.0.17':
     dependencies:
       '@vitest/pretty-format': 4.0.17
       tinyrainbow: 3.0.3
+
+  acorn@8.16.0: {}
 
   ansi-regex@5.0.1: {}
 
@@ -2660,6 +2686,8 @@ snapshots:
   comma-separated-tokens@2.0.3: {}
 
   commander@12.1.0: {}
+
+  commander@2.20.3: {}
 
   complain@1.6.1:
     dependencies:
@@ -3427,6 +3455,13 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
+  terser@5.46.0:
+    dependencies:
+      '@jridgewell/source-map': 0.3.11
+      acorn: 8.16.0
+      commander: 2.20.3
+      source-map-support: 0.5.21
+
   tinybench@2.9.0: {}
 
   tinyexec@1.0.2: {}
@@ -3509,7 +3544,7 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite@7.3.1(@types/node@20.19.28)(tsx@4.21.0):
+  vite@7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0):
     dependencies:
       esbuild: 0.27.2
       fdir: 6.5.0(picomatch@4.0.3)
@@ -3520,12 +3555,13 @@ snapshots:
     optionalDependencies:
       '@types/node': 20.19.28
       fsevents: 2.3.3
+      terser: 5.46.0
       tsx: 4.21.0
 
-  vitest@4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17)(tsx@4.21.0):
+  vitest@4.0.17(@types/node@20.19.28)(@vitest/ui@4.0.17)(terser@5.46.0)(tsx@4.21.0):
     dependencies:
       '@vitest/expect': 4.0.17
-      '@vitest/mocker': 4.0.17(vite@7.3.1(@types/node@20.19.28)(tsx@4.21.0))
+      '@vitest/mocker': 4.0.17(vite@7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0))
       '@vitest/pretty-format': 4.0.17
       '@vitest/runner': 4.0.17
       '@vitest/snapshot': 4.0.17
@@ -3542,7 +3578,7 @@ snapshots:
       tinyexec: 1.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vite: 7.3.1(@types/node@20.19.28)(tsx@4.21.0)
+      vite: 7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 20.19.28

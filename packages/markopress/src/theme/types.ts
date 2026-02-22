@@ -18,6 +18,7 @@ export interface Layouts {
   page?: string;
   docs?: string;
   blog?: string;
+  content?: string;
   post?: string;
   tag?: string;
   category?: string;

@@ -1,4 +1,0 @@
-/**
- * Markdown processing types
- */
-export {};
