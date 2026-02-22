@@ -19,6 +19,9 @@ export interface MarkdownOptions {
     /** Directory containing Marko component files (default: 'tags/') */
     tagsDir?: string;
   };
+
+  /** Base path for link rewriting (e.g., '/markopress'). Links are rewritten only when this is non-root. */
+  base?: string;
 }
 
 export interface MarkdownProcessor {

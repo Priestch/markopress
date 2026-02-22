@@ -13,6 +13,7 @@ import { createEnhancedHighlighter } from './code.js';
 import { preprocessIncludesWithRegions } from './includes.js';
 import { preserveTagsPlugin } from './preserve-tags.js';
 import { globalTagValidator } from './tag-validator.js';
+import { basePathPlugin } from './base-path-plugin.js';
 import type { MarkdownOptions, ProcessedMarkdown, Header, MarkdownEnv } from './types.js';
 
 // Cache highlighter instance
@@ -182,6 +183,11 @@ export async function getMarkdownIt(
         );
       },
     });
+  }
+
+  // Add base-path link rewriting plugin
+  if (options.base) {
+    md.use(basePathPlugin, options.base);
   }
 
   return md;

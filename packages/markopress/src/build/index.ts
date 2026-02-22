@@ -264,7 +264,8 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       for (const file of mod.files) {
         try {
           const source = await fs.readFile(file.filePath, 'utf-8');
-          const rendered = await renderMarkdown(source);
+          const base = (config.site?.base || '/').replace(/\/$/, '');
+          const rendered = await renderMarkdown(source, { base });
 
           // Write .marko file with escaped HTML
           // Clean up Shiki output: remove empty trailing <span class="line"></span>
