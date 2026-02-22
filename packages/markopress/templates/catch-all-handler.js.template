@@ -107,11 +107,7 @@ export async function GET(context, next) {
 
   // === SHARED: Set context for template ===
   // Prefix navbar links with base path
-  const rawNavbar = config.theme.options.navbar || [];
-  context.navbar = rawNavbar.map(item => ({
-    ...item,
-    link: item.link ? base + item.link : item.link,
-  }));
+  context.navbar = config.theme.options.navbar || [];
   context.lang = config.site.lang || 'en-US';
   context.siteHead = config.site.head || [];
   context.footer = config.theme.options.footer || null;
@@ -123,18 +119,7 @@ export async function GET(context, next) {
 
   // Load module enhancements for this content type (sidebar, etc.)
   const enhancements = moduleEnhancements[contentType] || {};
-  const rawSidebar = enhancements.sidebar || null;
-  if (rawSidebar && base) {
-    context.sidebar = rawSidebar.map(section => ({
-      ...section,
-      items: (section.items || []).map(item => ({
-        ...item,
-        link: item.link ? base + item.link : item.link,
-      })),
-    }));
-  } else {
-    context.sidebar = rawSidebar;
-  }
+  context.sidebar = enhancements.sidebar || null;
 
   // TOC (table of contents)
   if (headers && headers.length > 0) {
