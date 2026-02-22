@@ -42,6 +42,13 @@ export async function startDevServer(options: DevServerOptions = {}) {
     await pluginManager.execLoadContentHooks();
   }
 
+  // Clean stale pre-rendered markdown from previous builds.
+  // Dev mode renders markdown at request time, so these files are unused.
+  // If left from a build with a different BASE_URL, baked-in base paths
+  // would leak into dev responses.
+  const generatedMarkdownDir = path.join(config.root, 'src', '.generated', 'markdown');
+  await fs.rm(generatedMarkdownDir, { recursive: true, force: true });
+
   // Empty manifest for dynamic rendering
   const manifest: Record<string, any> = {};
   const modules: any[] = [];

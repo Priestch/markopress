@@ -14,6 +14,7 @@ import { preprocessIncludesWithRegions } from './includes.js';
 import { preserveTagsPlugin } from './preserve-tags.js';
 import { globalTagValidator } from './tag-validator.js';
 import { basePathPlugin } from './base-path-plugin.js';
+import { mdLinkPlugin } from './md-link-plugin.js';
 import type { MarkdownOptions, ProcessedMarkdown, Header, MarkdownEnv } from './types.js';
 
 // Cache highlighter instance
@@ -184,6 +185,9 @@ export async function getMarkdownIt(
       },
     });
   }
+
+  // Strip .md extensions from links
+  md.use(mdLinkPlugin);
 
   // Add base-path link rewriting plugin
   if (options.base) {
