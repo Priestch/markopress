@@ -2,9 +2,8 @@
 
 > A general-purpose static site generator powered by Marko.js v6
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/Priestch/markopress/build.yml?branch=main)](https://github.com/Priestch/markopress/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Priestch/markopress/deploy.yml?branch=main)](https://github.com/Priestch/markopress/actions)
 [![NPM Version](https://img.shields.io/npm/v/markopress.svg)](https://www.npmjs.com/package/markopress)
-[![License](https://img.shields.io/npm/l/markopress.svg)](LICENSE)
 
 **MarkoPress** is a fast, modern static site generator that combines the power of Marko.js v6 with the simplicity of markdown. It's designed to be a drop-in alternative to VitePress and Docusaurus with full content compatibility.
 
