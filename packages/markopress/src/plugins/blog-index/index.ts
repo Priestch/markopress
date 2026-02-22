@@ -83,6 +83,7 @@ export default function blogIndexPlugin(options: BlogIndexOptions = {}): MarkoPr
       routes[path] = {
         path,
         component: generateBlogIndexComponent(),
+        handler: generateBlogIndexHandler(),
         meta: {
           blogPosts: blogPostsData,
           blogConfig: blogConfigData,
@@ -182,5 +183,35 @@ function generateBlogIndexComponent() {
     text-decoration: underline;
   }
 </style>
+`;
+}
+
+/**
+ * Generate blog index handler that sets $global.blogPosts from module enhancements
+ */
+function generateBlogIndexHandler() {
+  return `import { config } from '../_config.js';
+
+let moduleEnhancements = {};
+try {
+  moduleEnhancements = (await import('/src/.generated/module-enhancements.js')).default;
+} catch {}
+
+export async function GET(context, next) {
+  const base = (config.site.base || '/').replace(/\\/$/, '');
+  context.base = base || '/';
+
+  // Standard context fields
+  context.navbar = config.theme.options.navbar || [];
+  context.lang = config.site.lang || 'en-US';
+  context.siteHead = config.site.head || [];
+  context.footer = config.theme.options.footer || null;
+  context.title = 'Blog';
+  context.description = 'Blog posts';
+
+  // Blog posts from module enhancements (links already prefixed at build time)
+  const blogModule = moduleEnhancements['blog'] || {};
+  context.blogPosts = blogModule.blogPosts || [];
+}
 `;
 }
