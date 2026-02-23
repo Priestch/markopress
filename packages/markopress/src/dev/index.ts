@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process';
 import matter from 'gray-matter';
 import { loadConfig } from '../config/index.js';
 import { PluginManager } from '../plugin/manager.js';
-import { generateRoutes, copyThemeCSS, generateCatchAllRoutes, filePathToUrl } from '../build/index.js';
+import { generateRoutes, copyThemeCSS, generateCatchAllRoutes, filePathToUrl, extractStylesFromMarkoTags } from '../build/index.js';
 import { buildSearchIndex } from '../search/index.js';
 import { renderMarkdown } from '../markdown/renderer.js';
 
@@ -35,6 +35,12 @@ export async function startDevServer(options: DevServerOptions = {}) {
   const config = await loadConfig(root, { mode: 'development', command: 'dev' });
   console.log(`✓ Config loaded from ${config.root}`);
 
+  // Resolve the @marko/run app root (.markopress directory)
+  // This is where package.json, vite.config.js, node_modules, and src/routes live
+  const markoAppRoot = path.join(root, '.markopress');
+  const hasAppRoot = await fs.stat(markoAppRoot).then(s => s.isDirectory()).catch(() => false);
+  const appRoot = hasAppRoot ? markoAppRoot : root;
+
   // Initialize plugin manager
   let pluginManager: PluginManager | undefined;
   if (config.plugins && config.plugins.length > 0) {
@@ -49,15 +55,54 @@ export async function startDevServer(options: DevServerOptions = {}) {
   // Dev mode renders markdown at request time, so these files are unused.
   // If left from a build with a different BASE_URL, baked-in base paths
   // would leak into dev responses.
-  const generatedMarkdownDir = path.join(config.root, 'src', '.generated', 'markdown');
+  const generatedMarkdownDir = path.join(appRoot, 'src', '.generated', 'markdown');
   await fs.rm(generatedMarkdownDir, { recursive: true, force: true });
 
-  // Empty manifest for dynamic rendering
+  // Scan content directory to discover routes
   const manifest: Record<string, any> = {};
   const modules: any[] = [];
+  const contentDir = path.resolve(root, config.contentDir);
+
+  try {
+    const entries = await fs.readdir(contentDir, { withFileTypes: true, recursive: true });
+    const directoryFiles: Map<string, any[]> = new Map();
+
+    for (const entry of entries) {
+      if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
+
+      const filePath = path.join(entry.path || entry.parentPath || contentDir, entry.name);
+      const relativePath = path.relative(contentDir, filePath);
+      const urlPath = filePathToUrl(filePath, contentDir);
+      
+      const pathParts = relativePath.split(path.sep);
+      const directory = pathParts.length === 1 ? 'root' : pathParts[0];
+
+      if (!directoryFiles.has(directory)) {
+        directoryFiles.set(directory, []);
+      }
+      
+      directoryFiles.get(directory)!.push({
+        id: entry.name.replace('.md', ''),
+        slug: entry.name.replace('.md', ''),
+        filePath,
+        urlPath,
+        directory,
+      });
+    }
+
+    for (const [dir, files] of directoryFiles) {
+      modules.push({
+        id: dir,
+        dir: path.join(contentDir, dir === 'root' ? '' : dir),
+        files,
+      });
+    }
+  } catch (error) {
+    console.warn(`Warning: Could not scan content directory: ${error}`);
+  }
 
   console.log('📝 Generating routes from content...');
-  const routesDir = path.join(config.root, 'src', 'routes');
+  const routesDir = path.join(appRoot, 'src', 'routes');
   const routeMode = options.useCatchAllRoutes ?? config.build.useCatchAllRoutes;
 
   // Ensure routes directory exists
@@ -87,8 +132,15 @@ export async function startDevServer(options: DevServerOptions = {}) {
 
   // Copy theme CSS
   console.log('🎨 Copying theme CSS...');
-  await copyThemeCSS(config.root, config, false);
+  await copyThemeCSS(appRoot, config, false);
   console.log('   Theme CSS copied\n');
+
+  // Extract custom Marko tag styles (if enabled)
+  if (config.markdown?.markoTags?.enabled) {
+    console.log('🎨 Extracting custom tag styles...');
+    await extractStylesFromMarkoTags(appRoot, config, false);
+    console.log('   Custom tag styles extracted\n');
+  }
 
   // Build search index
   if (config.search?.enabled !== false) {
@@ -125,7 +177,7 @@ export async function startDevServer(options: DevServerOptions = {}) {
 
     try {
       const searchIndexJson = await buildSearchIndex(searchPages, config.search);
-      const searchIndexPath = path.join(root, 'public', 'search-index.json');
+      const searchIndexPath = path.join(appRoot, 'public', 'search-index.json');
       await fs.mkdir(path.dirname(searchIndexPath), { recursive: true });
       await fs.writeFile(searchIndexPath, searchIndexJson);
       console.log(`   Search index built (${searchPages.length} pages)\n`);
@@ -149,7 +201,7 @@ export async function startDevServer(options: DevServerOptions = {}) {
 
   const devProcess = spawn('npx', ['marko-run', ...args], {
     stdio: 'inherit',
-    cwd: config.root,
+    cwd: appRoot,
   });
 
   devProcess.on('error', (error) => {

@@ -20,9 +20,9 @@ This directory contains **custom routes and components** that you manually creat
 
 ### ❌ Auto-Generated Routes (DO NOT EDIT)
 
-MarkoPress automatically generates these from your `content/` directory:
+MarkoPress automatically generates these from your `content/` directory (VitePress-style routing):
 
-- From `content/pages/*.md` → generates root routes
+- From `content/*.md` → generates root routes (e.g., `content/about.md` → `/about`)
 - From `content/docs/**/*.md` → generates `/docs/*` routes
 - From `content/blog/**/*.md` → generates `/blog/*` routes
 

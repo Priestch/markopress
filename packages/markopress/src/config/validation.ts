@@ -19,12 +19,19 @@ const SiteConfigSchema = z.object({
 /**
  * Content configuration schema
  * Allows arbitrary module names (e.g., pages, guides, docs, blog, tutorials, etc.)
+ * Each entry can be a string (directory path) or an object with options
  */
-const ContentConfigSchema = z.object({
-  pages: z.string().optional(),
-  docs: z.string().optional(),
-  blog: z.string().optional(),
-}).passthrough(); // Allow additional properties (like 'guides', 'tutorials', etc.)
+const ContentEntrySchema = z.union([
+  z.string(),
+  z.object({
+    dir: z.string().optional(),
+    sidebar: z.boolean().optional(),
+    toc: z.boolean().optional(),
+    rss: z.boolean().optional(),
+    list: z.boolean().optional(),
+  }).passthrough(),
+]);
+const ContentConfigSchema = z.record(z.string(), ContentEntrySchema);
 
 /**
  * Navigation item schema
@@ -85,6 +92,10 @@ const MarkdownConfigSchema = z.object({
     light: z.string().optional(),
     dark: z.string().optional(),
   }).optional(),
+  markoTags: z.object({
+    enabled: z.boolean().optional(),
+    tagsDir: z.string().optional(),
+  }).optional(),
 });
 
 /**
@@ -117,10 +128,14 @@ const PluginConfigSchema = z.union([
  */
 export const MarkoPressConfigSchema = z.object({
   site: SiteConfigSchema,
+  contentDir: z.string().optional(),
   content: ContentConfigSchema.optional(),
   theme: ThemeConfigSchema.optional(),
   markdown: MarkdownConfigSchema.optional(),
   build: BuildConfigSchema.optional(),
+  search: z.object({
+    enabled: z.boolean().optional(),
+  }).passthrough().optional(),
   plugins: z.array(PluginConfigSchema).optional(),
 });
 

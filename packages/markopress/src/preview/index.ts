@@ -3,6 +3,8 @@
  * Serves the production build
  */
 
+import path from 'node:path';
+import { existsSync, statSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import type { PreviewOptions } from '../build/types.js';
 
@@ -14,12 +16,18 @@ export async function preview(options: PreviewOptions = {}): Promise<never> {
   console.log('   Press Ctrl+C to stop\n');
 
   // Use resolved root or fall back to process.cwd()
-  const cwd = root || process.cwd();
+  const projectRoot = root || process.cwd();
+
+  // Resolve the @marko/run app root (.markopress directory)
+  const markoAppRoot = path.join(projectRoot, '.markopress');
+  const appRoot = existsSync(markoAppRoot) && statSync(markoAppRoot).isDirectory()
+    ? markoAppRoot
+    : projectRoot;
 
   // Use @marko/run preview command
   const previewProcess = spawn('npx', ['marko-run', 'preview', '--port', String(port)], {
     stdio: 'inherit',
-    cwd,
+    cwd: appRoot,
   });
 
   previewProcess.on('error', (error) => {

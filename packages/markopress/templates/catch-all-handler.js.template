@@ -9,6 +9,7 @@ let moduleEnhancements = {};
 let allMetadata = {};
 let contentModules = {};
 
+// {{IF_BUILD_START}}
 if (IS_BUILD) {
   // Build mode: load pre-compiled content via import.meta.glob (Vite resolves at build time)
   contentModules = import.meta.glob('/src/.generated/markdown/{{CONTENT_TYPE}}/*.marko');
@@ -16,16 +17,6 @@ if (IS_BUILD) {
     allMetadata = (await import('/src/.generated/content-metadata.js')).default;
   } catch {
     allMetadata = {};
-  }
-} else {
-  // Dev mode: load module enhancements for sidebar, etc.
-  try {
-    const { promises: fs } = await import('node:fs');
-    const { default: path } = await import('node:path');
-    const enhancementsPath = path.join(config.root, 'src/.generated/module-enhancements.json');
-    moduleEnhancements = await fs.readFile(enhancementsPath, 'utf-8').then(JSON.parse).catch(() => ({}));
-  } catch {
-    // Enhancements file not found, use empty object
   }
 }
 
@@ -37,6 +28,21 @@ if (IS_BUILD) {
     moduleEnhancements = {};
   }
 }
+// {{IF_BUILD_END}}
+
+// {{IF_DEV_START}}
+if (!IS_BUILD) {
+  // Dev mode: load module enhancements for sidebar, etc.
+  try {
+    const { promises: fs } = await import('node:fs');
+    const { default: path } = await import('node:path');
+    const enhancementsPath = path.join(config.root, 'src/.generated/module-enhancements.json');
+    moduleEnhancements = await fs.readFile(enhancementsPath, 'utf-8').then(JSON.parse).catch(() => ({}));
+  } catch {
+    // Enhancements file not found, use empty object
+  }
+}
+// {{IF_DEV_END}}
 
 export async function GET(context, next) {
   const slug = context.params.slug || 'index';
@@ -50,6 +56,7 @@ export async function GET(context, next) {
   let frontmatter = {};
   let headers = [];
 
+  // {{IF_BUILD_START}}
   if (IS_BUILD) {
     // === BUILD MODE ===
     // Look up pre-compiled .marko module from glob map
@@ -68,7 +75,11 @@ export async function GET(context, next) {
     const meta = allMetadata[metaKey] || {};
     frontmatter = meta.frontmatter || {};
     headers = meta.headers || [];
-  } else {
+  }
+  // {{IF_BUILD_END}}
+
+  // {{IF_DEV_START}}
+  if (!IS_BUILD) {
     // === DEV MODE ===
     // Render markdown at request time using virtual modules
     const { renderMarkdown } = await import('markopress/markdown');
@@ -76,8 +87,12 @@ export async function GET(context, next) {
     const { promises: fs } = await import('node:fs');
     const { default: path } = await import('node:path');
 
-    const contentConfig = config.content[contentType];
-    const contentDir = typeof contentConfig === 'string' ? contentConfig : contentConfig?.dir;
+    // For root-level content, use contentDir directly; for modules, use module-specific dir
+    const contentDir = contentType === 'root'
+      ? config.contentDir
+      : (typeof config.content[contentType] === 'string'
+          ? config.content[contentType]
+          : config.content[contentType]?.dir);
 
     if (!contentDir) {
       return next();
@@ -104,6 +119,7 @@ export async function GET(context, next) {
       return new Response('Not Found', { status: 404, statusText: 'Not Found' });
     }
   }
+  // {{IF_DEV_END}}
 
   // === SHARED: Set context for template ===
   // Prefix navbar links with base path

@@ -9,6 +9,61 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
+// Standard HTML elements that should never be flagged as missing custom tags
+const HTML_ELEMENTS = new Set([
+  'a', 'abbr', 'address', 'area', 'article', 'aside', 'audio',
+  'b', 'base', 'bdi', 'bdo', 'blockquote', 'body', 'br', 'button',
+  'canvas', 'caption', 'cite', 'code', 'col', 'colgroup',
+  'data', 'datalist', 'dd', 'del', 'details', 'dfn', 'dialog', 'div', 'dl', 'dt',
+  'em', 'embed',
+  'fieldset', 'figcaption', 'figure', 'footer', 'form',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'header', 'hgroup', 'hr', 'html',
+  'i', 'iframe', 'img', 'input', 'ins',
+  'kbd',
+  'label', 'legend', 'li', 'link',
+  'main', 'map', 'mark', 'math', 'menu', 'meta', 'meter',
+  'nav', 'noscript',
+  'object', 'ol', 'optgroup', 'option', 'output',
+  'p', 'param', 'picture', 'pre', 'progress',
+  'q',
+  'rp', 'rt', 'ruby',
+  's', 'samp', 'script', 'search', 'section', 'select', 'slot', 'small', 'source', 'span', 'strong', 'style', 'sub', 'summary', 'sup',
+  'svg',
+  'table', 'tbody', 'td', 'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'title', 'tr', 'track',
+  'u', 'ul',
+  'var', 'video',
+  'wbr',
+  // SVG elements
+  'circle', 'clippath', 'defs', 'desc', 'ellipse', 'feblend', 'fecolormatrix',
+  'fecomponenttransfer', 'fecomposite', 'feconvolvematrix', 'fediffuselighting',
+  'fedisplacementmap', 'fedropshadow', 'feflood', 'fefunca', 'fefuncb', 'fefuncg',
+  'fefuncr', 'fegaussianblur', 'feimage', 'femerge', 'femergenode', 'femorphology',
+  'feoffset', 'fepointlight', 'fespecularlighting', 'fespotlight', 'fetile',
+  'feturbulence', 'filter', 'foreignobject', 'g', 'image', 'line', 'lineargradient',
+  'marker', 'mask', 'metadata', 'mpath', 'path', 'pattern', 'polygon', 'polyline',
+  'radialgradient', 'rect', 'set', 'stop', 'switch', 'symbol', 'text', 'textpath',
+  'tspan', 'use', 'view',
+  // MathML
+  'annotation', 'semantics',
+  // XML/RSS/Sitemap elements
+  'urlset', 'url', 'loc', 'lastmod', 'changefreq', 'priority',
+  'rss', 'channel', 'item', 'guid', 'pubdate',
+]);
+
+// Marko built-in tags and common framework tags
+const MARKO_BUILTINS = new Set([
+  'if', 'else', 'else-if', 'for', 'while', 'let', 'const', 'return',
+  'await', 'try', 'catch', 'id', 'lifecycle', 'effect',
+  'html-comment', 'void',
+  // Theme slot tags (provided by markopress theme system)
+  'theme-head-top', 'theme-head-bottom',
+  'theme-body-top', 'theme-body-bottom',
+  'theme-doc-top', 'theme-doc-bottom',
+  'theme-navbar-start', 'theme-navbar-center', 'theme-navbar-end',
+  'theme-sidebar-top', 'theme-sidebar-bottom',
+  'theme-page-top', 'theme-page-bottom',
+]);
+
 export interface DetectedTag {
   /** Tag name (kebab-case, e.g., "alert-box") */
   tagName: string;
@@ -99,6 +154,10 @@ export class TagValidator {
 
     // Check each detected tag
     for (const [tagName, occurrences] of this.detectedTags) {
+      // Skip standard HTML elements, SVG/XML elements, and Marko built-ins
+      if (HTML_ELEMENTS.has(tagName) || MARKO_BUILTINS.has(tagName)) {
+        continue;
+      }
       if (!this.availableTags.has(tagName)) {
         // Tag is missing - add all occurrences
         missingTags.push(...occurrences);

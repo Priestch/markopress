@@ -57,10 +57,14 @@ npm run preview
 my-markopress-site/
 ├── .markopress/
 │   └── config.ts          # Site configuration
-├── content/
-│   ├── pages/             # → /route
+├── content/               # All content (VitePress-style routing)
+│   ├── index.md           # → /
+│   ├── about.md           # → /about
 │   ├── docs/              # → /docs/*
+│   │   ├── index.md
+│   │   └── guide.md
 │   └── blog/              # → /blog/*
+│       └── first-post.md
 ├── public/                # Static assets
 ├── src/
 │   ├── routes/            # Custom routes (optional)
@@ -70,60 +74,59 @@ my-markopress-site/
 
 ## 📝 Content Organization
 
-### Pages
+MarkoPress uses **VitePress-style routing** where file path directly determines URL.
 
-Create pages in `content/pages/`:
+### URL Mapping
 
-```markdown
----
-title: "About Us"
-description: "Learn about our company"
----
+The `contentDir` (default: `content`) contains all content. Directory structure = URL structure:
 
-# About Us
+| File Path | URL |
+|-----------|-----|
+| `content/index.md` | `/` |
+| `content/about.md` | `/about` |
+| `content/docs/index.md` | `/docs/` |
+| `content/docs/guide.md` | `/docs/guide` |
+| `content/blog/index.md` | `/blog/` |
+| `content/blog/first-post.md` | `/blog/first-post` |
 
-We are awesome!
+### Configuration
+
+```typescript
+import { defineConfig } from 'markopress';
+
+export default defineConfig({
+  contentDir: 'content',  // Default
+  content: {
+    docs: {
+      sidebar: true,      // Auto-generate sidebar
+      toc: true,          // Table of contents
+    },
+    blog: {
+      rss: true,          // Generate RSS feed
+      list: true,         // Generate blog list page
+    },
+  },
+});
 ```
 
-This creates a route at `/about`.
+### Feature Flags
 
-### Documentation
+| Flag | Description |
+|------|-------------|
+| `sidebar` | Auto-generate sidebar navigation for the section |
+| `toc` | Generate table of contents for each page |
+| `rss` | Generate RSS feed for the section |
+| `list` | Generate a list/index page showing all items |
 
-Create docs in `content/docs/`:
+### Frontmatter Fields
 
-```markdown
----
-title: "Getting Started"
-description: "Get started with MarkoPress"
-order: 1
----
-
-# Getting Started
-
-Welcome to MarkoPress!
-```
-
-This creates a route at `/docs/getting-started` with automatic sidebar and prev/next navigation.
-
-### Blog Posts
-
-Create blog posts in `content/blog/`:
-
-```markdown
----
-title: "First Post"
-description: "Hello world!"
-date: 2024-01-11
-author: "Your Name"
-tags: ["announcement", "first-post"]
----
-
-# First Post
-
-This is my first blog post!
-```
-
-This creates a route at `/blog/first-post` with RSS feed support.
+- `title` (string) - Page title
+- `description` (string) - SEO description
+- `draft` (boolean) - Exclude from build when true
+- `order` (number) - Sidebar ordering
+- `date` (Date) - Publication date (for blog)
+- `author` (string) - Author name (for blog)
+- `tags` (string[]) - Tags (for blog)
 
 ## 🏷️ Marko Tags in Markdown
 
@@ -193,10 +196,16 @@ export default defineConfig({
     description: 'My awesome site',
     base: '/',
   },
+  contentDir: 'content',
   content: {
-    pages: 'content/pages',
-    docs: 'content/docs',
-    blog: 'content/blog',
+    docs: {
+      sidebar: true,
+      toc: true,
+    },
+    blog: {
+      rss: true,
+      list: true,
+    },
   },
   theme: '@markopress/theme-default',
   themeConfig: {

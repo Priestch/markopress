@@ -3,6 +3,7 @@
  * MarkoPress CLI
  */
 
+import path from 'node:path';
 import { Command } from 'commander';
 import { resolveAppRoot } from '../config/app-root.js';
 import { startDevServer } from '../dev/index.js';
@@ -10,7 +11,11 @@ import { build } from '../build/index.js';
 import { preview } from '../preview/index.js';
 
 // Resolve the app root (e.g., website/.markopress)
+// The project root is the parent directory of .markopress/
 const appRoot = resolveAppRoot();
+const projectRoot = appRoot.endsWith('.markopress') || appRoot.endsWith('.markopress/')
+  ? path.dirname(appRoot)
+  : appRoot;
 
 interface DevOptions {
   port: string;
@@ -54,7 +59,7 @@ program
       host: options.host,
       open: options.open,
       useCatchAllRoutes: options.catchAll,
-      root: appRoot,
+      root: projectRoot,
     });
   });
 
@@ -69,7 +74,7 @@ program
       debug: options.debug,
       outDir: options.output,
       useCatchAllRoutes: options.catchAll,
-      root: appRoot,
+      root: projectRoot,
     });
 
     if (!result.success) {
@@ -88,7 +93,7 @@ program
     await preview({
       port: parseInt(options.port),
       host: options.host,
-      root: appRoot,
+      root: projectRoot,
     });
   });
 
