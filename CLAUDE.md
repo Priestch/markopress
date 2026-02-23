@@ -88,7 +88,7 @@ interface MarkoPressPlugin {
 ```
 
 Built-in plugins:
-- **plugin-content-pages** - Scans `content/pages/` → generates `/` routes
+- **plugin-content-pages** - Scans `content/*.md` → generates root routes
 - **plugin-content-docs** - Scans `content/docs/` → generates `/docs/*` routes
 - **plugin-content-blog** - Scans `content/blog/` → generates `/blog/*` routes
 
@@ -165,10 +165,16 @@ export default defineConfig({
     dir?: 'ltr' | 'rtl';     // Default: 'ltr'
     head?: HeadTag[];        // Additional meta tags
   },
+  contentDir?: string;       // Default: 'content'
   content: {
-    pages?: string;          // Default: 'content/pages'
-    docs?: string;           // Default: 'content/docs'
-    blog?: string;           // Default: 'content/blog'
+    docs?: {
+      sidebar?: boolean;     // Auto-generate sidebar
+      toc?: boolean;         // Table of contents
+    };
+    blog?: {
+      rss?: boolean;         // Generate RSS feed
+      list?: boolean;        // Generate blog list page
+    };
     // Custom content directories also supported
   },
   theme: {
@@ -215,24 +221,60 @@ src/routes/               # Generated routes (auto-created, do not edit)
 
 ## Content Organization
 
-Content uses **GitHub Flavored Markdown** with YAML frontmatter. File naming determines routes:
+Content uses **GitHub Flavored Markdown** with YAML frontmatter. MarkoPress uses **VitePress-style routing** where file path directly determines URL.
 
-| Directory | Route Pattern | Frontmatter |
-|-----------|---------------|-------------|
-| `content/pages/` | `/filename` | `title`, `description`, `draft?` |
-| `content/docs/` | `/docs/filename` | `title`, `description`, `order?` |
-| `content/blog/` | `/blog/filename` | `title`, `date`, `author`, `tags`, `draft?` |
+### URL Mapping
 
-Blog posts should use date-prefix naming: `YYYY-MM-D-slug.md`
+The `contentDir` (default: `content`) contains all content. Directory structure = URL structure:
 
-**Common frontmatter fields:**
+| File Path | URL |
+|-----------|-----|
+| `content/index.md` | `/` |
+| `content/about.md` | `/about` |
+| `content/docs/index.md` | `/docs/` |
+| `content/docs/guide.md` | `/docs/guide` |
+| `content/blog/index.md` | `/blog/` |
+| `content/blog/first-post.md` | `/blog/first-post` |
+
+### Configuration
+
+```typescript
+import { defineConfig } from 'markopress';
+
+export default defineConfig({
+  contentDir: 'content',  // Default
+  content: {
+    // Enable features per section
+    docs: {
+      sidebar: true,      // Auto-generate sidebar
+      toc: true,          // Table of contents
+    },
+    blog: {
+      rss: true,          // Generate RSS feed
+      list: true,         // Generate blog list page
+    },
+  },
+});
+```
+
+### Feature Flags
+
+| Flag | Description |
+|------|-------------|
+| `sidebar` | Auto-generate sidebar navigation for the section |
+| `toc` | Generate table of contents for each page |
+| `rss` | Generate RSS feed for the section |
+| `list` | Generate a list/index page showing all items |
+
+### Frontmatter Fields
+
 - `title` (string) - Page title
 - `description` (string) - SEO description
 - `draft` (boolean) - Exclude from build when true
-- `order` (number) - Sidebar ordering for docs
-- `date` (Date) - Publication date for blog
-- `author` (string) - Author for blog
-- `tags` (string[]) - Tags for blog
+- `order` (number) - Sidebar ordering
+- `date` (Date) - Publication date (for blog)
+- `author` (string) - Author name (for blog)
+- `tags` (string[]) - Tags (for blog)
 
 ### Markdown Features
 
