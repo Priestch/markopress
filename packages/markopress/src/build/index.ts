@@ -132,7 +132,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         const relativePath = path.relative(contentDir, filePath);
         const urlPath = filePathToUrl(filePath, contentDir);
         
-        const directory = relativePath.split(path.sep)[0] || 'root';
+        // Determine directory: root-level files go to 'root', others use first path segment
+        const pathParts = relativePath.split(path.sep);
+        const directory = pathParts.length === 1 ? 'root' : pathParts[0];
         
         const content = await fs.readFile(filePath, 'utf-8');
         let frontmatter: Record<string, unknown> = {};
@@ -1913,69 +1915,67 @@ export async function generateCatchAllRoutes(
   console.log('   Using catch-all dynamic routes...');
   console.log(`   Mode: ${isBuild ? 'build (pre-compiled)' : 'dev (request-time rendering)'}`);
 
-  // Generate catch-all routes for each content directory from config
-  const contentDirs = config.content || {};
+  // Get directories from config.content keys (feature-based format)
+  const contentDirs = Object.keys(config.content || {});
 
-  for (const [moduleId, dirConfig] of Object.entries(contentDirs)) {
-    if (!dirConfig) continue;
+  // Also add any directories found during content scan (for unlisted dirs)
+  const scannedDirs = new Set(modules.map(m => m.id));
+  const allDirs = [...new Set([...contentDirs, ...scannedDirs])];
 
-    // Skip non-directory entries
-    if (typeof dirConfig === 'object' && dirConfig !== null && !('dir' in dirConfig)) {
-      continue;
-    }
+  // Check if there are root-level files (pages without prefix)
+  const hasRootFiles = modules.some(m => m.id === 'root');
+  
+  if (hasRootFiles) {
+    // Generate catch-all route for root-level pages
+    const pagesDir = path.join(routesDir, '$$slug');
+    await fs.mkdir(pagesDir, { recursive: true });
 
-    if (moduleId === 'pages') {
-      // Generate catch-all route for pages (root-level, no module prefix)
-      const pagesDir = path.join(routesDir, '$$slug');
-      await fs.mkdir(pagesDir, { recursive: true });
+    const pagesHandler = await loadTemplate('catch-all-handler.js.template', {
+      CONTENT_TYPE: 'root',
+      CONFIG_PATH: '../_config.js',
+      VITE_PLUGIN_PATH: 'markopress/build',
+      IS_BUILD: isBuild ? 'true' : 'false',
+    });
+    await fs.writeFile(path.join(pagesDir, '+handler.js'), pagesHandler);
 
-      // Handler - no manifest needed, content rendered at request time
-      const pagesHandler = await loadTemplate('catch-all-handler.js.template', {
-        CONTENT_TYPE: 'pages',
-        CONFIG_PATH: '../_config.js',
-        VITE_PLUGIN_PATH: 'markopress/build',
-        IS_BUILD: isBuild ? 'true' : 'false',
-      });
-      await fs.writeFile(path.join(pagesDir, '+handler.js'), pagesHandler);
+    const pagesPage = await loadTemplate('catch-all-page.marko.template', {
+      CONTENT_TYPE_CLASS: 'page',
+    });
+    await fs.writeFile(path.join(pagesDir, '+page.marko'), pagesPage);
 
-      // Page
-      const pagesPage = await loadTemplate('catch-all-page.marko.template', {
-        CONTENT_TYPE_CLASS: 'page',
-      });
-      await fs.writeFile(path.join(pagesDir, '+page.marko'), pagesPage);
-
-      if (debug) console.log(`   Generated pages catch-all route`);
-    } else {
-      // Generate catch-all route for non-pages modules (blog, guides, etc.)
-      const moduleDir = path.join(routesDir, moduleId, '$$slug');
-      await fs.mkdir(moduleDir, { recursive: true });
-
-      // Handler - no manifest needed
-      const handlerTemplate = await loadTemplate('catch-all-handler.js.template', {
-        CONTENT_TYPE: moduleId,
-        CONFIG_PATH: '../../_config.js',
-        VITE_PLUGIN_PATH: 'markopress/build',
-        IS_BUILD: isBuild ? 'true' : 'false',
-      });
-      await fs.writeFile(path.join(moduleDir, '+handler.js'), handlerTemplate);
-
-      // Page
-      const pageTemplate = await loadTemplate('catch-all-page.marko.template', {
-        CONTENT_TYPE_CLASS: moduleId,
-      });
-      await fs.writeFile(path.join(moduleDir, '+page.marko'), pageTemplate);
-
-      if (debug) console.log(`   Generated ${moduleId} catch-all route`);
-    }
+    if (debug) console.log(`   Generated root pages catch-all route`);
   }
 
-  // Step 3: Generate config file for handlers
+  // Generate catch-all routes for each content subdirectory
+  for (const moduleId of allDirs) {
+    if (moduleId === 'root') continue; // Already handled above
+
+    const moduleDir = path.join(routesDir, moduleId, '$$slug');
+    await fs.mkdir(moduleDir, { recursive: true });
+
+    const handlerTemplate = await loadTemplate('catch-all-handler.js.template', {
+      CONTENT_TYPE: moduleId,
+      CONFIG_PATH: '../../_config.js',
+      VITE_PLUGIN_PATH: 'markopress/build',
+      IS_BUILD: isBuild ? 'true' : 'false',
+    });
+    await fs.writeFile(path.join(moduleDir, '+handler.js'), handlerTemplate);
+
+    const pageTemplate = await loadTemplate('catch-all-page.marko.template', {
+      CONTENT_TYPE_CLASS: moduleId,
+    });
+    await fs.writeFile(path.join(moduleDir, '+page.marko'), pageTemplate);
+
+    if (debug) console.log(`   Generated ${moduleId} catch-all route`);
+  }
+
+  // Generate config file for handlers
   await generateConfigFile(routesDir, config, debug);
 
-  // Step 4: Generate vite.config.js for markdown content virtual module support
+  // Generate vite.config.js for markdown content virtual module support
   await generateViteConfig(config.root, debug);
 
-  // Step 5: Generate root layout that wraps all pages
+  // Generate root layout that wraps all pages
   await generateRootLayout(routesDir, config, debug);
 }
 

@@ -10,11 +10,12 @@ export default defineConfig({
       ['meta', { name: 'theme-color', content: '#3c8772' }],
     ],
   },
-  contentDir: '../content',
+  contentDir: 'content',
   content: {
-    pages: '../content/pages',
-    guides: { dir: '../content/guides', sidebar: true, toc: true },
-    blog: '../content/blog',
+    guides: { sidebar: true, toc: true },
+    blog: { rss: true, list: true },
+    documentation: { sidebar: true },
+    portfolio: {},
   },
   theme: {
     name: '@markopress/theme-default',
