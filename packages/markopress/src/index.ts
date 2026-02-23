@@ -1,5 +1,5 @@
 /**
- * MarkoPress - A general-purpose static site generator using Marko.js v6
+ * MarkoPress - A general-purpose static site generator built on Marko.js v6
  */
 
 // Core exports
@@ -7,7 +7,6 @@ export * from './config/index.js';
 export * from './markdown/index.js';
 export { PluginManager } from './plugin/index.js';
 export * from './content/index.js';
-export * from './vite/index.js';
 
 // Search exports
 export * from './search/index.js';
