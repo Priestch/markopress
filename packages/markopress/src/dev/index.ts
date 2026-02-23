@@ -6,9 +6,12 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import matter from 'gray-matter';
 import { loadConfig } from '../config/index.js';
 import { PluginManager } from '../plugin/manager.js';
 import { generateRoutes, copyThemeCSS, generateCatchAllRoutes } from '../build/index.js';
+import { buildSearchIndex } from '../search/index.js';
+import { renderMarkdown } from '../markdown/renderer.js';
 
 interface DevServerOptions {
   port?: number;
@@ -86,6 +89,56 @@ export async function startDevServer(options: DevServerOptions = {}) {
   console.log('🎨 Copying theme CSS...');
   await copyThemeCSS(config.root, config, false);
   console.log('   Theme CSS copied\n');
+
+  // Build search index
+  if (config.search?.enabled !== false) {
+    console.log('🔍 Building search index...');
+    const searchPages: Array<{
+      url: string;
+      html: string;
+      title: string;
+      frontmatter?: Record<string, unknown>;
+    }> = [];
+
+    for (const [moduleId, contentConfig] of Object.entries(config.content)) {
+      const moduleConfig = typeof contentConfig === 'string'
+        ? { dir: contentConfig }
+        : contentConfig;
+      if (!moduleConfig?.dir) continue;
+
+      const contentDir = path.resolve(root, moduleConfig.dir);
+      try {
+        const entries = await fs.readdir(contentDir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.isFile() && entry.name.endsWith('.md')) {
+            const filePath = path.join(contentDir, entry.name);
+            const rawContent = await fs.readFile(filePath, 'utf-8');
+            const rendered = await renderMarkdown(rawContent, config.markdown);
+            const slug = entry.name.replace('.md', '');
+            const urlPath = slug === 'index' ? `/${moduleId}` : `/${moduleId}/${slug}`;
+            searchPages.push({
+              url: urlPath,
+              html: rendered.html,
+              title: (rendered.frontmatter?.title as string) || slug,
+              frontmatter: rendered.frontmatter,
+            });
+          }
+        }
+      } catch {
+        // Directory doesn't exist
+      }
+    }
+
+    try {
+      const searchIndexJson = await buildSearchIndex(searchPages, config.search);
+      const searchIndexPath = path.join(root, 'public', 'search-index.json');
+      await fs.mkdir(path.dirname(searchIndexPath), { recursive: true });
+      await fs.writeFile(searchIndexPath, searchIndexJson);
+      console.log(`   Search index built (${searchPages.length} pages)\n`);
+    } catch (error) {
+      console.warn('   Warning: Failed to build search index:', error);
+    }
+  }
 
   // Theme components are auto-discovered from the markopress package
   // via marko metadata (marko.json + package exports)
