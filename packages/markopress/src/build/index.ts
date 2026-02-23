@@ -34,6 +34,17 @@ function isInternalDefaultTheme(themeName: string): boolean {
 // Stub type for backward compatibility (modules removed, now rendered at request time)
 export type ContentModule = any;
 
+function filePathToUrl(filePath: string, contentDir: string): string {
+  const relativePath = path.relative(contentDir, filePath);
+  const slug = relativePath.replace(/\.md$/, '').split(path.sep).join('/');
+  
+  if (slug === 'index') return '/';
+  if (slug.endsWith('/index')) {
+    return '/' + slug.replace('/index', '');
+  }
+  return '/' + slug;
+}
+
 export interface BuildOptions {
   useCatchAllRoutes?: boolean;
   outDir?: string;
@@ -108,65 +119,64 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     // This allows plugins to enhance modules with metadata (sidebar, toc, etc.)
     const manifest: ContentManifest = {};
     const modules: any[] = [];
-    for (const [moduleId, contentConfig] of Object.entries(config.content)) {
-      const moduleConfig = typeof contentConfig === 'string'
-        ? { dir: contentConfig }
-        : contentConfig;
+    const contentDir = path.resolve(root, config.contentDir);
 
-      if (!moduleConfig?.dir) continue;
+    try {
+      const entries = await fs.readdir(contentDir, { withFileTypes: true, recursive: true });
+      const directoryFiles: Map<string, any[]> = new Map();
 
-      // Create a minimal ContentModule object with enhancement support
-      const enhancements = new Map<string, unknown>();
-      const module = {
-        id: moduleId,
-        dir: moduleConfig.dir,
-        config: moduleConfig,
-        // Plugin enhancement API
-        enhance(key: string, data: unknown) {
-          enhancements.set(key, data);
-        },
-        getEnhancement<T = unknown>(key: string): T | undefined {
-          return enhancements.get(key) as T;
-        },
-        // Will be populated with file data during build
-        files: [] as any[],
-        // Store enhancements for serialization
-        _enhancements: enhancements,
-      };
+      for (const entry of entries) {
+        if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
 
-      // Scan content directory for markdown files
-      const contentDir = path.resolve(root, moduleConfig.dir);
-      try {
-        const entries = await fs.readdir(contentDir, { withFileTypes: true });
-        for (const entry of entries) {
-          if (entry.isFile() && entry.name.endsWith('.md')) {
-            const filePath = path.join(contentDir, entry.name);
-            const content = await fs.readFile(filePath, 'utf-8');
-
-            // Parse frontmatter with gray-matter so quoted strings are normalized.
-            let frontmatter: Record<string, unknown> = {};
-            try {
-              frontmatter = matter(content).data as Record<string, unknown>;
-            } catch {
-              // Ignore parse errors and continue with empty metadata.
-            }
-
-            module.files.push({
-              id: entry.name.replace('.md', ''),
-              slug: entry.name.replace('.md', ''),
-              filePath,
-              urlPath: entry.name.replace('.md', '') === 'index' ? `/${moduleId}` : `/${moduleId}/${entry.name.replace('.md', '')}`,
-              processed: {
-                frontmatter,
-              },
-            });
-          }
+        const filePath = path.join(entry.path || entry.parentPath || contentDir, entry.name);
+        const relativePath = path.relative(contentDir, filePath);
+        const urlPath = filePathToUrl(filePath, contentDir);
+        
+        const directory = relativePath.split(path.sep)[0] || 'root';
+        
+        const content = await fs.readFile(filePath, 'utf-8');
+        let frontmatter: Record<string, unknown> = {};
+        try {
+          frontmatter = matter(content).data as Record<string, unknown>;
+        } catch {
+          // Ignore parse errors
         }
-      } catch {
-        // Directory doesn't exist, skip
+
+        if (!directoryFiles.has(directory)) {
+          directoryFiles.set(directory, []);
+        }
+        
+        directoryFiles.get(directory)!.push({
+          id: entry.name.replace('.md', ''),
+          slug: entry.name.replace('.md', ''),
+          filePath,
+          urlPath,
+          directory,
+          processed: { frontmatter },
+        });
       }
 
-      modules.push(module);
+      for (const [dir, files] of directoryFiles) {
+        const features = config.content[dir] || {};
+        const enhancements = new Map<string, unknown>();
+        
+        modules.push({
+          id: dir,
+          dir: path.join(contentDir, dir === 'root' ? '' : dir),
+          config: features,
+          features,
+          files,
+          enhance(key: string, data: unknown) {
+            enhancements.set(key, data);
+          },
+          getEnhancement<T = unknown>(key: string): T | undefined {
+            return enhancements.get(key) as T;
+          },
+          _enhancements: enhancements,
+        });
+      }
+    } catch (error) {
+      console.warn(`Warning: Could not scan content directory: ${error}`);
     }
 
     // Step 4: Execute enhanceModules hooks
@@ -453,12 +463,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     const staticUrls: string[] = [];
     for (const mod of modules) {
       for (const file of mod.files) {
-        if (mod.id === 'pages') {
-          // Pages are root-level: index → /, other → /slug
-          staticUrls.push(file.id === 'index' ? '/' : `/${file.id}`);
-        } else {
-          staticUrls.push(file.urlPath);
-        }
+        staticUrls.push(file.urlPath);
       }
     }
     // Add plugin routes (e.g., /blog index page)
