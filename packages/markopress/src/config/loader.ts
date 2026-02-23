@@ -22,24 +22,24 @@ const DEFAULT_CONFIG: Omit<ResolvedConfig, 'root'> = {
     lang: 'en-US',
     head: [],
   },
+  contentDir: 'content',
   content: {
-    pages: '../content/pages',
-    // No default 'docs' - users should use generic module names
-    blog: '../content/blog',
+    docs: { sidebar: true },
+    blog: { rss: true, list: true },
   },
   theme: {
     name: '@markopress/theme-default',
     options: {},
   },
   markdown: {
-    lineNumbers: false,  // Changed default to false to avoid Marko parser issues
+    lineNumbers: false,
     theme: {
       light: 'github-light',
       dark: 'github-dark',
     },
   },
   build: {
-    useCatchAllRoutes: false,
+    useCatchAllRoutes: true,
     outDir: 'dist',
     assetsDir: 'assets',
   },
@@ -201,9 +201,12 @@ export function resolveConfig(
 
   site.head = [...(site.head || []), themeCssHeadTag];
 
+  const contentDir = userConfig.contentDir ?? DEFAULT_CONFIG.contentDir;
+
   return {
     root,
     site,
+    contentDir,
     content,
     theme,
     markdown,

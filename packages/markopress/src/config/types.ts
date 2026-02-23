@@ -184,8 +184,9 @@ export interface PluginConfig {
 
 export interface UserConfig extends MarkoPressConfig {}
 
-export interface ResolvedConfig extends Required<MarkoPressConfig> {
+export interface ResolvedConfig extends Required<Omit<MarkoPressConfig, 'contentDir'>> {
   root: string;
+  contentDir: string;
   content: NewContentConfig;
   build: BuildConfig;
 }
