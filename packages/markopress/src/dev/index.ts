@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process';
 import matter from 'gray-matter';
 import { loadConfig } from '../config/index.js';
 import { PluginManager } from '../plugin/manager.js';
-import { generateRoutes, copyThemeCSS, generateCatchAllRoutes } from '../build/index.js';
+import { generateRoutes, copyThemeCSS, generateCatchAllRoutes, filePathToUrl } from '../build/index.js';
 import { buildSearchIndex } from '../search/index.js';
 import { renderMarkdown } from '../markdown/renderer.js';
 
@@ -100,33 +100,27 @@ export async function startDevServer(options: DevServerOptions = {}) {
       frontmatter?: Record<string, unknown>;
     }> = [];
 
-    for (const [moduleId, contentConfig] of Object.entries(config.content)) {
-      const moduleConfig = typeof contentConfig === 'string'
-        ? { dir: contentConfig }
-        : contentConfig;
-      if (!moduleConfig?.dir) continue;
+    const contentDir = path.resolve(root, config.contentDir);
+    try {
+      const entries = await fs.readdir(contentDir, { withFileTypes: true, recursive: true });
+      for (const entry of entries) {
+        if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
 
-      const contentDir = path.resolve(root, moduleConfig.dir);
-      try {
-        const entries = await fs.readdir(contentDir, { withFileTypes: true });
-        for (const entry of entries) {
-          if (entry.isFile() && entry.name.endsWith('.md')) {
-            const filePath = path.join(contentDir, entry.name);
-            const rawContent = await fs.readFile(filePath, 'utf-8');
-            const rendered = await renderMarkdown(rawContent, config.markdown);
-            const slug = entry.name.replace('.md', '');
-            const urlPath = slug === 'index' ? `/${moduleId}` : `/${moduleId}/${slug}`;
-            searchPages.push({
-              url: urlPath,
-              html: rendered.html,
-              title: (rendered.frontmatter?.title as string) || slug,
-              frontmatter: rendered.frontmatter,
-            });
-          }
-        }
-      } catch {
-        // Directory doesn't exist
+        const filePath = path.join(entry.path || entry.parentPath || contentDir, entry.name);
+        const urlPath = filePathToUrl(filePath, contentDir);
+        const rawContent = await fs.readFile(filePath, 'utf-8');
+        const rendered = await renderMarkdown(rawContent, config.markdown);
+        const slug = entry.name.replace('.md', '');
+
+        searchPages.push({
+          url: urlPath,
+          html: rendered.html,
+          title: (rendered.frontmatter?.title as string) || slug,
+          frontmatter: rendered.frontmatter,
+        });
       }
+    } catch {
+      // Directory doesn't exist
     }
 
     try {

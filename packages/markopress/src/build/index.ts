@@ -34,7 +34,7 @@ function isInternalDefaultTheme(themeName: string): boolean {
 // Stub type for backward compatibility (modules removed, now rendered at request time)
 export type ContentModule = any;
 
-function filePathToUrl(filePath: string, contentDir: string): string {
+export function filePathToUrl(filePath: string, contentDir: string): string {
   const relativePath = path.relative(contentDir, filePath);
   const slug = relativePath.replace(/\.md$/, '').split(path.sep).join('/');
   
