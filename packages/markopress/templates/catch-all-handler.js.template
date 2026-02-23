@@ -64,7 +64,7 @@ export async function GET(context, next) {
     const loader = contentModules[modulePath];
 
     if (!loader) {
-      return new Response('Not Found', { status: 404, statusText: 'Not Found' });
+      return next();
     }
 
     const mod = await loader();
@@ -104,10 +104,10 @@ export async function GET(context, next) {
       const source = await fs.readFile(filePath, 'utf-8').catch(() => null);
 
       if (!source) {
-        return new Response('Not Found', { status: 404, statusText: 'Not Found' });
+        return next();
       }
 
-      const rendered = await renderMarkdown(source);
+      const rendered = await renderMarkdown(source, { base: base !== '/' ? base : undefined });
       frontmatter = rendered.frontmatter;
       headers = rendered.headers || [];
 
@@ -116,7 +116,7 @@ export async function GET(context, next) {
       contentComponent = (await loadMarkdownModule(`virtual:markdown-content/${contentId}`)).default;
     } catch (error) {
       console.error(`Error rendering ${contentType}/${slug}:`, error);
-      return new Response('Not Found', { status: 404, statusText: 'Not Found' });
+      return next();
     }
   }
   // {{IF_DEV_END}}

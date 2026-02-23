@@ -248,11 +248,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         frontmatter?: Record<string, unknown>;
       }> = [];
 
+      const searchBase = (config.site?.base || '/').replace(/\/$/, '');
       for (const module of modules) {
         for (const file of module.files) {
           try {
             const rawContent = await fs.readFile(file.filePath, 'utf-8');
-            const rendered = await renderMarkdown(rawContent, config.markdown);
+            const rendered = await renderMarkdown(rawContent, { ...config.markdown, base: searchBase });
             searchPages.push({
               url: file.urlPath,
               html: rendered.html,
