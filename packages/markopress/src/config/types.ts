@@ -136,12 +136,30 @@ export interface BuildConfig {
   assetsDir?: string;
 }
 
+export interface SearchConfig {
+  /** Enable search (default: true) */
+  enabled?: boolean;
+  /** Exclude pages from search by path pattern */
+  exclude?: string[];
+  /** Minisearch options */
+  minisearch?: {
+    fuzzy?: number;
+    prefix?: boolean;
+    boost?: {
+      title?: number;
+      titles?: number;
+      text?: number;
+    };
+  };
+}
+
 export interface MarkoPressConfig {
   site: SiteConfig;
   content?: ContentConfig;
   theme?: ThemeConfig;
   markdown?: MarkdownConfig;
   build?: BuildConfig;
+  search?: SearchConfig;
   plugins?: (string | PluginConfig)[];
 }
 
