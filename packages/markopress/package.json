@@ -69,6 +69,10 @@
       "import": "./dist/vite/index.js",
       "types": "./dist/vite/index.d.ts"
     },
+    "./search": {
+      "import": "./dist/search/index.js",
+      "types": "./dist/search/index.d.ts"
+    },
     "./plugins/*": {
       "import": "./dist/plugins/*.js",
       "types": "./dist/plugins/*.d.ts"
