@@ -2,14 +2,8 @@
  * Blog listing layout
  */
 
-class {
-  onCreate() {
-    this.state = {
-      title: input.frontmatter?.title || 'Blog',
-      posts: input.posts || [],
-    };
-  }
-}
+<const/title=input.frontmatter?.title || 'Blog'/>
+<const/posts=input.posts || []/>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -17,7 +11,7 @@ class {
   <theme-head-top/>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${state.title}</title>
+  <title>${title}</title>
   <theme-head-bottom/>
 </head>
 <body>
@@ -33,9 +27,9 @@ class {
 
     <main class="blog-content">
       <theme-page-top/>
-      <h1>${state.title}</h1>
+      <h1>${title}</h1>
       <div class="posts-list">
-        <for|post| in=(state.posts)>
+        <for|post| of=posts>
           <article class="post-summary">
             <h2>
               <a href="${post.urlPath}">${post.frontmatter.title}</a>

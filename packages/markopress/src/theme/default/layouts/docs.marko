@@ -2,19 +2,13 @@
  * Documentation layout with sidebar and table of contents
  */
 
-class {
-  onCreate() {
-    this.state = {
-      title: input.frontmatter?.title || 'Documentation',
-      description: input.frontmatter?.description || '',
-      headers: input.headers || [],
-      editUrl: input.editUrl,
-      lastUpdated: input.lastUpdated,
-      prevPage: input.prevPage,
-      nextPage: input.nextPage,
-    };
-  }
-}
+<const/title=input.frontmatter?.title || 'Documentation'/>
+<const/description=input.frontmatter?.description || ''/>
+<const/headers=input.headers || []/>
+<const/editUrl=input.editUrl/>
+<const/lastUpdated=input.lastUpdated/>
+<const/prevPage=input.prevPage/>
+<const/nextPage=input.nextPage/>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,9 +16,9 @@ class {
   <theme-head-top/>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${state.title}</title>
-  <if=state.description>
-    <meta name="description" content="${state.description}">
+  <title>${title}</title>
+  <if=description>
+    <meta name="description" content=description>
   </if>
   <theme-head-bottom/>
 </head>
@@ -54,22 +48,22 @@ class {
       <main id="main-content" class="docs-content">
         <theme-doc-top/>
         <article class="docs-article main-content">
-          <h1>${state.title}</h1>
+          <h1>${title}</h1>
           <${input.renderBody()} />
         </article>
 
         <!-- Documentation Footer -->
         <doc-footer
-          editUrl=state.editUrl
-          lastUpdated=state.lastUpdated
-          prev=state.prevPage
-          next=state.nextPage/>
+          editUrl=editUrl
+          lastUpdated=lastUpdated
+          prev=prevPage
+          next=nextPage/>
 
         <theme-doc-bottom/>
       </main>
       <aside class="toc">
         <theme-aside-top/>
-        <toc headers=state.headers/>
+        <toc headers=headers/>
         <theme-aside-bottom/>
       </aside>
     </div>

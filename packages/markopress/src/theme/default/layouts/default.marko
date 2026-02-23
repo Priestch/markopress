@@ -3,50 +3,32 @@
  * Main layout wrapper with theme support, navigation, and SEO
  */
 
-class {
-  onCreate() {
-    this.state = {
-      darkMode: false,
-      mobileMenuOpen: false,
-      sidebarOpen: true,
-    };
-  }
+<let/darkMode=false/>
+<let/mobileMenuOpen=false/>
+<let/sidebarOpen=true/>
+<const/basePath=($global.base === '/' ? '' : $global.base) || ''/>
 
+<lifecycle
   onMount() {
     // Check for saved theme preference or system preference
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      this.state.darkMode = true;
+      darkMode = true;
       document.documentElement.classList.add('dark');
     }
 
     // Check for saved sidebar state
     const sidebarState = localStorage.getItem('sidebar');
     if (sidebarState === 'closed') {
-      this.state.sidebarOpen = false;
+      sidebarOpen = false;
     }
   }
-
-  toggleDarkMode() {
-    this.state.darkMode = !this.state.darkMode;
-    document.documentElement.classList.toggle('dark', this.state.darkMode);
-    localStorage.setItem('theme', this.state.darkMode ? 'dark' : 'light');
-  }
-
-  toggleMobileMenu() {
-    this.state.mobileMenuOpen = !this.state.mobileMenuOpen;
-  }
-
-  toggleSidebar() {
-    this.state.sidebarOpen = !this.state.sidebarOpen;
-    localStorage.setItem('sidebar', this.state.sidebarOpen ? 'open' : 'closed');
-  }
-}
+/>
 
 <!DOCTYPE html>
-<html lang=$input.lang||"en">
+<html lang=input.lang||"en">
 <head>
   <theme-head-top/>
 
@@ -97,14 +79,14 @@ class {
   </style>
 
   <!-- Component Styles -->
-  <link rel="stylesheet" href="/markopress-components.css">
+  <link rel="stylesheet" href=(basePath + '/markopress-components.css')>
 
   <theme-head-bottom/>
 </head>
 <body class=${[
   'theme-default',
-  state.darkMode ? 'dark' : 'light',
-  !state.sidebarOpen ? 'sidebar-closed' : ''
+  darkMode ? 'dark' : 'light',
+  !sidebarOpen ? 'sidebar-closed' : ''
 ].filter(Boolean).join(' ')}>
   <theme-body-top/>
 
@@ -125,11 +107,11 @@ class {
         <theme-navbar-center/>
 
         <!-- Header Actions -->
-        <theme-navbar-end darkMode=state.darkMode mobileMenuOpen=state.mobileMenuOpen />
+        <theme-navbar-end darkMode=darkMode mobileMenuOpen=mobileMenuOpen />
       </div>
 
       <!-- Mobile Menu -->
-      <if=state.mobileMenuOpen>
+      <if=mobileMenuOpen>
         <div class="navbar-mobile-menu">
           <nav-bar/>
         </div>
@@ -138,10 +120,13 @@ class {
 
     <div class="layout-container">
       <!-- Sidebar (if provided) -->
-      <aside class="sidebar" class-list={collapsed: !state.sidebarOpen}>
+      <aside class="sidebar" class-list={collapsed: !sidebarOpen}>
         <div class="sidebar-container">
           <!-- Collapse Button -->
-          <button class="sidebar-toggle-btn" on-click('toggleSidebar') aria-label="Toggle sidebar">
+          <button class="sidebar-toggle-btn" onClick() {
+            sidebarOpen = !sidebarOpen;
+            localStorage.setItem('sidebar', sidebarOpen ? 'open' : 'closed');
+          } aria-label="Toggle sidebar">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>

@@ -2,14 +2,8 @@
  * Default page layout
  */
 
-class {
-  onCreate() {
-    this.state = {
-      title: input.frontmatter?.title || 'Page',
-      description: input.frontmatter?.description || '',
-    };
-  }
-}
+<const/title=input.frontmatter?.title || 'Page'/>
+<const/description=input.frontmatter?.description || ''/>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -17,9 +11,9 @@ class {
   <theme-head-top/>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${state.title}</title>
-  <if=state.description>
-    <meta name="description" content="${state.description}">
+  <title>${title}</title>
+  <if=description>
+    <meta name="description" content=description>
   </if>
   <theme-head-bottom/>
 </head>
@@ -37,7 +31,7 @@ class {
     <main class="content">
       <theme-page-top/>
       <article>
-        <h1>${state.title}</h1>
+        <h1>${title}</h1>
         <${input.renderBody()} />
       </article>
       <theme-page-bottom/>
