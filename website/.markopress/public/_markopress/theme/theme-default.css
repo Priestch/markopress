@@ -959,7 +959,6 @@ a.header-anchor {
   color: var(--color-primary-3);
   opacity: 0;
   transition: opacity var(--transition-fast);
-  padding-left: 0.25em;
 }
 
 h1:hover .header-anchor,
