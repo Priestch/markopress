@@ -11,7 +11,7 @@
   <meta name="theme-color" content="#3c8772">
   <link rel="stylesheet" href="{{BASE_PATH}}/_markopress/theme/theme-{{THEME_STYLE}}.css">
   <link rel="stylesheet" href="{{BASE_PATH}}/_markopress/theme/styles.css">
-  <link rel="stylesheet" href="{{BASE_PATH}}/markopress-components.css">
+  {{COMPONENT_STYLES_LINK}}
   <theme-head-bottom/>
 </head>
 <body>

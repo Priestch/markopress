@@ -262,7 +262,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
     // Step 4: Initialize tag validator if Marko tags enabled
     if (config.markdown.markoTags?.enabled) {
-      const tagsDir = path.join(root, config.markdown.markoTags.tagsDir || 'src/.markopress/tags');
+      const tagsDir = path.join(root, config.markdown.markoTags.tagsDir || 'src/tags');
       console.log('🔍 Scanning tags directory...');
       const t7 = time('Tag validation setup');
       t7.start();
@@ -959,10 +959,15 @@ async function generateRootLayout(
   const themeStyle = (config.theme?.options?.style as string) || 'default';
 
   // Generate layout using template file
+  const basePath = config.site?.base?.replace(/\/$/, '') || '';
+  const componentStylesLink = config.markdown?.markoTags?.enabled
+    ? `<link rel="stylesheet" href="${basePath}/markopress-components.css">`
+    : '';
   const template = await loadTemplate('layout.marko.template', {
     SITE_TITLE: siteTitle,
     THEME_STYLE: themeStyle,
-    BASE_PATH: config.site?.base?.replace(/\/$/, '') || '',
+    BASE_PATH: basePath,
+    COMPONENT_STYLES_LINK: componentStylesLink,
   });
 
   await fs.writeFile(layoutFile, template);
@@ -1202,8 +1207,23 @@ export async function extractStylesFromMarkoTags(
   config: ResolvedConfig,
   debug: boolean
 ): Promise<void> {
-  const tagsDirConfig = config.markdown?.markoTags?.tagsDir || 'src/.markopress/tags';
+  const tagsDirConfig = config.markdown?.markoTags?.tagsDir || 'src/tags';
   const tagsDir = path.join(rootDir, tagsDirConfig);
+
+  // Create public directory if it doesn't exist
+  const publicDir = path.join(rootDir, 'public');
+  await fs.mkdir(publicDir, { recursive: true });
+  const outputPath = path.join(publicDir, 'markopress-components.css');
+
+  // Only extract styles when marko tags feature is enabled
+  if (!config.markdown?.markoTags?.enabled) {
+    if (debug) {
+      console.log(`   Marko tags not enabled, skipping style extraction`);
+    }
+    // Remove stale CSS file if it exists
+    try { await fs.unlink(outputPath); } catch {}
+    return;
+  }
 
   // Check if tags directory exists
   try {
@@ -1311,12 +1331,7 @@ export async function extractStylesFromMarkoTags(
     }
   }
 
-  // Create public directory if it doesn't exist
-  const publicDir = path.join(rootDir, 'public');
-  await fs.mkdir(publicDir, { recursive: true });
-
   // Write the combined CSS file
-  const outputPath = path.join(publicDir, 'markopress-components.css');
   const cssContent = cssEntries.join('\n');
 
   await fs.writeFile(outputPath, cssContent);
@@ -1436,7 +1451,7 @@ export async function copyTagsDirectory(
   config: ResolvedConfig,
   debug: boolean
 ): Promise<void> {
-  const tagsDirConfig = config.markdown?.markoTags?.tagsDir || 'src/.markopress/tags';
+  const tagsDirConfig = config.markdown?.markoTags?.tagsDir || 'src/tags';
   const tagsDir = path.join(rootDir, tagsDirConfig);
   const distTagsDir = path.join(outDir, 'tags');
 

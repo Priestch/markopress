@@ -179,7 +179,7 @@ export default defineConfig({
     lineNumbers?: boolean;   // Default: false
     markoTags?: {
       enabled?: boolean;     // Default: false
-      tagsDir?: string;      // Default: 'src/.markopress/tags'
+      tagsDir?: string;      // Default: 'src/tags'
     };
     theme?: {
       light?: string;        // Default: 'github-light'
@@ -242,7 +242,7 @@ MarkoPress supports GitHub Flavored Markdown plus:
 - **Emoji** via markdown-it-emoji
 - **Task lists**: `- [ ]` and `- [x]`
 - **Tables** with standard GitHub syntax
-- **Custom Marko tags** (optional) - Use Marko components in markdown by placing `.marko` files in `src/.markopress/tags/` and setting `markdown.markoTags.enabled: true`
+- **Custom Marko tags** (optional) - Use Marko components in markdown by placing `.marko` files in `src/tags/` and setting `markdown.markoTags.enabled: true`
 
 ## Theming
 

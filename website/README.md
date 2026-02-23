@@ -166,7 +166,7 @@ Create `.markopress/src/components/` to override theme components
 Add custom routes in `.markopress/src/routes/` (but note that generated routes may overwrite)
 
 ### Custom Marko Tags
-Add `.markopress/tags/` for custom Marko components to use in markdown
+Add `src/tags/` for custom Marko components to use in markdown
 
 ### Configuration
 Edit `.markopress/config.js` to customize theme, plugins, and content paths

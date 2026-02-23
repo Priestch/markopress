@@ -318,10 +318,10 @@ Theme tags from `@markopress/theme-default` are automatically available in your 
 
 ### Creating Custom Tags
 
-Place `.marko` files in `src/.markopress/tags/` and they'll be automatically discovered:
+Place `.marko` files in `src/tags/` and they'll be automatically discovered:
 
 ```
-src/.markopress/tags/
+src/tags/
   my-custom-tag.marko
   another-tag.marko
 ```

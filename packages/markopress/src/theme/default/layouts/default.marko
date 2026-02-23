@@ -78,8 +78,10 @@
     <include('../styles.css')/>
   </style>
 
-  <!-- Component Styles -->
-  <link rel="stylesheet" href=(basePath + '/markopress-components.css')>
+  <!-- Component Styles (only when marko tags are enabled) -->
+  <if=$global.hasComponentStyles>
+    <link rel="stylesheet" href=(basePath + '/markopress-components.css')>
+  </if>
 
   <theme-head-bottom/>
 </head>
