@@ -1,15 +1,29 @@
 /*!
  * Search Component
- * Search placeholder with keyboard shortcut (Ctrl+K / Cmd+K) and modal overlay
- * Functional search to be implemented later
+ * Full-text search using minisearch
  */
 
+import { search as runSearch } from 'markopress/search';
+
 <let/isOpen=false/>
+<let/query=""/>
+<let/results=[]/>
+<let/loading=false/>
+<let/selectedIndex=0/>
+
+<lifecycle onUpdate() {
+  if (isOpen) {
+    requestAnimationFrame(() => {
+      const input = document.querySelector('.search-input') as HTMLInputElement;
+      input?.focus();
+    });
+  }
+}/>
 
 <button
   class="search-trigger"
   aria-label="Search"
-  onClick(e) {
+  onClick() {
     isOpen = true;
   }>
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -30,8 +44,10 @@
 <if=isOpen>
   <div
     class="search-modal"
-    onClick(e) {
+    onClick() {
       isOpen = false;
+      query = "";
+      results = [];
     }>
     <div
       class="search-modal-content"
@@ -47,21 +63,122 @@
           type="text"
           class="search-input"
           placeholder="Search documentation..."
-          disabled
+          value=query
+          autofocus=true
+          key="search-input"
+          onKeydown(e) {
+            handleKeydown(e);
+          }
+          onInput(e) {
+            query = e.target.value;
+            handleSearch(query);
+          }
         />
         <kbd class="search-shortcut-small">ESC</kbd>
       </div>
-      <div class="search-placeholder">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="search-placeholder-icon">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <p class="search-placeholder-text">Search is coming soon!</p>
-        <p class="search-placeholder-hint">Press <kbd>ESC</kbd> to close</p>
-      </div>
+      
+      <if=loading>
+        <div class="search-loading">
+          <span>Searching...</span>
+        </div>
+      </if>
+      <else if=results.length>
+        <ul class="search-results">
+          <for|result, index| of=results>
+            <li class={ 'search-result-item': true, 'selected': index === selectedIndex }>
+              <a 
+                href=result.url
+                onClick() {
+                  isOpen = false;
+                  query = "";
+                  results = [];
+                }>
+                <span class="result-title">${result.title}</span>
+                <if=result.titles?.length>
+                  <span class="result-breadcrumb">
+                    ${result.titles.join(' → ')}
+                  </span>
+                </if>
+              </a>
+            </li>
+          </for>
+        </ul>
+      </else>
+      <else if=query && !loading>
+        <div class="search-empty">
+          <span>No results for "${query}"</span>
+        </div>
+      </else>
+      <else>
+        <div class="search-placeholder">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="search-placeholder-icon">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <p class="search-placeholder-text">Type to search</p>
+          <p class="search-placeholder-hint">Press <kbd>ESC</kbd> to close</p>
+        </div>
+      </else>
     </div>
   </div>
 </if>
+
+<script>
+  let searchTimeout: ReturnType<typeof setTimeout>;
+
+  async function handleSearch(query: string) {
+    if (!query.trim()) {
+      results = [];
+      return;
+    }
+
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(async () => {
+      loading = true;
+      try {
+        results = await runSearch(query);
+        selectedIndex = 0;
+      } catch (error) {
+        console.error('Search failed:', error);
+        results = [];
+      }
+      loading = false;
+    }, 150);
+  }
+
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      isOpen = false;
+      query = "";
+      results = [];
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedIndex = Math.min(selectedIndex + 1, results.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedIndex = Math.max(selectedIndex - 1, 0);
+    } else if (e.key === 'Enter' && results[selectedIndex]) {
+      window.location.href = results[selectedIndex].url;
+      isOpen = false;
+      query = "";
+      results = [];
+    }
+  }
+
+  // Global keyboard shortcut
+  if (typeof window !== 'undefined') {
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        isOpen = !isOpen;
+      }
+      if (e.key === '/' && !isOpen && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault();
+        isOpen = true;
+      }
+    });
+  }
+</script>
 
 <style>
   .search-trigger {
@@ -120,7 +237,6 @@
     }
   }
 
-  /* Search Modal */
   .search-modal {
     position: fixed;
     top: 0;
@@ -137,17 +253,14 @@
   }
 
   @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   .search-modal-content {
     width: 90%;
     max-width: 640px;
+    max-height: 70vh;
     background: var(--bg-default);
     border: 1px solid var(--border-default);
     border-radius: var(--radius-lg, 12px);
@@ -193,12 +306,58 @@
     color: var(--text-3);
   }
 
-  .search-input:disabled {
-    cursor: not-allowed;
-  }
-
   .search-shortcut-small {
     flex-shrink: 0;
+  }
+
+  .search-loading,
+  .search-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xl);
+    color: var(--text-3);
+  }
+
+  .search-results {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .search-result-item {
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .search-result-item:last-child {
+    border-bottom: none;
+  }
+
+  .search-result-item a {
+    display: block;
+    padding: var(--space-md) var(--space-lg);
+    text-decoration: none;
+    color: var(--text-1);
+    transition: background var(--transition-fast);
+  }
+
+  .search-result-item a:hover,
+  .search-result-item.selected a {
+    background: var(--bg-soft);
+  }
+
+  .result-title {
+    display: block;
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--space-xs);
+  }
+
+  .result-breadcrumb {
+    display: block;
+    font-size: var(--font-size-sm);
+    color: var(--text-3);
   }
 
   .search-placeholder {
