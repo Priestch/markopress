@@ -2,23 +2,24 @@ import { defineConfig } from 'markopress';
 
 export default defineConfig({
   site: {
-    title: 'MarkoPress',
-    description: 'A general-purpose static site generator using Marko.js v6',
+    title: 'MarkoPress Demo',
+    description: 'A demo site built with MarkoPress',
     base: process.env.BASE_URL || '/',
     lang: 'en-US',
     head: [
       ['meta', { name: 'theme-color', content: '#3c8772' }],
     ],
   },
+  contentDir: '../content',
   content: {
-    pages: '../content/pages',           // No TOC (default)
-    guides: { dir: '../content/guides', toc: true },  // Enable TOC for guides
-    blog: '../content/blog',             // No TOC for blog posts
+    pages: '../content/pages',
+    guides: { dir: '../content/guides', sidebar: true, toc: true },
+    blog: '../content/blog',
   },
   theme: {
     name: '@markopress/theme-default',
     options: {
-      style: 'default', // or 'docusaurus' or 'default'
+      style: 'default',
       navbar: [
         { text: 'Home', link: '/' },
         { text: 'Features', link: '/features' },
@@ -37,12 +38,11 @@ export default defineConfig({
     },
   },
   build: {
-    useCatchAllRoutes: true,  // Use dynamic routes with $!{} syntax for HTML rendering
+    useCatchAllRoutes: true,
   },
   plugins: [
     'blog-index',
     ['sidenav', { module: 'guides' }],
     'toc',
-    // Search and RSS coming later
   ],
 });
