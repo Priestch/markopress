@@ -2,6 +2,8 @@
  * Search types for MarkoPress
  */
 
+export { type SearchConfig } from '../config/types.js';
+
 export interface SearchIndexEntry {
   id: string;
   title: string;
@@ -17,20 +19,6 @@ export interface SearchResult {
   text: string;
   url: string;
   score: number;
-}
-
-export interface SearchConfig {
-  enabled?: boolean;
-  exclude?: string[];
-  minisearch?: {
-    fuzzy?: number;
-    prefix?: boolean;
-    boost?: {
-      title?: number;
-      titles?: number;
-      text?: number;
-    };
-  };
 }
 
 export interface SearchIndexData {

@@ -43,6 +43,9 @@ const DEFAULT_CONFIG: Omit<ResolvedConfig, 'root'> = {
     outDir: 'dist',
     assetsDir: 'assets',
   },
+  search: {
+    enabled: true,
+  },
   plugins: [],
 };
 
@@ -180,6 +183,7 @@ export function resolveConfig(
   const site = deepMerge(DEFAULT_CONFIG.site, userConfig.site || {});
   const theme = deepMerge(DEFAULT_CONFIG.theme, userConfig.theme || {});
   const markdown = deepMerge(DEFAULT_CONFIG.markdown, userConfig.markdown || {});
+  const search = deepMerge(DEFAULT_CONFIG.search, userConfig.search || {});
 
   // Plugins need special handling - don't merge, just replace
   const plugins = userConfig.plugins || DEFAULT_CONFIG.plugins;
@@ -204,6 +208,7 @@ export function resolveConfig(
     theme,
     markdown,
     build,
+    search,
     plugins,
   };
 }

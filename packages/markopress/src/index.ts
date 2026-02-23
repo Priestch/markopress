@@ -9,6 +9,9 @@ export { PluginManager } from './plugin/index.js';
 export * from './content/index.js';
 export * from './vite/index.js';
 
+// Search exports
+export * from './search/index.js';
+
 // Theme exports with renaming to avoid conflicts
 export {
   type ThemeConfig as ThemeThemeConfig,
