@@ -2,7 +2,7 @@ import MiniSearch from 'minisearch';
 import type { SearchIndexEntry, SearchConfig } from '../types.js';
 
 const headingRegex = /<h(\d)[^>]*>(.*?)<\/h\1>/gi;
-const headingContentRegex = /<a[^>]*href="#([^"]*)"[^>]*>(.*?)<\/a>/i;
+const anchorRegex = /<a[^>]*href="#([^"]*)"[^>]*>/i;
 
 export async function buildSearchIndex(
   pages: Array<{
@@ -79,9 +79,12 @@ function splitPageIntoSections(
     const headingHtml = parts[i + 1] || '';
     const content = parts[i + 2] || '';
 
-    const headingMatch = headingContentRegex.exec(headingHtml);
-    const title = stripHtmlTags(headingMatch?.[2] || headingHtml).trim();
-    const anchor = headingMatch?.[1] || '';
+    const anchorMatch = anchorRegex.exec(headingHtml);
+    const anchor = anchorMatch?.[1] || '';
+    
+    // Extract title from entire heading, removing the anchor link
+    const titleHtml = headingHtml.replace(/<a[^>]*class=["']?header-anchor[^>]*>.*?<\/a>/gi, '');
+    const title = stripHtmlTags(titleHtml).trim();
 
     if (!title) continue;
 
