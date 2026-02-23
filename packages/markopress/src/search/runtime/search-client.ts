@@ -4,11 +4,48 @@ import type { SearchIndexEntry, SearchResult, SearchConfig } from '../types.js';
 let searchIndex: MiniSearch<SearchIndexEntry> | null = null;
 let loadPromise: Promise<MiniSearch<SearchIndexEntry>> | null = null;
 
-export async function initSearch(basePath = ''): Promise<MiniSearch<SearchIndexEntry>> {
+interface ImportMetaWithEnv extends ImportMeta {
+  env?: {
+    BASE_URL?: string;
+  };
+}
+
+function normalizeBasePath(basePath: string): string {
+  const trimmed = basePath.trim();
+  if (!trimmed || trimmed === '/') return '';
+  const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  return withLeadingSlash.replace(/\/+$/, '');
+}
+
+function resolveRuntimeBasePath(): string {
+  const globalBase = (globalThis as typeof globalThis & {
+    __MARKOPRESS_BASE_PATH__?: string;
+  }).__MARKOPRESS_BASE_PATH__;
+
+  if (typeof globalBase === 'string') return globalBase;
+
+  const htmlBase = (globalThis as typeof globalThis & {
+    document?: {
+      documentElement?: {
+        getAttribute?: (name: string) => string | null;
+      };
+    };
+  }).document?.documentElement?.getAttribute?.('data-markopress-base-path');
+
+  if (typeof htmlBase === 'string') return htmlBase;
+
+  const viteBase = (import.meta as ImportMetaWithEnv).env?.BASE_URL;
+  if (typeof viteBase === 'string') return viteBase;
+
+  return '';
+}
+
+export async function initSearch(basePath?: string): Promise<MiniSearch<SearchIndexEntry>> {
   if (searchIndex) return searchIndex;
   if (loadPromise) return loadPromise;
 
-  const indexPath = basePath ? `${basePath}/search-index.json` : '/search-index.json';
+  const normalizedBase = normalizeBasePath(basePath ?? resolveRuntimeBasePath());
+  const indexPath = `${normalizedBase}/search-index.json`;
 
   loadPromise = fetch(indexPath)
     .then(r => {
