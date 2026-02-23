@@ -13,7 +13,7 @@
     "preview": "markopress preview"
   },
   "dependencies": {
-    "markopress": "0.0.3"
+    "markopress": "workspace:*"
   },
   "engines": {
     "node": ">=18.0.0"

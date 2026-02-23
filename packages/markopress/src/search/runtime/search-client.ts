@@ -13,14 +13,20 @@ export async function initSearch(basePath = ''): Promise<MiniSearch<SearchIndexE
   loadPromise = fetch(indexPath)
     .then(r => {
       if (!r.ok) throw new Error(`Failed to load search index: ${r.status}`);
-      return r.text();
+      return r.json();
     })
-    .then(data => {
-      searchIndex = MiniSearch.loadJSON<SearchIndexEntry>(data, {
+    .then((data: any) => {
+      console.log('[search] Loaded index with', data.documentCount, 'documents');
+      searchIndex = MiniSearch.loadJSON<SearchIndexEntry>(JSON.stringify(data), {
         fields: ['title', 'titles', 'text'],
         storeFields: ['title', 'titles', 'url'],
       });
       return searchIndex;
+    })
+    .catch(err => {
+      console.error('[search] Failed to load index:', err);
+      loadPromise = null;
+      throw err;
     });
 
   return loadPromise;
@@ -33,26 +39,33 @@ export async function search(
 ): Promise<SearchResult[]> {
   if (!query.trim()) return [];
 
-  const index = await initSearch();
+  try {
+    const index = await initSearch();
 
-  const results = index.search(query, {
-    fuzzy: config?.minisearch?.fuzzy ?? 0.2,
-    prefix: config?.minisearch?.prefix ?? true,
-    boost: {
-      title: config?.minisearch?.boost?.title ?? 4,
-      titles: config?.minisearch?.boost?.titles ?? 2,
-      text: config?.minisearch?.boost?.text ?? 1,
-    },
-  });
+    const results = index.search(query, {
+      fuzzy: config?.minisearch?.fuzzy ?? 0.2,
+      prefix: config?.minisearch?.prefix ?? true,
+      boost: {
+        title: config?.minisearch?.boost?.title ?? 4,
+        titles: config?.minisearch?.boost?.titles ?? 2,
+        text: config?.minisearch?.boost?.text ?? 1,
+      },
+    });
 
-  return results.slice(0, limit).map((result) => ({
-    id: result.id,
-    title: result.title as string,
-    titles: result.titles as string[],
-    text: (result as unknown as { text?: string }).text ?? '',
-    url: result.url as string,
-    score: result.score,
-  })) as SearchResult[];
+    console.log('[search] Query:', query, 'Results:', results.length);
+
+    return results.slice(0, limit).map((result) => ({
+      id: result.id,
+      title: result.title as string,
+      titles: result.titles as string[],
+      text: (result as unknown as { text?: string }).text ?? '',
+      url: result.url as string,
+      score: result.score,
+    })) as SearchResult[];
+  } catch (err) {
+    console.error('[search] Search failed:', err);
+    return [];
+  }
 }
 
 export function clearSearchIndex(): void {
