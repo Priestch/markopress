@@ -41,6 +41,19 @@ export interface ModuleOptions {
   type?: 'page' | 'doc' | 'blog' | 'custom';
 }
 
+export interface ContentFeatureOptions {
+  sidebar?: boolean;
+  rss?: boolean;
+  list?: boolean;
+  toc?: boolean;
+}
+
+export type ContentDirectoryConfig = ContentFeatureOptions;
+
+export interface NewContentConfig {
+  [directory: string]: ContentDirectoryConfig;
+}
+
 /**
  * Content module configuration
  *
@@ -155,7 +168,8 @@ export interface SearchConfig {
 
 export interface MarkoPressConfig {
   site: SiteConfig;
-  content?: ContentConfig;
+  contentDir?: string;
+  content?: NewContentConfig;
   theme?: ThemeConfig;
   markdown?: MarkdownConfig;
   build?: BuildConfig;
@@ -172,8 +186,8 @@ export interface UserConfig extends MarkoPressConfig {}
 
 export interface ResolvedConfig extends Required<MarkoPressConfig> {
   root: string;
-  content: ContentConfig;  // All properties are optional, allows any module name
-  build: BuildConfig;  // All properties are optional, allows custom build options
+  content: NewContentConfig;
+  build: BuildConfig;
 }
 
 export type ConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>;
