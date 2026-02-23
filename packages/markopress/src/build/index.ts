@@ -230,12 +230,18 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
 
       for (const module of modules) {
         for (const file of module.files) {
-          searchPages.push({
-            url: file.urlPath,
-            html: file.processed?.html || '',
-            title: (file.processed?.frontmatter?.title as string) || file.id,
-            frontmatter: file.processed?.frontmatter,
-          });
+          try {
+            const rawContent = await fs.readFile(file.filePath, 'utf-8');
+            const rendered = await renderMarkdown(rawContent, config.markdown);
+            searchPages.push({
+              url: file.urlPath,
+              html: rendered.html,
+              title: (rendered.frontmatter?.title as string) || file.id,
+              frontmatter: rendered.frontmatter,
+            });
+          } catch (error) {
+            console.warn(`   Warning: Could not index ${file.filePath}:`, error);
+          }
         }
       }
 
@@ -244,7 +250,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
         const searchIndexPath = path.join(root, 'public', 'search-index.json');
         await fs.mkdir(path.dirname(searchIndexPath), { recursive: true });
         await fs.writeFile(searchIndexPath, searchIndexJson);
-        console.log('   Search index built\n');
+        console.log(`   Search index built (${searchPages.length} pages)\n`);
       } catch (error) {
         console.warn('   Warning: Failed to build search index:', error);
       }

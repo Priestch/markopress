@@ -71,6 +71,8 @@ function splitPageIntoSections(
   parts.shift();
 
   let parentTitles: string[] = [];
+  let sectionIndex = 0;
+  const usedIds = new Set<string>();
 
   for (let i = 0; i < parts.length; i += 3) {
     const level = parseInt(parts[i]) - 1;
@@ -86,8 +88,15 @@ function splitPageIntoSections(
     const titles = parentTitles.slice(0, level);
     titles[level] = title;
 
-    const id = anchor ? `${baseUrl}#${anchor}` : baseUrl;
-    const url = id;
+    let id = anchor ? `${baseUrl}#${anchor}` : `${baseUrl}#s${sectionIndex}`;
+    while (usedIds.has(id)) {
+      sectionIndex++;
+      id = `${baseUrl}#s${sectionIndex}`;
+    }
+    usedIds.add(id);
+    sectionIndex++;
+
+    const url = anchor ? `${baseUrl}#${anchor}` : baseUrl;
 
     sections.push({
       id,
