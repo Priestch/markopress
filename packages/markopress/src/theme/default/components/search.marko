@@ -11,6 +11,12 @@ import { search as runSearch } from 'markopress/search';
 <let/loading=false/>
 <let/selectedIndex=0/>
 
+<lifecycle onMount() {
+  if (isOpen) focusInput();
+} onUpdate() {
+  if (isOpen) focusInput();
+}/>
+
 <button
   class="search-trigger"
   aria-label="Search"
@@ -56,6 +62,7 @@ import { search as runSearch } from 'markopress/search';
           placeholder="Search documentation..."
           value=query
           autofocus=true
+          key="search-input"
           onKeydown(e) {
             handleKeydown(e);
           }
@@ -115,6 +122,13 @@ import { search as runSearch } from 'markopress/search';
 
 <script>
   let searchTimeout: ReturnType<typeof setTimeout>;
+
+  function focusInput() {
+    const input = document.querySelector('.search-input') as HTMLInputElement;
+    if (input) {
+      setTimeout(() => input.focus(), 0);
+    }
+  }
 
   async function handleSearch(query: string) {
     if (!query.trim()) {
