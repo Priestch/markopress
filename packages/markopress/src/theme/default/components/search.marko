@@ -11,10 +11,13 @@ import { search as runSearch } from 'markopress/search';
 <let/loading=false/>
 <let/selectedIndex=0/>
 
-<lifecycle onMount() {
-  if (isOpen) focusInput();
-} onUpdate() {
-  if (isOpen) focusInput();
+<lifecycle onUpdate() {
+  if (isOpen) {
+    requestAnimationFrame(() => {
+      const input = document.querySelector('.search-input') as HTMLInputElement;
+      input?.focus();
+    });
+  }
 }/>
 
 <button
@@ -122,13 +125,6 @@ import { search as runSearch } from 'markopress/search';
 
 <script>
   let searchTimeout: ReturnType<typeof setTimeout>;
-
-  function focusInput() {
-    const input = document.querySelector('.search-input') as HTMLInputElement;
-    if (input) {
-      setTimeout(() => input.focus(), 0);
-    }
-  }
 
   async function handleSearch(query: string) {
     if (!query.trim()) {
