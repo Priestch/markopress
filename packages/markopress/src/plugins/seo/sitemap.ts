@@ -3,7 +3,6 @@
  */
 
 import { SitemapStream, streamToPromise } from 'sitemap';
-import { minimatch } from 'minimatch';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 
@@ -15,7 +14,17 @@ import type { SitemapOptions, SitemapItem } from './types.js';
  * Check if a URL path matches any exclusion patterns
  */
 function isExcluded(urlPath: string, excludePatterns: string[]): boolean {
-  return excludePatterns.some((pattern) => minimatch(urlPath, pattern));
+  for (const pattern of excludePatterns) {
+    const regexPattern = pattern
+      .replace(/\*\*/g, '.*')
+      .replace(/\*/g, '[^/]*')
+      .replace(/\?/g, '[^/]');
+    const regex = new RegExp(`^${regexPattern}$`);
+    if (regex.test(urlPath)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
