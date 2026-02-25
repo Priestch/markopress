@@ -53,8 +53,3 @@ export interface SeoPluginConfig {
 export interface SeoPluginFactoryOptions {
   sitemap?: SitemapOptions;
 }
-
-/**
- * Create SEO plugin instance
- */
-export function seoPlugin(options?: SeoPluginFactoryOptions): MarkoPressPlugin;
