@@ -149,8 +149,8 @@ export class PluginManager {
    * External plugins are resolved by package name
    */
   private resolvePluginPath(name: string): string {
-    // Built-in plugins - simple names like 'sidenav', 'toc', 'blog-index'
-    const builtInPlugins = ['sidenav', 'toc', 'blog-index'];
+    // Built-in plugins - simple names like 'sidenav', 'toc', 'blog-index', 'seo'
+    const builtInPlugins = ['sidenav', 'toc', 'blog-index', 'seo'];
     if (builtInPlugins.includes(name)) {
       return `../plugins/${name}/index.js`;
     }
