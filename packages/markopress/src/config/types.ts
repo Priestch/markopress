@@ -2,6 +2,8 @@
  * Configuration types for MarkoPress
  */
 
+import type { SeoPluginConfig } from '../plugins/seo/types.js';
+
 export interface SiteConfig {
   title: string;
   description?: string;
@@ -189,6 +191,7 @@ export interface ResolvedConfig extends Required<Omit<MarkoPressConfig, 'content
   contentDir: string;
   content: NewContentConfig;
   build: BuildConfig;
+  seo?: SeoPluginConfig;
 }
 
 export type ConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>;
