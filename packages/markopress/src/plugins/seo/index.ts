@@ -21,18 +21,20 @@ export function seoPlugin(options?: SeoPluginFactoryOptions): MarkoPressPlugin {
   return {
     name: 'seo',
 
-    async afterBuild(ctx) {
-      // Get SEO config from plugin factory options
-      const sitemapConfig = options?.sitemap;
+    async postBuild(ctx) {
+      const { config } = ctx;
+
+      // Get SEO config from user config
+      const seoConfig = (config as any).seo;
 
       // Skip if sitemap not enabled
-      if (!sitemapConfig) {
+      if (!seoConfig?.sitemap) {
         console.log('[seo] Sitemap not configured, skipping');
         return;
       }
 
       // Generate sitemap
-      await generateSitemap(ctx, sitemapConfig);
+      await generateSitemap(ctx, seoConfig.sitemap);
     },
   };
 }

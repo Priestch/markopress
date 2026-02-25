@@ -7,8 +7,20 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 
 import type { ResolvedConfig } from '../../config/types.js';
-import type { BuildContext, ContentManifest } from '../../plugin/types.js';
+import type { AllContent, RouteManifest } from '../../plugin/types.js';
+import type { ContentFile } from '../../content/types.js';
 import type { SitemapOptions, SitemapItem } from './types.js';
+
+/**
+ * Post-build context for sitemap generation
+ */
+interface PostBuildContext {
+  config: ResolvedConfig;
+  outDir: string;
+  routes: RouteManifest;
+  assets: string[];
+  allContent: AllContent;
+}
 
 /**
  * Check if a URL path matches any exclusion patterns
@@ -71,48 +83,70 @@ function resolveHostname(config: ResolvedConfig, options?: SitemapOptions): stri
  */
 async function buildSitemapItem(
   urlPath: string,
-  allContent: ContentManifest,
-  contentDir: string
+  allContent: AllContent
 ): Promise<SitemapItem> {
   const item: SitemapItem = {
     url: urlPath,
   };
 
   // Try to find matching content file for lastmod
-  for (const moduleId in allContent) {
-    const files = allContent[moduleId];
-    const match = files.find((file) => file.urlPath === urlPath);
+  // Check all content types (pages, docs, posts, and custom modules)
+  const pages = allContent.getPages();
+  const docs = allContent.getDocs();
+  const posts = allContent.getPosts();
 
-    if (match) {
-      const modTime = await getFileModTime(match.filePath);
-      if (modTime) {
-        item.lastmod = modTime;
-      }
-      break;
+  // Search through pages
+  const pageMatch = pages.find((file) => file.urlPath === urlPath);
+  if (pageMatch) {
+    const modTime = await getFileModTime(pageMatch.filePath);
+    if (modTime) {
+      item.lastmod = modTime;
     }
+    return item;
   }
 
+  // Search through docs
+  const docMatch = docs.find((file) => file.urlPath === urlPath);
+  if (docMatch) {
+    const modTime = await getFileModTime(docMatch.filePath);
+    if (modTime) {
+      item.lastmod = modTime;
+    }
+    return item;
+  }
+
+  // Search through posts
+  const postMatch = posts.find((file) => file.urlPath === urlPath);
+  if (postMatch) {
+    const modTime = await getFileModTime(postMatch.filePath);
+    if (modTime) {
+      item.lastmod = modTime;
+    }
+    return item;
+  }
+
+  // No matching content file found
   return item;
 }
 
 /**
  * Generate sitemap.xml from routes
  *
- * @param ctx - Build context with config and routes
+ * @param ctx - Post-build context with config and routes
  * @param options - Sitemap generation options
  */
 export async function generateSitemap(
-  ctx: BuildContext,
+  ctx: PostBuildContext,
   options: SitemapOptions = {}
 ): Promise<void> {
-  const { config, routes, content } = ctx;
+  const { config, routes, allContent: content } = ctx;
 
   try {
     // Resolve hostname
     const hostname = resolveHostname(config, options);
 
     // Get base path for URL handling
-    const base = config.site.base || '/';
+    const base = config.site?.base || '/';
 
     // Default exclusion patterns
     const excludePatterns = options.exclude || ['/api/**', '/admin/**'];
@@ -131,7 +165,7 @@ export async function generateSitemap(
       // Build full URL with hostname and base
       const fullUrl = `${hostname}${base}${routePath.replace(/^\//, '')}`;
 
-      const item = await buildSitemapItem(routePath, content, config.contentDir);
+      const item = await buildSitemapItem(routePath, content);
       item.url = fullUrl;
 
       sitemapItems.push(item);
@@ -158,16 +192,16 @@ export async function generateSitemap(
     const xml = await streamToPromise(smStream).then((data) => data.toString());
 
     // Write to output directory
-    const outDir = config.build.outDir || 'dist';
-    const sitemapPath = join(config.root, outDir, 'sitemap.xml');
+    const outDir = ctx.outDir;
+    const sitemapPath = join(outDir, 'sitemap.xml');
 
-    await fs.mkdir(join(config.root, outDir), { recursive: true });
+    await fs.mkdir(outDir, { recursive: true });
     await fs.writeFile(sitemapPath, xml, 'utf8');
 
-    ctx.utils.log(`Generated sitemap.xml with ${finalItems.length} URLs`);
+    console.log(`[seo] Generated sitemap.xml with ${finalItems.length} URLs`);
   } catch (error) {
     // Don't throw - log error and continue
     const message = error instanceof Error ? error.message : String(error);
-    ctx.utils.error(`Failed to generate sitemap: ${message}`);
+    console.error(`[seo] Failed to generate sitemap: ${message}`);
   }
 }

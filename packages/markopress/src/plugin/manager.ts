@@ -389,6 +389,7 @@ export class PluginManager {
    * Execute postBuild hooks on all plugins
    */
   async execPostBuildHooks(
+    config: ResolvedConfig,
     outDir: string,
     routes: RouteManifest,
     assets: string[]
@@ -398,6 +399,7 @@ export class PluginManager {
       if (plugin.postBuild) {
         try {
           await plugin.postBuild({
+            config,
             outDir,
             routes,
             assets,

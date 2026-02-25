@@ -188,6 +188,7 @@ export interface MarkoPressPlugin {
    * Perfect for generating sitemaps, RSS feeds, optimizing assets
    */
   postBuild?(ctx: {
+    config: ResolvedConfig;
     outDir: string;
     routes: RouteManifest;
     assets: string[];

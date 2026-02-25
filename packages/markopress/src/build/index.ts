@@ -520,6 +520,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       const t16 = time('Post-build hooks');
       t16.start();
       await pluginManager.execPostBuildHooks(
+        config,
         buildResult.outDir,
         routeManifest,
         assets
