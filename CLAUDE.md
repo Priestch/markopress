@@ -92,6 +92,33 @@ Built-in plugins:
 - **plugin-content-docs** - Scans `content/docs/` → generates `/docs/*` routes
 - **plugin-content-blog** - Scans `content/blog/` → generates `/blog/*` routes
 
+### SEO Plugin
+
+Built-in plugin for SEO optimization. Currently supports sitemap generation.
+
+**Enable in config:**
+
+```typescript
+import { defineConfig } from 'markopress';
+
+export default defineConfig({
+  plugins: ['seo'],
+  seo: {
+    sitemap: {
+      hostname: 'https://example.com',  // Optional, uses site.url by default
+      exclude: ['/api/**', '/private'], // Routes to exclude
+      transformItems: (items) => {
+        // Add external URLs or modify items
+        return items.filter(item => !item.url.startsWith('/draft'));
+      }
+    }
+  }
+})
+```
+
+**Generated output:**
+- `dist/sitemap.xml` - Sitemap following sitemaps.org protocol
+
 ### Build Process
 
 The build system generates **static route files** from markdown content:
@@ -352,13 +379,13 @@ NODE_ENV="production"              # Build mode
 
 ## Auto-Generated Production Features
 
-MarkoPress automatically generates these production-ready features:
+MarkoPress provides optional SEO features via the built-in `seo` plugin:
 
-- **Sitemap** at `/sitemap/xml` - All pages with lastmod, changefreq, priority
-- **Robots.txt** at `/robots/txt` - Crawler rules with sitemap reference
-- **RSS Feed** at `/api/rss/xml` - Blog posts feed
-- **Open Graph tags** - Social sharing meta tags (use `public/og-image.png`)
-- **Analytics** - Configure via `public/analytics.js` (GA4, Plausible, Umami)
+- **Sitemap** at `/sitemap.xml` - All pages with lastmod, changefreq, priority
+  - Enable by adding `plugins: ['seo']` to config
+  - See [SEO Plugin docs](#seo-plugin) for configuration
+
+**Note:** robots.txt and RSS feeds are planned for future releases.
 
 ## Testing
 
