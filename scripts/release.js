@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs'
-import { resolve, join } from 'node:path'
+import { resolve, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import c from 'picocolors'
 import prompts from 'prompts'
@@ -49,7 +49,111 @@ const run = (bin, args, opts = {}) => {
   return execa(bin, args, { stdio: 'inherit', ...opts })
 }
 
+// Always executes regardless of DRY_RUN (read-only git operations)
+const runRead = (bin, args, opts = {}) =>
+  execa(bin, args, { stdio: 'pipe', ...opts })
+
 const step = (msg) => console.log(c.cyan(msg))
+
+// Conventional commit type → changelog section title
+const COMMIT_TYPES = {
+  feat: '✨ Features',
+  fix: '🐛 Bug Fixes',
+  perf: '⚡ Performance Improvements',
+  refactor: '♻️ Refactoring',
+  docs: '📝 Documentation',
+  build: '🏗️ Build System',
+  ci: '👷 CI/CD',
+  test: '✅ Tests',
+  chore: '🔧 Chores'
+}
+
+async function getLastTag(pkgName) {
+  try {
+    const { stdout } = await runRead('git', [
+      'tag', '--sort=-creatordate', '--list', `${pkgName}-v*`
+    ], { cwd: rootDir })
+    const tags = stdout.trim().split('\n').filter(Boolean)
+    return tags[0] || null
+  } catch {
+    return null
+  }
+}
+
+async function getCommitsSince(tag, pkgDir) {
+  const range = tag ? `${tag}..HEAD` : 'HEAD'
+  const relPath = relative(rootDir, pkgDir)
+  try {
+    const { stdout } = await runRead('git', [
+      'log', range, '--format=%H|%s', '--', relPath
+    ], { cwd: rootDir })
+    return stdout.trim().split('\n').filter(Boolean)
+  } catch {
+    return []
+  }
+}
+
+function parseConventionalCommit(line) {
+  const [hash, ...rest] = line.split('|')
+  const subject = rest.join('|')
+  // Matches: type(scope)!: description  or  type!: description  or  type: description
+  const match = subject.match(/^(\w+)(\([^)]+\))?(!)?:\s+(.+)$/)
+  if (!match) return null
+  const [, type, scope, breaking, description] = match
+  return {
+    hash: hash.substring(0, 7),
+    type,
+    scope: scope ? scope.slice(1, -1) : null,
+    breaking: !!breaking,
+    description
+  }
+}
+
+function generateChangelogEntry(version, commits) {
+  const date = new Date().toISOString().split('T')[0]
+  const categories = { breaking: [], ...Object.fromEntries(Object.keys(COMMIT_TYPES).map(k => [k, []])) }
+
+  for (const line of commits) {
+    const commit = parseConventionalCommit(line)
+    if (!commit) continue
+    if (commit.breaking) categories.breaking.push(commit)
+    if (categories[commit.type]) categories[commit.type].push(commit)
+  }
+
+  const sections = [
+    { key: 'breaking', title: '⚠️ Breaking Changes' },
+    ...Object.entries(COMMIT_TYPES).map(([key, title]) => ({ key, title }))
+  ]
+
+  let content = `## [${version}] - ${date}\n\n`
+  let hasContent = false
+
+  for (const { key, title } of sections) {
+    if (!categories[key] || categories[key].length === 0) continue
+    hasContent = true
+    content += `### ${title}\n\n`
+    for (const commit of categories[key]) {
+      const scope = commit.scope ? `**${commit.scope}:** ` : ''
+      content += `- ${scope}${commit.description} ([${commit.hash}](../../commit/${commit.hash}))\n`
+    }
+    content += '\n'
+  }
+
+  if (!hasContent) {
+    content += '_No significant changes_\n\n'
+  }
+
+  return content
+}
+
+function updateChangelog(changelogPath, entry) {
+  const header = '# Changelog\n\n'
+  let existing = ''
+  if (existsSync(changelogPath)) {
+    existing = readFileSync(changelogPath, 'utf-8').replace(/^# Changelog\n\n/, '')
+  }
+  writeFileSync(changelogPath, header + entry + existing)
+}
 
 async function main() {
   if (DRY_RUN) {
@@ -157,6 +261,27 @@ async function main() {
   step('\nUpdating the package version...')
   updatePackage(pkgDir, targetVersion)
 
+  const pkgName = pkg.name.replace(/^@[^/]+\//, '') // Remove scope for tag/commit message and changelog lookup
+
+  // Generate changelog.
+  step('\nGenerating changelog...')
+  const lastTag = await getLastTag(pkgName)
+  const commits = await getCommitsSince(lastTag, pkgDir)
+  if (lastTag) {
+    console.log(c.gray(`  Commits since ${lastTag}: ${commits.length}`))
+  } else {
+    console.log(c.gray(`  No previous tag found, including all commits (${commits.length})`))
+  }
+  const changelogEntry = generateChangelogEntry(targetVersion, commits)
+  const changelogPath = join(pkgDir, 'CHANGELOG.md')
+  if (!DRY_RUN) {
+    updateChangelog(changelogPath, changelogEntry)
+    console.log(c.green('✓ CHANGELOG.md updated'))
+  } else {
+    console.log(c.gray('[dry-run] Would update CHANGELOG.md:'))
+    console.log(c.gray(changelogEntry))
+  }
+
   // Build the package.
   step('\nBuilding the package...')
   await run('pnpm', ['build'], { cwd: pkgDir })
@@ -172,7 +297,6 @@ async function main() {
 
   // Commit changes to the Git and create a tag.
   step('\nCommitting changes...')
-  const pkgName = pkg.name.replace(/^@[^/]+\//, '') // Remove scope for cleaner commit message
 
   // Stage all changes (root + package)
   await run('git', ['add', '-A'], { cwd: rootDir })
