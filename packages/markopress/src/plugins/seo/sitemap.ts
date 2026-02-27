@@ -139,7 +139,7 @@ export async function generateSitemap(
   ctx: PostBuildContext,
   options: SitemapOptions = {}
 ): Promise<void> {
-  const { config, routes, allContent: content } = ctx;
+  const { config, outDir, allContent: content } = ctx;
 
   try {
     // Resolve hostname
@@ -151,21 +151,34 @@ export async function generateSitemap(
     // Default exclusion patterns
     const excludePatterns = options.exclude || ['/api/**', '/admin/**'];
 
-    // Build sitemap items from routes
+    // Read static URLs from the build manifest
+    // This includes all content routes, not just plugin-added routes
+    // The file is at <project-root>/.markopress/src/.generated/static-urls.json
+    const staticUrlsPath = join(config.root, '.markopress', 'src', '.generated', 'static-urls.json');
+    let urlPaths: string[] = [];
+
+    try {
+      const staticUrlsContent = await fs.readFile(staticUrlsPath, 'utf-8');
+      urlPaths = JSON.parse(staticUrlsContent);
+    } catch (error) {
+      // If static-urls.json doesn't exist, fall back to empty array
+      // This shouldn't happen in normal builds, but we handle it gracefully
+      console.warn('[sitemap] static-urls.json not found, sitemap may be incomplete');
+    }
+
+    // Build sitemap items from all static URLs
     const sitemapItems: SitemapItem[] = [];
 
-    for (const routePath in routes) {
-      const route = routes[routePath];
-
+    for (const urlPath of urlPaths) {
       // Skip excluded paths
-      if (isExcluded(routePath, excludePatterns)) {
+      if (isExcluded(urlPath, excludePatterns)) {
         continue;
       }
 
       // Build full URL with hostname and base
-      const fullUrl = `${hostname}${base}${routePath.replace(/^\//, '')}`;
+      const fullUrl = `${hostname}${base}${urlPath.replace(/^\//, '')}`;
 
-      const item = await buildSitemapItem(routePath, content);
+      const item = await buildSitemapItem(urlPath, content);
       item.url = fullUrl;
 
       sitemapItems.push(item);
