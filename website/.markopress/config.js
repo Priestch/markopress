@@ -42,8 +42,14 @@ export default defineConfig({
     useCatchAllRoutes: true,
   },
   plugins: [
+    'seo',
     'blog-index',
     ['sidenav', { module: 'guides' }],
     'toc',
   ],
+  seo: {
+    sitemap: {
+      hostname: 'https://markopress.test',
+    }
+  },
 });

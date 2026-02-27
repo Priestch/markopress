@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import type { SeoPluginConfig } from '../plugins/seo/types.js';
 
 /**
  * Site configuration schema
@@ -124,6 +125,22 @@ const PluginConfigSchema = z.union([
 ]);
 
 /**
+ * Sitemap configuration schema
+ */
+const SitemapConfigSchema = z.object({
+  hostname: z.string().optional(),
+  exclude: z.array(z.string()).optional(),
+  transformItems: z.any().optional(),
+}).passthrough();
+
+/**
+ * SEO plugin configuration schema
+ */
+const SeoConfigSchema = z.object({
+  sitemap: SitemapConfigSchema.optional(),
+}).passthrough().optional();
+
+/**
  * Main MarkoPress configuration schema
  */
 export const MarkoPressConfigSchema = z.object({
@@ -136,6 +153,7 @@ export const MarkoPressConfigSchema = z.object({
   search: z.object({
     enabled: z.boolean().optional(),
   }).passthrough().optional(),
+  seo: SeoConfigSchema,
   plugins: z.array(PluginConfigSchema).optional(),
 });
 

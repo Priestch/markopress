@@ -188,6 +188,9 @@ export function resolveConfig(
   // Plugins need special handling - don't merge, just replace
   const plugins = userConfig.plugins || DEFAULT_CONFIG.plugins;
 
+  // SEO config is optional
+  const seo = userConfig.seo;
+
   // Add theme CSS based on style option
   const style = (theme.options?.style as 'default' | 'vitepress' | 'docusaurus') || 'default';
   const base = (site.base || '/').replace(/\/$/, '');
@@ -213,6 +216,7 @@ export function resolveConfig(
     build,
     search,
     plugins,
+    seo,
   };
 }
 
