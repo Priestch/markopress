@@ -1,1 +1,16 @@
 <!-- Extension point: theme head bottom -->
+<!-- Renders head tags with position="bottom" from config.site.head -->
+
+<if=$global.headBottom && $global.headBottom.length>
+  <for|tag| of=$global.headBottom>
+    <if=tag.length === 3>
+      <!-- Inline content tag: [tagName, attrs, content] -->
+      <${tag[0]} ...tag[1]>
+        ${tag[2]}
+      </${tag[0]}>
+    <else>
+      <!-- Self-closing tag: [tagName, attrs] -->
+      <${tag[0]} ...tag[1]/>
+    </if>
+  </for>
+</if>

@@ -129,6 +129,10 @@ export async function GET(context, next) {
   context.footer = config.theme.options.footer || null;
   context.hasComponentStyles = !!(config.markdown?.markoTags?.enabled);
 
+  // Head injection from plugin
+  context.headTop = config._headInject?.headTop || [];
+  context.headBottom = config._headInject?.headBottom || [];
+
   context.title = frontmatter.title || slug;
   context.description = frontmatter.description || '';
   context.contentComponent = contentComponent;
