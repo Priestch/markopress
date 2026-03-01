@@ -31,7 +31,7 @@ export interface LinkTag extends BaseHeadTag {
   rel: string;
   href: string;
   as?: string;          // For preconnect/prefetch (script, style, font)
-  type?: string;        // MIME type
+  mimeType?: string;    // MIME type (maps to HTML 'type' attribute)
   media?: string;       // Media query
   sizes?: string;       // For icons
   crossorigin?: 'anonymous' | 'use-credentials';
@@ -47,7 +47,7 @@ export interface ScriptTag extends BaseHeadTag {
   content?: string;     // Inline script
   async?: boolean;
   defer?: boolean;
-  type?: string;        // module, text/javascript, etc.
+  scriptType?: string;  // module, text/javascript, etc. (maps to HTML 'type' attribute)
   crossorigin?: 'anonymous' | 'use-credentials';
   integrity?: string;   // SRI hash
   nonce?: string;       // CSP nonce
@@ -60,8 +60,10 @@ export interface BaseTag extends BaseHeadTag {
   target?: '_blank' | '_self' | '_parent' | '_top';
 }
 
-// Renderable format for Marko templates: [tagName, attributesObject]
-export type RenderableHeadTag = [string, Record<string, unknown>];
+// Renderable format for Marko templates: [tagName, attributesObject] or [tagName, attributesObject, content]
+export type RenderableHeadTag =
+  | [string, Record<string, unknown>]
+  | [string, Record<string, unknown>, string];
 
 // Grouped tags by position
 export interface GroupedHeadTags {
