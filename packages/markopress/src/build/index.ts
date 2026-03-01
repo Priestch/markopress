@@ -98,7 +98,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     // Step 0: Load configuration
     const t0 = time('Config loading');
     t0.start();
-    const config = await loadConfig(root, { mode: 'production', command: 'build' });
+    let config = await loadConfig(root, { mode: 'production', command: 'build' });
     t0.end();
 
     // Step 1: Initialize plugin manager
@@ -109,6 +109,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       t1.start();
       pluginManager = new PluginManager(config);
       await pluginManager.loadPlugins(config.plugins);
+      config = pluginManager.getConfig();
       t1.end();
       console.log('');
     }
@@ -946,6 +947,7 @@ async function generateConfigFile(
     },
     markdown: config.markdown || {},
     build: config.build || {},
+    _headInject: (config as any)._headInject || undefined,
   };
 
   // Prefix navbar links with base path

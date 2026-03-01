@@ -242,7 +242,7 @@ describe('transformHeadConfig', () => {
       };
       const result = transformHeadConfig([script]);
       expect(result.headBottom).toEqual([
-        ['script', { text: 'console.log("hello");' }],
+        ['script', {}, 'console.log("hello");'],
       ]);
     });
 
@@ -309,6 +309,25 @@ describe('transformHeadConfig', () => {
       const result = transformHeadConfig([script]);
       expect(result.headBottom).toEqual([
         ['script', { src: '/script.js' }],
+      ]);
+    });
+
+    test('should merge custom attrs from script tag', () => {
+      const script: ScriptTag = {
+        type: 'script',
+        src: 'https://example.com/script.js',
+        defer: true,
+        attrs: {
+          'data-website-id': 'test-website-id-123'
+        }
+      };
+      const result = transformHeadConfig([script]);
+      expect(result.headBottom).toEqual([
+        ['script', {
+          src: 'https://example.com/script.js',
+          defer: true,
+          'data-website-id': 'test-website-id-123'
+        }],
       ]);
     });
   });

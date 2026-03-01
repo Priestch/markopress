@@ -12,6 +12,15 @@ export default defineConfig({
         name: 'theme-color',
         content: '#3c8772'
       },
+      {
+        type: 'script',
+        src: 'https://cloud.umami.is/script.js',
+        defer: true,
+        position: 'bottom',  // Load in head-bottom (before </head>)
+        attrs: {
+          'data-website-id': '49883dab-2308-45a7-bdec-cd88e700d04b'
+        }
+      },
     ],
   },
   contentDir: 'content',
@@ -46,6 +55,7 @@ export default defineConfig({
     useCatchAllRoutes: true,
   },
   plugins: [
+    'head-inject',
     'seo',
     'blog-index',
     ['sidenav', { module: 'guides' }],

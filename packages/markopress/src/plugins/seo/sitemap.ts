@@ -204,7 +204,7 @@ export async function generateSitemap(
     // Generate XML
     const xml = await streamToPromise(smStream).then((data) => data.toString());
 
-    // Write to output directory
+    // Write to static output directory
     const outDir = ctx.outDir;
     const publicDir = join(outDir, 'public');
     const sitemapPath = join(publicDir, 'sitemap.xml');

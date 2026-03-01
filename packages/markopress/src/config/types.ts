@@ -198,6 +198,10 @@ export interface ResolvedConfig extends Omit<Required<Omit<MarkoPressConfig, 'co
   content: NewContentConfig;
   build: BuildConfig;
   seo?: SeoPluginConfig;
+  _headInject?: {
+    headTop: Array<[string, Record<string, unknown>]> | Array<[string, Record<string, unknown>, string]>;
+    headBottom: Array<[string, Record<string, unknown>]> | Array<[string, Record<string, unknown>, string]>;
+  };
 }
 
 export type ConfigFn = (env: ConfigEnv) => UserConfig | Promise<UserConfig>;

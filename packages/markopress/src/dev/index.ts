@@ -32,7 +32,7 @@ export async function startDevServer(options: DevServerOptions = {}) {
   const root = options.root || process.cwd();
 
   // Load configuration
-  const config = await loadConfig(root, { mode: 'development', command: 'dev' });
+  let config = await loadConfig(root, { mode: 'development', command: 'dev' });
   console.log(`✓ Config loaded from ${config.root}`);
 
   // Resolve the @marko/run app root (.markopress directory)
@@ -46,6 +46,7 @@ export async function startDevServer(options: DevServerOptions = {}) {
   if (config.plugins && config.plugins.length > 0) {
     pluginManager = new PluginManager(config);
     await pluginManager.loadPlugins(config.plugins);
+    config = pluginManager.getConfig();
 
     // Execute loadContent hooks to let plugins load external content
     await pluginManager.execLoadContentHooks();

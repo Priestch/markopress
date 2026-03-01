@@ -21,7 +21,7 @@ export interface MetaTag extends BaseHeadTag {
   name?: string;
   property?: string;     // For Open Graph (og:*, twitter:card)
   httpEquiv?: string;    // For http-equiv="refresh", etc.
-  content: string;
+  content?: string;      // Optional - not used for charset-only meta tags
   charset?: string;      // For <meta charset="UTF-8">
 }
 
@@ -51,6 +51,7 @@ export interface ScriptTag extends BaseHeadTag {
   crossorigin?: 'anonymous' | 'use-credentials';
   integrity?: string;   // SRI hash
   nonce?: string;       // CSP nonce
+  attrs?: Record<string, unknown>; // Custom attributes (e.g., data-*)
 }
 
 // Base tag: <base href="...">
@@ -60,9 +61,12 @@ export interface BaseTag extends BaseHeadTag {
   target?: '_blank' | '_self' | '_parent' | '_top';
 }
 
-// Renderable format for Marko templates: [tagName, attributesObject]
-// For inline scripts, use the 'text' attribute in the attributes object
-export type RenderableHeadTag = [string, Record<string, unknown>];
+// Renderable format for Marko templates
+// - Self-closing tags: [tagName, attributesObject]
+// - Inline content tags: [tagName, attributesObject, bodyContent]
+export type RenderableHeadTag =
+  | [string, Record<string, unknown>]
+  | [string, Record<string, unknown>, string];
 
 // Grouped tags by position
 export interface GroupedHeadTags {

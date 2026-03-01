@@ -149,11 +149,10 @@ describe('head-inject integration', () => {
     const headBottom = (result as any)._headInject.headBottom;
     expect(headBottom).toHaveLength(1);
 
-    // Inline scripts use 'text' attribute in Marko
+    // Inline scripts use 3-tuple format: [tag, attrs, body]
     expect(headBottom[0][0]).toBe('script');
-    expect(headBottom[0][1]).toEqual({
-      text: 'console.log("test");'
-    });
+    expect(headBottom[0][1]).toEqual({});
+    expect(headBottom[0][2]).toBe('console.log("test");');
   });
 
   it('should filter out undefined attributes', () => {

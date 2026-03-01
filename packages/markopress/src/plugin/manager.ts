@@ -430,6 +430,13 @@ export class PluginManager {
   }
 
   /**
+   * Get the latest resolved config after plugin config hooks
+   */
+  getConfig(): ResolvedConfig {
+    return this.config;
+  }
+
+  /**
    * Clear plugin state
    */
   clear(): void {

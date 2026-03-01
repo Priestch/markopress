@@ -4,13 +4,11 @@
 <if=$global.headTop && $global.headTop.length>
   <for|tag| of=$global.headTop>
     <if=tag.length === 3>
-      <!-- Inline content tag: [tagName, attrs, content] -->
       <${tag[0]} ...tag[1]>
         ${tag[2]}
       </${tag[0]}>
     </if>
     <else>
-      <!-- Self-closing tag: [tagName, attrs] -->
       <${tag[0]} ...tag[1]/>
     </else>
   </for>
