@@ -206,9 +206,10 @@ export async function generateSitemap(
 
     // Write to output directory
     const outDir = ctx.outDir;
-    const sitemapPath = join(outDir, 'sitemap.xml');
+    const publicDir = join(outDir, 'public');
+    const sitemapPath = join(publicDir, 'sitemap.xml');
 
-    await fs.mkdir(outDir, { recursive: true });
+    await fs.mkdir(publicDir, { recursive: true });
     await fs.writeFile(sitemapPath, xml, 'utf8');
 
     console.log(`[seo] Generated sitemap.xml with ${finalItems.length} URLs`);

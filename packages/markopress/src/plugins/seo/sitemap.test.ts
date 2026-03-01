@@ -10,7 +10,8 @@ vi.mock('fs', async () => {
     ...actual,
     promises: {
       writeFile: vi.fn(),
-      mkdir: vi.fn(),
+      mkdir: vi.fn().mockResolvedValue(undefined),
+      readFile: vi.fn().mockResolvedValue(JSON.stringify(['/', '/about'])),
       stat: vi.fn(() => ({
         mtime: new Date('2024-02-24T10:00:00Z'),
       })),
@@ -24,6 +25,7 @@ import { promises as fs } from 'fs';
 describe('generateSitemap', () => {
   const mockConfig = {
     site: { url: 'https://example.com' },
+    root: '/tmp/project',
   } as any;
 
   const mockContentFiles: ContentFile[] = [
@@ -75,7 +77,7 @@ describe('generateSitemap', () => {
     await generateSitemap(mockContext, options);
 
     expect(fs.writeFile).toHaveBeenCalledWith(
-      '/tmp/dist/sitemap.xml',
+      '/tmp/dist/public/sitemap.xml',
       expect.stringContaining('<?xml version="1.0"'),
       'utf8'
     );
