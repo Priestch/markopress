@@ -7,7 +7,11 @@ export default defineConfig({
     base: process.env.BASE_URL || '/',
     lang: 'en-US',
     head: [
-      ['meta', { name: 'theme-color', content: '#3c8772' }],
+      {
+        type: 'meta',
+        name: 'theme-color',
+        content: '#3c8772'
+      },
     ],
   },
   contentDir: 'content',

@@ -75,6 +75,10 @@ export async function GET(context, next) {
     const meta = allMetadata[metaKey] || {};
     frontmatter = meta.frontmatter || {};
     headers = meta.headers || [];
+
+    // Load head tags from file metadata (added by head-inject plugin)
+    context.headTop = meta.headTop || [];
+    context.headBottom = meta.headBottom || [];
   }
   // {{IF_BUILD_END}}
 

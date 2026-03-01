@@ -197,10 +197,11 @@ export function resolveConfig(
   const themeCssPath = `${base}/_markopress/theme/theme-${style}.css`;
 
   // Inject theme CSS link into head
-  const themeCssHeadTag: HeadTag = ['link', {
+  const themeCssHeadTag: HeadTag = {
+    type: 'link',
     rel: 'stylesheet',
     href: themeCssPath,
-  }];
+  };
 
   site.head = [...(site.head || []), themeCssHeadTag];
 
