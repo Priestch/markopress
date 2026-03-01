@@ -324,7 +324,12 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     t7b.start();
     const generatedMarkdownDir = path.join(appRoot, 'src', '.generated', 'markdown');
     await fs.mkdir(generatedMarkdownDir, { recursive: true });
-    const markdownMetadata: Record<string, { frontmatter: Record<string, unknown>; headers: unknown[] }> = {};
+    const markdownMetadata: Record<string, {
+      frontmatter: Record<string, unknown>;
+      headers: unknown[];
+      headTop: unknown[];
+      headBottom: unknown[];
+    }> = {};
     let preRenderedCount = 0;
 
     for (const mod of modules) {
@@ -350,6 +355,9 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
           markdownMetadata[metaKey] = {
             frontmatter: rendered.frontmatter,
             headers: rendered.headers || [],
+            // Include head tags from plugin enhancements (head-inject plugin adds these)
+            headTop: file.headTop || [],
+            headBottom: file.headBottom || [],
           };
 
           preRenderedCount++;

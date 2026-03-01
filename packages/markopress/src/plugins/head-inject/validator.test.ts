@@ -30,7 +30,7 @@ describe('validateHeadTag', () => {
 
   it('should reject meta tag without any identifier', () => {
     const tag: HeadTag = { type: 'meta', content: 'test' };
-    expect(() => validateHeadTag(tag)).toThrow('name, property, httpEquiv, or charset');
+    expect(() => validateHeadTag(tag)).toThrow('name, property, or httpEquiv');
   });
 
   it('should reject link tag without rel', () => {

@@ -7,6 +7,13 @@ import { z } from 'zod';
 import type { SeoPluginConfig } from '../plugins/seo/types.js';
 
 /**
+ * Head tag schema (uses passthrough to allow head-inject plugin types)
+ */
+const HeadTagSchema = z.object({
+  type: z.enum(['meta', 'link', 'script', 'base']),
+}).passthrough();
+
+/**
  * Site configuration schema
  */
 const SiteConfigSchema = z.object({
@@ -14,7 +21,7 @@ const SiteConfigSchema = z.object({
   description: z.string().max(500, { message: 'Description too long' }).optional(),
   base: z.string().startsWith('/', { message: 'Base must start with /' }).optional(),
   lang: z.string().regex(/^[a-z]{2}(-[A-Z]{2})?$/, { message: 'Invalid language code' }).optional(),
-  head: z.array(z.tuple([z.string(), z.record(z.string(), z.string())])).optional(),
+  head: z.array(HeadTagSchema).optional(),
 });
 
 /**

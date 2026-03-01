@@ -7,7 +7,38 @@
   <if=$global.description>
     <meta name="description" content=$global.description>
   </if>
+
+  <!-- Inject head tags from frontmatter (top position) -->
+  <if=$global.headTop>
+    <for|tag| of=$global.headTop>
+      <if=tag.length === 3>
+        <!-- Tag with content (e.g., <script>content</script>) -->
+        <${tag[0]} ...tag[1]>
+          ${tag[2]}
+        </${tag[0]}>
+      <else>
+        <!-- Self-closing tag -->
+        <${tag[0]} ...tag[1]/>
+      </if>
+    </for>
+  </if>
+
   <link rel="stylesheet" href="/theme.css">
+
+  <!-- Inject head tags from frontmatter (bottom position) -->
+  <if=$global.headBottom>
+    <for|tag| of=$global.headBottom>
+      <if=tag.length === 3>
+        <!-- Tag with content (e.g., <script>content</script>) -->
+        <${tag[0]} ...tag[1]>
+          ${tag[2]}
+        </${tag[0]}>
+      <else>
+        <!-- Self-closing tag -->
+        <${tag[0]} ...tag[1]/>
+      </if>
+    </for>
+  </if>
 </head>
 <body>
   <div class="app-container">

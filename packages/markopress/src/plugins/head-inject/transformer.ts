@@ -32,8 +32,13 @@ export function filterUndefined<T extends Record<string, unknown>>(
  * Transform a meta tag to renderable format
  */
 function transformMetaTag(tag: MetaTag): RenderableHeadTag {
+  // Charset is a special case: <meta charset="UTF-8"> only has charset attribute
+  if (tag.charset) {
+    return ['meta', { charset: tag.charset }];
+  }
+
+  // All other meta tags
   const attrs: Record<string, unknown> = filterUndefined({
-    charset: tag.charset,
     name: tag.name,
     property: tag.property,
     'http-equiv': tag.httpEquiv,

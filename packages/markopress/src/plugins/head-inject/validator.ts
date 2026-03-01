@@ -32,12 +32,20 @@ export function validateHeadTag(tag: HeadTag): void {
 }
 
 function validateMetaTag(tag: MetaTag): void {
+  // Charset is a special case: <meta charset="UTF-8"> doesn't need content
+  if (tag.charset) {
+    return; // Valid charset tag
+  }
+
+  // All other meta tags need content
   if (!tag.content) {
     throw new ValidationError('meta', 'Missing required attribute: content');
   }
-  const hasIdentifier = tag.name || tag.property || tag.httpEquiv || tag.charset;
+
+  // Must have an identifier (name, property, or httpEquiv)
+  const hasIdentifier = tag.name || tag.property || tag.httpEquiv;
   if (!hasIdentifier) {
-    throw new ValidationError('meta', 'Must have one of: name, property, httpEquiv, or charset');
+    throw new ValidationError('meta', 'Must have one of: name, property, or httpEquiv');
   }
 }
 

@@ -1,1 +1,8 @@
 <!-- Extension point: theme head bottom -->
+<!-- Rendered by head-inject plugin from config.site.head -->
+
+<if=$global.headBottom && $global.headBottom.length>
+  <for|tag| of=$global.headBottom>
+    <${tag[0]}...tag[1]/>
+  </for>
+</if>
