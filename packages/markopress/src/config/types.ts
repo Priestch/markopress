@@ -3,6 +3,7 @@
  */
 
 import type { SeoPluginConfig } from '../plugins/seo/types.js';
+import type { HeadTag } from '../plugins/head-inject/types.js';
 
 export interface SiteConfig {
   title: string;
@@ -12,7 +13,11 @@ export interface SiteConfig {
   head?: HeadTag[];
 }
 
-export type HeadTag = (string | Record<string, string>)[];
+/**
+ * Re-export head-inject plugin types for user convenience
+ * Use these for type-safe head tag configuration
+ */
+export type { HeadTag } from '../plugins/head-inject/types.js';
 
 /**
  * Module-specific options
