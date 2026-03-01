@@ -242,7 +242,7 @@ describe('transformHeadConfig', () => {
       };
       const result = transformHeadConfig([script]);
       expect(result.headBottom).toEqual([
-        ['script', {}, 'console.log("hello");'],
+        ['script', { text: 'console.log("hello");' }],
       ]);
     });
 

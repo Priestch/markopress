@@ -78,12 +78,9 @@ function transformScriptTag(tag: ScriptTag): RenderableHeadTag {
     crossorigin: tag.crossorigin,
     integrity: tag.integrity,
     nonce: tag.nonce,
+    text: tag.content, // Marko uses 'text' attribute for inline script content
   });
 
-  // Inline scripts have content
-  if (tag.content) {
-    return ['script', attrs, tag.content];
-  }
   return ['script', attrs];
 }
 

@@ -60,10 +60,9 @@ export interface BaseTag extends BaseHeadTag {
   target?: '_blank' | '_self' | '_parent' | '_top';
 }
 
-// Renderable format for Marko templates: [tagName, attributesObject] or [tagName, attributesObject, content]
-export type RenderableHeadTag =
-  | [string, Record<string, unknown>]
-  | [string, Record<string, unknown>, string];
+// Renderable format for Marko templates: [tagName, attributesObject]
+// For inline scripts, use the 'text' attribute in the attributes object
+export type RenderableHeadTag = [string, Record<string, unknown>];
 
 // Grouped tags by position
 export interface GroupedHeadTags {

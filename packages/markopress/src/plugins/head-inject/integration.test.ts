@@ -8,19 +8,22 @@ describe('head-inject integration', () => {
       site: {
         title: 'Integration Test',
         head: [
-          ['meta', { name: 'description', content: 'Test' }],
-          ['link', { rel: 'icon', href: '/favicon.ico', position: 'top' }],
-          ['script', { src: '/analytics.js', async: true }]
+          { type: 'meta', name: 'description', content: 'Test' },
+          { type: 'link', rel: 'icon', href: '/favicon.ico', position: 'top' },
+          { type: 'script', src: '/analytics.js', async: true }
         ]
       }
     } as any;
 
-    const plugin = headInjectPlugin();
-    const result = plugin.config!(mockConfig);
+    const result = headInjectPlugin.config!(mockConfig);
 
     // Verify config hook returns the config object
     expect(result).toBeDefined();
     expect(result.site.title).toBe('Integration Test');
+    // Verify _headInject data is added
+    expect((result as any)._headInject).toBeDefined();
+    expect((result as any)._headInject.headTop).toHaveLength(1);
+    expect((result as any)._headInject.headBottom).toHaveLength(2);
   });
 
   it('should handle empty head config gracefully', () => {
@@ -31,8 +34,7 @@ describe('head-inject integration', () => {
       }
     } as any;
 
-    const plugin = headInjectPlugin();
-    const result = plugin.config!(mockConfig);
+    const result = headInjectPlugin.config!(mockConfig);
 
     expect(result).toBeDefined();
     expect(result.site.head).toEqual([]);
@@ -45,169 +47,129 @@ describe('head-inject integration', () => {
       }
     } as any;
 
-    const plugin = headInjectPlugin();
-    const result = plugin.config!(mockConfig);
+    const result = headInjectPlugin.config!(mockConfig);
 
     expect(result).toBeDefined();
+    expect((result as any)._headInject).toBeUndefined();
   });
 
-  it('should handle invalid head config without throwing', () => {
+  it('should validate and reject invalid head config', () => {
     const mockConfig = {
       site: {
         title: 'Test Site',
         head: [
-          ['link', { rel: 'icon' }] as any  // Missing href (invalid)
+          { type: 'link', rel: 'icon' } as any  // Missing href (invalid)
         ]
       }
     };
 
-    const plugin = headInjectPlugin();
-    // Should not throw, but log warning
-    expect(() => plugin.config!(mockConfig)).not.toThrow();
+    // Should throw validation error
+    expect(() => headInjectPlugin.config!(mockConfig)).toThrow('[head-inject]');
   });
 
-  it('should handle multiple base tags validation', () => {
+  it('should validate and reject multiple base tags', () => {
     const mockConfig = {
       site: {
         title: 'Test Site',
         head: [
-          ['base', { href: 'https://example.com' }],
-          ['base', { href: 'https://other.com' }]
+          { type: 'base', href: 'https://example.com' },
+          { type: 'base', href: 'https://other.com' }
         ]
       }
     };
 
-    const plugin = headInjectPlugin();
-    // Should not throw, but log warning
-    expect(() => plugin.config!(mockConfig)).not.toThrow();
+    // Should throw validation error
+    expect(() => headInjectPlugin.config!(mockConfig)).toThrow('[head-inject]');
   });
 
-  it('should enhance modules with head data', async () => {
+  it('should properly group tags by position', () => {
     const mockConfig = {
       site: {
         title: 'Test Site',
         head: [
-          ['meta', { name: 'viewport', content: 'width=device-width', position: 'top' }],
-          ['link', { rel: 'stylesheet', href: '/style.css' }]
+          { type: 'meta', name: 'viewport', content: 'width=device-width', position: 'top' },
+          { type: 'link', rel: 'stylesheet', href: '/style.css' },
+          { type: 'script', src: '/early.js', position: 'top' },
+          { type: 'script', src: '/late.js' }
         ]
       }
     } as any;
 
-    const mockModules = [
-      {
-        id: 'docs',
-        files: [
-          {
-            id: 'docs/guide',
-            slug: 'guide',
-            processed: {
-              frontmatter: {
-                title: 'Guide'
-                // Note: File-specific head tags not included in this test
-                // as they require the new object format
-              }
-            }
-          }
-        ]
-      }
-    ];
+    const result = headInjectPlugin.config!(mockConfig);
 
-    const plugin = headInjectPlugin();
-    plugin.config!(mockConfig);
-    await plugin.enhanceModules!(mockModules);
-
-    // Verify global head tags are added to files
-    const file = mockModules[0].files[0];
-    expect(file.globalHeadTop).toBeDefined();
-    expect(file.globalHeadBottom).toBeDefined();
-    expect(file.globalHeadTop.length).toBeGreaterThan(0);
-    expect(file.globalHeadBottom.length).toBeGreaterThan(0);
+    const headInject = (result as any)._headInject;
+    expect(headInject).toBeDefined();
+    expect(headInject.headTop).toHaveLength(2);  // viewport meta and early script
+    expect(headInject.headBottom).toHaveLength(2);  // stylesheet and late script
   });
 
-  it('should handle modules with no head data', async () => {
+  it('should transform meta tags correctly', () => {
     const mockConfig = {
       site: {
         title: 'Test Site',
-        head: []
+        head: [
+          { type: 'meta', name: 'description', content: 'Test description' },
+          { type: 'meta', property: 'og:title', content: 'My Site' }
+        ]
       }
     } as any;
 
-    const mockModules = [
-      {
-        id: 'docs',
-        files: [
-          {
-            id: 'docs/guide',
-            slug: 'guide',
-            processed: {
-              frontmatter: {
-                title: 'Guide'
-              }
-            }
-          }
-        ]
-      }
-    ];
+    const result = headInjectPlugin.config!(mockConfig);
 
-    const plugin = headInjectPlugin();
-    plugin.config!(mockConfig);
-    await plugin.enhanceModules!(mockModules);
+    const headBottom = (result as any)._headInject.headBottom;
+    expect(headBottom).toHaveLength(2);
 
-    const file = mockModules[0].files[0];
-    // Should have empty arrays, not undefined
-    expect(file.globalHeadTop).toBeDefined();
-    expect(file.globalHeadBottom).toBeDefined();
+    // Check first meta tag
+    expect(headBottom[0][0]).toBe('meta');
+    expect(headBottom[0][1]).toEqual({
+      name: 'description',
+      content: 'Test description'
+    });
+
+    // Check second meta tag
+    expect(headBottom[1][0]).toBe('meta');
+    expect(headBottom[1][1]).toEqual({
+      property: 'og:title',
+      content: 'My Site'
+    });
   });
 
-  it('should respect enabled option', () => {
+  it('should transform script tags with content correctly', () => {
     const mockConfig = {
       site: {
         title: 'Test Site',
-        head: [['meta', { name: 'test', content: 'value' }]]
+        head: [
+          { type: 'script', content: 'console.log("test");' }
+        ]
       }
     } as any;
 
-    const pluginDisabled = headInjectPlugin({ enabled: false });
-    const result = pluginDisabled.config!(mockConfig);
+    const result = headInjectPlugin.config!(mockConfig);
 
-    expect(result).toBeDefined();
+    const headBottom = (result as any)._headInject.headBottom;
+    expect(headBottom).toHaveLength(1);
+
+    // Inline scripts use 'text' attribute in Marko
+    expect(headBottom[0][0]).toBe('script');
+    expect(headBottom[0][1]).toEqual({
+      text: 'console.log("test");'
+    });
   });
 
-  it('should handle file with no head data', async () => {
+  it('should filter out undefined attributes', () => {
     const mockConfig = {
       site: {
         title: 'Test Site',
-        head: [['meta', { name: 'viewport', content: 'width=device-width' }]]
+        head: [
+          { type: 'link', rel: 'stylesheet', href: '/style.css', as: undefined }
+        ]
       }
     } as any;
 
-    const mockModules = [
-      {
-        id: 'docs',
-        files: [
-          {
-            id: 'docs/guide',
-            slug: 'guide',
-            processed: {
-              frontmatter: {
-                title: 'Guide'
-                // No head property
-              }
-            }
-          }
-        ]
-      }
-    ];
+    const result = headInjectPlugin.config!(mockConfig);
 
-    const plugin = headInjectPlugin();
-    plugin.config!(mockConfig);
-
-    // Should not throw
-    expect(() => plugin.enhanceModules!(mockModules)).not.toThrow();
-
-    const file = mockModules[0].files[0];
-    // Should have global head tags
-    expect(file.globalHeadTop).toBeDefined();
-    expect(file.globalHeadBottom).toBeDefined();
+    const headBottom = (result as any)._headInject.headBottom;
+    expect(headBottom).toHaveLength(1);
+    expect(headBottom[0][1]).not.toHaveProperty('as');
   });
 });
