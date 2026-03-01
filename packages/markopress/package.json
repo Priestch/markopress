@@ -1,6 +1,6 @@
 {
   "name": "markopress",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "A fast, modern static site generator built on Marko.js v6 - drop-in alternative to VitePress and Docusaurus with full content compatibility",
   "keywords": [
     "static-site-generator",
