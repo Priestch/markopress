@@ -9,36 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **head-inject plugin**: Built-in plugin for injecting custom head tags via configuration
+- **head-inject plugin**: Built-in plugin for type-safe head tag injection via configuration
   - Automatically enabled and reads from `config.site.head`
   - Supports meta, link, script, and base tags
   - Configurable positioning (top/bottom of head section)
-  - Validates tag structure at config load time
-  - Works with global config and per-page frontmatter
+  - Validates tag structure at config load time with helpful error messages
+  - Full TypeScript type safety
   - Theme integration via `<theme-head-top/>` and `<theme-head-bottom/>` extension points
 
-- New configuration types for head injection:
-  - `HeadTag` - Type definition for head-inject plugin tags
-  - Re-exported as `HeadInjectPluginTag` from config types for user convenience
+- New head tag types for type-safe configuration:
+  - `HeadTag` - Union type for all supported head tags
+  - `MetaTag`, `LinkTag`, `ScriptTag`, `BaseTag` - Individual tag type definitions
+  - Re-exported from config types for user convenience
 
 - Documentation:
   - Comprehensive plugin documentation at `docs/plugins/head-injection.md`
   - Usage examples for common scenarios (Google Analytics, Google Fonts, Open Graph, etc.)
+  - Migration guide from old array format
 
 ### Changed
 
-- Enhanced plugin system:
-  - `enhanceModules` hook now supports head tag injection
-  - Build system includes head metadata in markdown metadata for handler access
-  - Theme extension points updated to render injected head tags
+- **BREAKING**: `site.head` config format changed from array-of-arrays to typed objects
+  - Old: `[['meta', { name: 'viewport' }]]`
+  - New: `[{ type: 'meta', name: 'viewport', content: '...' }]`
+  - Old format is no longer supported
+  - See documentation for migration examples
+
+- Plugin system:
+  - Config hook stores head data in `_headInject` for $global access
+  - Theme extension points render head tags via $global.headTop and $global.headBottom
 
 ### Technical Details
 
 - Plugin architecture:
-  - Config hook: Reads and processes `config.site.head`
-  - Validation: Ensures tag correctness with helpful error messages
-  - Transformation: Converts array format to renderable Marko format
-  - Enhancement: Adds head data to file metadata for templates
+  - Config hook: Reads, validates, and transforms `config.site.head`
+  - Validation: Throws helpful errors for invalid tag configurations
+  - Transformation: Converts typed objects to Marko-compatible renderable format
+  - $global injection: Head data available as $global.headTop and $global.headBottom
 
 - Implementation files:
   - `src/plugins/head-inject/index.ts` - Plugin entry point
