@@ -143,7 +143,11 @@ export async function generateSitemap(
 
   try {
     // Resolve hostname
-    const hostname = resolveHostname(config, options);
+    let hostname = resolveHostname(config, options);
+    // Remove trailing slash from hostname to avoid double slashes
+    if (hostname.endsWith('/')) {
+      hostname = hostname.slice(0, -1);
+    }
 
     // Get base path for URL handling
     const base = config.site?.base || '/';
