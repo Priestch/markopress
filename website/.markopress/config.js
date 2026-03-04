@@ -9,6 +9,11 @@ export default defineConfig({
     head: [
       {
         type: 'meta',
+        name: 'google-site-verification',
+        content: 'hxyiyiodOA26oUdU-oKtiCmWSsU9HuVewjyw08ovorw'
+      },
+      {
+        type: 'meta',
         name: 'theme-color',
         content: '#3c8772'
       },
