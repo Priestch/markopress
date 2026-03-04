@@ -63,7 +63,7 @@ export default defineConfig({
   ],
   seo: {
     sitemap: {
-      hostname: 'https://priestch.github.io/markopress/',
+      hostname: 'https://priestch.github.io',
     }
   },
 });
