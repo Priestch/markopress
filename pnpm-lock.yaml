@@ -119,8 +119,8 @@ importers:
   website/.markopress:
     dependencies:
       markopress:
-        specifier: 0.0.14
-        version: 0.0.14(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0))(@types/markdown-it@14.1.2)(marko@6.0.130)(vite@7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0))
+        specifier: 0.0.16
+        version: 0.0.16(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0))(@types/markdown-it@14.1.2)(marko@6.0.130)(vite@7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0))
 
 packages:
 
@@ -1341,8 +1341,8 @@ packages:
     resolution: {integrity: sha512-tI8fMIGe8+EicAkUP9IBuV0kfrO6L28PsJdaVl7iYyyqGMutCJgeuq/ARQgu8SqCdAzOOpEFb7+Pe0iB62/Gew==}
     engines: {node: 18 || 20 || >=22}
 
-  markopress@0.0.14:
-    resolution: {integrity: sha512-9afaj/kjHkqHtukHPE8IDJIhhxEK7lRUGsBebhmO+mvMDqRIxgTA0Fx8XRDI97smN+7QjnIAk+XzqkJJ5ePMcg==}
+  markopress@0.0.16:
+    resolution: {integrity: sha512-yeFC4MF0PodAuQ8EySb3QWPNlsoyzUO54Oacdm+9yvBuQ4hR998nybCN0U9lntIcxthrVVcY3qrV/Ck6MJXApQ==}
     engines: {node: '>=18.0.0'}
     hasBin: true
     peerDependencies:
@@ -3131,7 +3131,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  markopress@0.0.14(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0))(@types/markdown-it@14.1.2)(marko@6.0.130)(vite@7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0)):
+  markopress@0.0.16(@marko/run@0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0))(@types/markdown-it@14.1.2)(marko@6.0.130)(vite@7.3.1(@types/node@20.19.28)(terser@5.46.0)(tsx@4.21.0)):
     dependencies:
       '@marko/run': 0.9.4(@marko/compiler@5.39.47)(@types/node@20.19.28)(esbuild@0.27.2)(marko@6.0.130)(terser@5.46.0)(tsx@4.21.0)
       chokidar: 3.6.0
