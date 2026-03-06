@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.16] - 2026-03-06
+
+### ✨ Features
+
+- support robots ([83e8fa8](https://github.com/Priestch/markopress/commit/83e8fa8))
+
+
 ## [0.0.15] - 2026-03-03
 
 ### 🔧 Chores
