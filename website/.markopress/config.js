@@ -69,6 +69,11 @@ export default defineConfig({
   seo: {
     sitemap: {
       hostname: 'https://priestch.github.io',
+    },
+    robots: {
+      userAgent: '*',
+      allow: ['/'],
+      crawlDelay: 10,
     }
   },
 });

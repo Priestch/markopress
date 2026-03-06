@@ -141,10 +141,22 @@ const SitemapConfigSchema = z.object({
 }).passthrough();
 
 /**
+ * Robots configuration schema
+ */
+const RobotsConfigSchema = z.object({
+  userAgent: z.union([z.string(), z.array(z.string())]).optional(),
+  allow: z.array(z.string()).optional(),
+  disallow: z.array(z.string()).optional(),
+  crawlDelay: z.number().nonnegative().optional(),
+  sitemap: z.string().optional(),
+}).passthrough();
+
+/**
  * SEO plugin configuration schema
  */
 const SeoConfigSchema = z.object({
   sitemap: SitemapConfigSchema.optional(),
+  robots: RobotsConfigSchema.optional(),
 }).passthrough().optional();
 
 /**

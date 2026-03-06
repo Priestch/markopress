@@ -40,11 +40,41 @@ export interface SitemapOptions {
   };
 }
 
+export interface RobotsOptions {
+  /**
+   * User agent(s) to apply rules to
+   * @default ['*']
+   */
+  userAgent?: string | string[];
+
+  /**
+   * Allowed paths for matching user agents
+   */
+  allow?: string[];
+
+  /**
+   * Disallowed paths for matching user agents
+   */
+  disallow?: string[];
+
+  /**
+   * Optional crawl delay in seconds
+   */
+  crawlDelay?: number;
+
+  /**
+   * Explicit sitemap URL to reference in robots.txt
+   * If not provided, generated from site.url / sitemap config when available
+   */
+  sitemap?: string;
+}
+
 /**
  * SEO plugin configuration
  */
 export interface SeoPluginConfig {
   sitemap?: SitemapOptions;
+  robots?: RobotsOptions;
 }
 
 /**
@@ -52,4 +82,5 @@ export interface SeoPluginConfig {
  */
 export interface SeoPluginFactoryOptions {
   sitemap?: SitemapOptions;
+  robots?: RobotsOptions;
 }
