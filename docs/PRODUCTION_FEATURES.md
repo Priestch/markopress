@@ -6,11 +6,10 @@ MarkoPress includes production-ready features to help your site rank well in sea
 
 ### Sitemap.xml
 
-Your site automatically generates a sitemap at `/sitemap/xml` that includes:
+If you enable the built-in `seo` plugin (`plugins: ['seo']`), MarkoPress generates a sitemap at `/sitemap.xml` that includes:
 - All pages, documentation, and blog posts
 - Last modification dates
-- Change frequencies (daily for pages, weekly for docs, monthly for blog)
-- Priority scores (homepage: 1.0, pages: 0.9, docs: 0.8, blog: 0.7)
+- Change frequencies and priority scores
 
 **Submit to search engines:**
 - Google Search Console: `https://search.google.com/search-console`
@@ -18,10 +17,31 @@ Your site automatically generates a sitemap at `/sitemap/xml` that includes:
 
 ### Robots.txt
 
-Automatically generated at `/robots/txt` with:
-- Allow all crawlers
+Generated at `/robots.txt` when `seo.robots` is configured, with:
+- Allow/disallow rules per user-agent
 - Reference to your sitemap
 - Configurable crawl-delay and disallow rules
+
+Enable both in one place:
+
+```typescript
+import { defineConfig } from 'markopress';
+
+export default defineConfig({
+  plugins: ['seo'],
+  seo: {
+    sitemap: {
+      hostname: 'https://yourdomain.com',
+    },
+    robots: {
+      userAgent: '*',
+      allow: ['/'],
+      disallow: ['/admin', '/search'],
+      crawlDelay: 10,
+    },
+  },
+});
+```
 
 ### Open Graph Meta Tags
 
@@ -107,8 +127,8 @@ Before deploying to production:
 - [ ] Configure `SITE_URL` environment variable
 - [ ] Add `public/og-image.png` (1200x630px recommended)
 - [ ] Set up analytics (edit `public/analytics.js`)
-- [ ] Test sitemap: `https://yourdomain.com/sitemap/xml`
-- [ ] Test robots.txt: `https://yourdomain.com/robots/txt`
+- [ ] Test sitemap: `https://yourdomain.com/sitemap.xml`
+- [ ] Test robots.txt: `https://yourdomain.com/robots.txt`
 - [ ] Test RSS feed: `https://yourdomain.com/api/rss/xml`
 - [ ] Submit sitemap to Google Search Console
 - [ ] Verify analytics tracking is working
@@ -124,30 +144,20 @@ Before deploying to production:
 
 ### Change Sitemap Priority
 
-Edit `src/routes/sitemap.xml/+handler.ts` to adjust priority scores:
-
-```typescript
-if (type === 'pages') {
-  priority = 1.0; // Homepage
-  changefreq = 'daily';
-} else if (type === 'docs') {
-  priority = 0.8;
-  changefreq = 'weekly';
-}
-```
+The built-in SEO plugin uses default scoring rules. For custom scoring or filtering, implement your own `seo` post-build logic or replace it with a custom plugin.
 
 ### Customize Robots.txt
 
-Edit `src/routes/robots.txt/+handler.ts` to add rules:
+Configure `seo.robots` in your MarkoPress config:
 
 ```typescript
-// Disallow specific paths
-Disallow: /admin/
-Disallow: /private/
-
-// Block specific crawlers
-User-agent: ChatGPT-User
-Disallow: /
+seo: {
+  robots: {
+    userAgent: ['*', 'ChatGPT-User'],
+    disallow: ['/admin', '/private'],
+    crawlDelay: 10,
+  },
+}
 ```
 
 ### Add Custom Meta Tags
@@ -161,7 +171,7 @@ Add to `src/routes/+page.marko` in the `<head>` section:
 
 ## 🎯 Performance Tips
 
-1. **Set proper cache headers** - Sitemap and robots.txt are cached for 1 hour
+1. **Static output** - `sitemap.xml` and `robots.txt` are generated during build and served as static assets
 2. **Use CDN** - Serve static assets through a CDN
 3. **Enable compression** - Build output is already gzip-compressed
 4. **Monitor Core Web Vitals** - Use Google PageSpeed Insights

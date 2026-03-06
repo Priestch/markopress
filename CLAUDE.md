@@ -94,7 +94,7 @@ Built-in plugins:
 
 ### SEO Plugin
 
-Built-in plugin for SEO optimization. Currently supports sitemap generation.
+Built-in plugin for SEO optimization. Supports both sitemap and robots output.
 
 **Enable in config:**
 
@@ -111,13 +111,20 @@ export default defineConfig({
         // Add external URLs or modify items
         return items.filter(item => !item.url.startsWith('/draft'));
       }
-    }
+    },
+    robots: {
+      userAgent: '*',
+      allow: ['/'],
+      disallow: ['/admin'],
+      crawlDelay: 10,
+    },
   }
 })
 ```
 
 **Generated output:**
 - `dist/sitemap.xml` - Sitemap following sitemaps.org protocol
+- `dist/public/robots.txt` - Crawling rules
 
 ### Build Process
 
@@ -385,7 +392,7 @@ MarkoPress provides optional SEO features via the built-in `seo` plugin:
   - Enable by adding `plugins: ['seo']` to config
   - See [SEO Plugin docs](#seo-plugin) for configuration
 
-**Note:** robots.txt and RSS feeds are planned for future releases.
+**Note:** `robots.txt` generation is now supported via `seo.robots`.
 
 ## Testing
 
