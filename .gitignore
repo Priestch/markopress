@@ -11,3 +11,7 @@ Thumbs.db
 /public/
 /src/
 /vite.config.js
+
+# Generated website app build outputs
+/website/.markopress/public/
+/website/.markopress/dist/

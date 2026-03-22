@@ -8,6 +8,7 @@ import matter from 'gray-matter';
 import MarkdownIt from 'markdown-it';
 import { getMarkdownIt } from './loader.js';
 import type { MarkdownOptions, ProcessedMarkdown, Header } from './types.js';
+import { resolveImageTagsInHtml } from '../image/tag.js';
 
 /**
  * Cached MarkdownIt instance (lazy-loaded on first use)
@@ -50,7 +51,7 @@ export async function renderMarkdown(
   });
 
   // Render markdown to HTML
-  const html = mdInstance.render(rawContent);
+  const html = await resolveImageTagsInHtml(mdInstance.render(rawContent));
 
   // Extract headers for TOC
   const headers = extractHeaders(rawContent);

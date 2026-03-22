@@ -16,6 +16,7 @@ import { globalTagValidator } from './tag-validator.js';
 import { basePathPlugin } from './base-path-plugin.js';
 import { mdLinkPlugin } from './md-link-plugin.js';
 import type { MarkdownOptions, ProcessedMarkdown, Header, MarkdownEnv } from './types.js';
+import { resolveImageTagsInHtml } from '../image/tag.js';
 
 // Cache highlighter instance
 let highlighterInstance: Awaited<ReturnType<typeof createHighlighter>> | null = null;
@@ -222,7 +223,7 @@ export async function parseMarkdown(
   const md = existingMd || await setupMarkdownIt(options, env);
 
   // Render to HTML
-  const html = md.render(content, env);
+  const html = await resolveImageTagsInHtml(md.render(content, env));
 
   // Extract headers only if TOC is enabled for this module
   const headers = env.extractToc ? extractHeaders(content) : [];

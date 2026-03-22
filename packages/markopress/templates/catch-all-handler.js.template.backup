@@ -88,13 +88,11 @@ export async function GET(context, next) {
     const { default: path } = await import('node:path');
 
     // For root-level content, use contentDir directly; for modules, use module-specific dir
-    // Auto-default to content/{contentType} if dir not specified
     const contentDir = contentType === 'root'
       ? config.contentDir
       : (typeof config.content[contentType] === 'string'
           ? config.content[contentType]
-          : config.content[contentType]?.dir
-            || `${config.contentDir}/${contentType}`);  // ✅ Smart default!
+          : config.content[contentType]?.dir);
 
     if (!contentDir) {
       return next();

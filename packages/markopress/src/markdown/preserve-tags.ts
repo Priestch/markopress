@@ -34,6 +34,11 @@ interface Component {
     processedTag: string;
 }
 
+interface Range {
+    start: number;
+    end: number;
+}
+
 /**
  * Create placeholder for a detected Marko component
  */
@@ -53,6 +58,95 @@ function restoreComponents(html: string, components: Component[]): string {
         result = result.replace(placeholder, comp.processedTag);
     }
     return result;
+}
+
+function isInsideRange(position: number, ranges: Range[]): Range | null {
+    for (const range of ranges) {
+        if (position < range.start) {
+            return null;
+        }
+        if (position >= range.start && position < range.end) {
+            return range;
+        }
+    }
+    return null;
+}
+
+function collectProtectedRanges(markdown: string): Range[] {
+    const ranges: Range[] = [];
+
+    // Protect fenced code blocks first so nested backticks are ignored later.
+    const lines = markdown.split('\n');
+    let offset = 0;
+    let inFence: { marker: string; indent: string; start: number } | null = null;
+
+    for (const line of lines) {
+        const lineWithNewlineLength = line.length + 1;
+        const fenceMatch = line.match(/^( {0,3})(`{3,}|~{3,})(.*)$/);
+
+        if (!inFence) {
+            if (fenceMatch) {
+                inFence = {
+                    indent: fenceMatch[1],
+                    marker: fenceMatch[2],
+                    start: offset,
+                };
+            }
+        } else {
+            const closingPattern = new RegExp(`^${inFence.indent}[${inFence.marker[0]}]{${inFence.marker.length},}\\s*$`);
+            if (closingPattern.test(line)) {
+                ranges.push({
+                    start: inFence.start,
+                    end: offset + lineWithNewlineLength,
+                });
+                inFence = null;
+            }
+        }
+
+        offset += lineWithNewlineLength;
+    }
+
+    if (inFence) {
+        ranges.push({
+            start: inFence.start,
+            end: markdown.length,
+        });
+    }
+
+    // Protect inline code spans outside fenced blocks.
+    let pos = 0;
+    while (pos < markdown.length) {
+        const fenceRange = isInsideRange(pos, ranges);
+        if (fenceRange) {
+            pos = fenceRange.end;
+            continue;
+        }
+
+        if (markdown[pos] !== '`') {
+            pos++;
+            continue;
+        }
+
+        let tickCount = 1;
+        while (markdown[pos + tickCount] === '`') {
+            tickCount++;
+        }
+
+        const delimiter = '`'.repeat(tickCount);
+        const end = markdown.indexOf(delimiter, pos + tickCount);
+        if (end !== -1) {
+            ranges.push({
+                start: pos,
+                end: end + tickCount,
+            });
+            pos = end + tickCount;
+            continue;
+        }
+
+        pos += tickCount;
+    }
+
+    return ranges.sort((a, b) => a.start - b.start);
 }
 
 /**
@@ -112,7 +206,7 @@ function parseOpeningTag(markdown: string, pos: number): ParsedTag | null {
     tagRegex.lastIndex = pos;
     const match = tagRegex.exec(markdown);
 
-    if (!match) {
+    if (!match || match.index !== pos) {
         return null;
     }
 
@@ -222,14 +316,27 @@ function extractComponent(markdown: string, startPos: number, md: any, onTagDete
  */
 function extractComponents(markdown: string, md: any, onTagDetected?: (tag: string, line: number) => void, getLineNumber?: (text: string, pos: number) => number): Component[] {
     const components: Component[] = [];
+    const protectedRanges = collectProtectedRanges(markdown);
     let pos = 0;
     let id = 0;
 
     while (pos < markdown.length) {
+        const protectedRange = isInsideRange(pos, protectedRanges);
+        if (protectedRange) {
+            pos = protectedRange.end;
+            continue;
+        }
+
         // Find next potential tag
         const tagStart = markdown.indexOf('<', pos);
         if (tagStart === -1) {
             break;
+        }
+
+        const nextProtectedRange = isInsideRange(tagStart, protectedRanges);
+        if (nextProtectedRange) {
+            pos = nextProtectedRange.end;
+            continue;
         }
 
         const component = extractComponent(markdown, tagStart, md, onTagDetected, getLineNumber);

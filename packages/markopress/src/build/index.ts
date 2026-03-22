@@ -59,6 +59,45 @@ export interface BuildResult {
   errors: string[];
 }
 
+export async function syncPublicAssets(
+  sourceRoot: string,
+  appRoot: string,
+  debug: boolean
+): Promise<void> {
+  if (sourceRoot === appRoot) {
+    return;
+  }
+
+  const sourcePublicDir = path.join(sourceRoot, 'public');
+  const targetPublicDir = path.join(appRoot, 'public');
+  const manifestPath = path.join(appRoot, 'src', '.generated', 'public-assets-manifest.json');
+  const previousFiles = await readSyncedPublicAssetManifest(manifestPath);
+  let syncedFiles: string[] = [];
+
+  try {
+    const stat = await fs.stat(sourcePublicDir);
+    if (!stat.isDirectory()) {
+      await removeStalePublicAssets(targetPublicDir, previousFiles, syncedFiles);
+      await writeSyncedPublicAssetManifest(manifestPath, syncedFiles);
+      return;
+    }
+  } catch {
+    await removeStalePublicAssets(targetPublicDir, previousFiles, syncedFiles);
+    await writeSyncedPublicAssetManifest(manifestPath, syncedFiles);
+    return;
+  }
+
+  await fs.mkdir(targetPublicDir, { recursive: true });
+  syncedFiles = await copyDirectoryContents(sourcePublicDir, targetPublicDir);
+  await removeStalePublicAssets(targetPublicDir, previousFiles, syncedFiles);
+  await writeSyncedPublicAssetManifest(manifestPath, syncedFiles);
+
+  if (debug) {
+    console.log(`   Synced public assets from: ${sourcePublicDir}`);
+    console.log(`   Output: ${targetPublicDir}`);
+  }
+}
+
 /**
  * Build the MarkoPress site for production
  */
@@ -235,6 +274,13 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
       await fs.writeFile(enhancementsPath, enhancementsJs, 'utf-8');
       console.log(`   Wrote module enhancements to src/.generated/module-enhancements.js\n`);
     }
+
+    console.log('📦 Syncing public assets...');
+    const t_public = time('Public assets sync');
+    t_public.start();
+    await syncPublicAssets(root, appRoot, debug);
+    t_public.end();
+    console.log('   Public assets synced\n');
 
     // Step 4a: Build search index
     if (config.search?.enabled !== false) {
@@ -1542,6 +1588,91 @@ export async function copyTagsDirectory(
   if (debug) {
     console.log(`   Copied ${copiedCount} tag files from: ${tagsDir}`);
     console.log(`   Output: ${distTagsDir}`);
+  }
+}
+
+async function copyDirectoryContents(
+  sourceDir: string,
+  targetDir: string,
+  baseSourceDir: string = sourceDir
+): Promise<string[]> {
+  const entries = await fs.readdir(sourceDir, { withFileTypes: true });
+  const copiedFiles: string[] = [];
+
+  for (const entry of entries) {
+    const sourcePath = path.join(sourceDir, entry.name);
+    const targetPath = path.join(targetDir, entry.name);
+
+    if (entry.isDirectory()) {
+      await fs.mkdir(targetPath, { recursive: true });
+      copiedFiles.push(...await copyDirectoryContents(sourcePath, targetPath, baseSourceDir));
+      continue;
+    }
+
+    if (entry.isFile()) {
+      await fs.copyFile(sourcePath, targetPath);
+      copiedFiles.push(path.relative(baseSourceDir, sourcePath));
+    }
+  }
+
+  return copiedFiles;
+}
+
+async function readSyncedPublicAssetManifest(manifestPath: string): Promise<string[]> {
+  try {
+    const manifest = await fs.readFile(manifestPath, 'utf-8');
+    const parsed = JSON.parse(manifest);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeSyncedPublicAssetManifest(
+  manifestPath: string,
+  files: string[]
+): Promise<void> {
+  await fs.mkdir(path.dirname(manifestPath), { recursive: true });
+  await fs.writeFile(manifestPath, JSON.stringify(files, null, 2));
+}
+
+async function removeStalePublicAssets(
+  targetPublicDir: string,
+  previousFiles: string[],
+  currentFiles: string[]
+): Promise<void> {
+  const currentFileSet = new Set(currentFiles);
+  const staleFiles = previousFiles
+    .filter((file) => !currentFileSet.has(file))
+    .sort((a, b) => b.length - a.length);
+
+  for (const staleFile of staleFiles) {
+    const targetPath = path.join(targetPublicDir, staleFile);
+    await fs.rm(targetPath, { force: true });
+    await removeEmptyParentDirectories(path.dirname(targetPath), targetPublicDir);
+  }
+}
+
+async function removeEmptyParentDirectories(
+  currentDir: string,
+  stopDir: string
+): Promise<void> {
+  let dir = currentDir;
+
+  while (dir.startsWith(stopDir) && dir !== stopDir) {
+    let entries;
+    try {
+      entries = await fs.readdir(dir);
+    } catch {
+      break;
+    }
+
+    if (entries.length > 0) {
+      break;
+    }
+
+    await fs.rmdir(dir);
+    dir = path.dirname(dir);
   }
 }
 

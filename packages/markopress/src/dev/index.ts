@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process';
 import matter from 'gray-matter';
 import { loadConfig } from '../config/index.js';
 import { PluginManager } from '../plugin/manager.js';
-import { generateRoutes, copyThemeCSS, generateCatchAllRoutes, filePathToUrl, extractStylesFromMarkoTags } from '../build/index.js';
+import { generateRoutes, copyThemeCSS, generateCatchAllRoutes, filePathToUrl, extractStylesFromMarkoTags, syncPublicAssets } from '../build/index.js';
 import { buildSearchIndex } from '../search/index.js';
 import { renderMarkdown } from '../markdown/renderer.js';
 
@@ -130,6 +130,11 @@ export async function startDevServer(options: DevServerOptions = {}) {
   if (pluginManager) {
     await pluginManager.execAllContentLoadedHooks(routeManifest);
   }
+
+  // Sync site public assets into the Marko app root so dev serves them.
+  console.log('📦 Syncing public assets...');
+  await syncPublicAssets(root, appRoot, false);
+  console.log('   Public assets synced\n');
 
   // Copy theme CSS
   console.log('🎨 Copying theme CSS...');

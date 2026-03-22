@@ -1,0 +1,94 @@
+/*!
+ * MarkoPress Image Component
+ * Responsive image component similar to Gatsby/Astro
+ */
+
+<const/layout=input.layout || 'responsive'/>
+<const/loading=input.loading || 'lazy'/>
+<const/decoding=input.decoding || 'async'/>
+<const/width=input.width ? Number(input.width) : undefined/>
+<const/height=input.height ? Number(input.height) : undefined/>
+<const/aspectRatio=(width && height ? (height / width * 100).toFixed(2) : '56.25')/>
+<const/sizes=input.sizes || (layout === 'fixed' && width ? `${width}px` : layout === 'fluid' ? '100vw' : undefined)/>
+<const/wrapperStyle={
+  display: 'inline-block',
+  overflow: 'hidden',
+  width: layout === 'fixed' && width ? `${width}px` : layout === 'fluid' ? '100%' : 'auto',
+  position: 'relative',
+  aspectRatio: width && height ? `${width} / ${height}` : undefined,
+}/>
+<const/imageStyle={
+  display: 'block',
+  maxWidth: '100%',
+  height: layout === 'fixed' && height ? `${height}px` : 'auto',
+  width: layout === 'fixed' && width ? `${width}px` : '100%',
+  position: 'relative',
+  zIndex: '1',
+  ...(input.style || {}),
+}/>
+<const/placeholderStyle={
+  position: 'absolute',
+  top: '0',
+  left: '0',
+  width: '100%',
+  height: '100%',
+  backgroundColor: '#f3f4f6',
+  backgroundImage: input.blurDataURL
+    ? `url("${input.blurDataURL}")`
+    : 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%)',
+  backgroundSize: input.blurDataURL ? 'cover' : '200% 100%',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+  animation: input.blurDataURL ? undefined : 'skeleton-loading 1.5s infinite',
+  paddingBottom: layout === 'fluid' ? `${aspectRatio}%` : '0',
+  opacity: '1',
+  transition: 'opacity 0.3s ease-in-out',
+  zIndex: '0',
+}/>
+
+<div
+  class={
+    'markopress-image-wrapper': true,
+    [input.class]: input.class
+  }
+  style=wrapperStyle>
+
+  <if=input.placeholder === 'blur'>
+    <div class="markopress-image-placeholder" style=placeholderStyle/>
+  </if>
+
+  <img
+    src=input.src
+    alt=input.alt || ''
+    width=width
+    height=height
+    loading=loading
+    decoding=decoding
+    fetchpriority=input.fetchpriority
+    srcset=input.srcset
+    sizes=sizes
+    style=imageStyle
+    class="markopress-image"
+  />
+</div>
+
+<style>
+  .markopress-image-wrapper {
+    position: relative;
+  }
+
+  .markopress-image {
+    display: block;
+    position: relative;
+    z-index: 1;
+  }
+
+  @keyframes skeleton-loading {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+</style>
