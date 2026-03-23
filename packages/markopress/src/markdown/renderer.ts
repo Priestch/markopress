@@ -51,7 +51,9 @@ export async function renderMarkdown(
   });
 
   // Render markdown to HTML
-  const html = await resolveImageTagsInHtml(mdInstance.render(rawContent));
+  const html = await resolveImageTagsInHtml(mdInstance.render(rawContent), {
+    base: options?.base ?? undefined,
+  });
 
   // Extract headers for TOC
   const headers = extractHeaders(rawContent);

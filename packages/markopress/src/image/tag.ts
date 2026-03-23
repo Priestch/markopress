@@ -22,6 +22,7 @@ export interface ResolveImageTagOptions {
   placeholder?: 'blur' | 'none';
   quality?: number;
   appRoot?: string;
+  base?: string;
 }
 
 export interface ResolvedImageTagData {
@@ -56,9 +57,10 @@ export async function resolveImageTag(
     placeholder = 'none',
     quality,
     appRoot = resolveAppRoot(),
+    base = '/',
   } = options;
 
-  const localSource = await resolveLocalSource(src, appRoot);
+  const localSource = await resolveLocalSource(src, appRoot, base);
   if (!localSource) {
     return {
       src,
@@ -120,9 +122,9 @@ export async function resolveImageTag(
     }));
   }
 
-  result.src = toPublicUrl(appRoot, variants[variants.length - 1].src);
+  result.src = toPublicUrl(appRoot, variants[variants.length - 1].src, base);
   result.srcset = variants
-    .map((variant) => `${toPublicUrl(appRoot, variant.src)} ${variant.width}w`)
+    .map((variant) => `${toPublicUrl(appRoot, variant.src, base)} ${variant.width}w`)
     .join(', ');
 
   return result;
@@ -130,7 +132,7 @@ export async function resolveImageTag(
 
 export async function resolveImageTagsInHtml(
   html: string,
-  options: Pick<ResolveImageTagOptions, 'appRoot'> = {}
+  options: Pick<ResolveImageTagOptions, 'appRoot' | 'base'> = {}
 ): Promise<string> {
   const matches = [...html.matchAll(/<image(?=[\s/>])[\s\S]*?(?:\/>|>)/g)];
   if (matches.length === 0) {
@@ -155,7 +157,8 @@ export async function resolveImageTagsInHtml(
 
 async function resolveLocalSource(
   src: string,
-  appRoot: string
+  appRoot: string,
+  base: string
 ): Promise<{ sourcePath: string; publicPath: string } | null> {
   if (!src || src.startsWith('data:image/')) {
     return null;
@@ -170,7 +173,7 @@ async function resolveLocalSource(
     // Non-URL path, continue.
   }
 
-  const cleanSrc = src.split(/[?#]/, 1)[0];
+  const cleanSrc = stripBasePath(src.split(/[?#]/, 1)[0], base);
   const publicDir = path.join(appRoot, 'public');
 
   if (cleanSrc.startsWith('/')) {
@@ -308,10 +311,10 @@ function toTransformFormat(format: AutoOptimizeFormat): TransformOptions['format
   return format === 'jpeg' ? 'jpg' : format;
 }
 
-function toPublicUrl(appRoot: string, filePath: string): string {
+function toPublicUrl(appRoot: string, filePath: string, base: string): string {
   const publicDir = path.join(appRoot, 'public');
   const relativePath = path.relative(publicDir, filePath).split(path.sep).join('/');
-  return `/${relativePath}`;
+  return withBasePath(`/${relativePath}`, base);
 }
 
 function getCachedBlurPlaceholder(sourcePath: string): Promise<string> {
@@ -325,7 +328,7 @@ function getCachedBlurPlaceholder(sourcePath: string): Promise<string> {
 
 async function resolveImageTagMarkup(
   tagSource: string,
-  options: Pick<ResolveImageTagOptions, 'appRoot'>
+  options: Pick<ResolveImageTagOptions, 'appRoot' | 'base'>
 ): Promise<string> {
   const parsed = parseImageTag(tagSource);
   if (!hasOnlyStaticOptimizationInputs(parsed.attributes)) {
@@ -348,6 +351,7 @@ async function resolveImageTagMarkup(
     placeholder: parsePlaceholderAttribute(getAttributeValue(parsed.attributes, 'placeholder')),
     quality: parseNumberAttribute(getAttributeValue(parsed.attributes, 'quality')),
     appRoot: options.appRoot,
+    base: options.base,
   });
 
   const attributes = parsed.attributes.map((attribute) => ({ ...attribute }));
@@ -669,4 +673,46 @@ function serializeAttribute(attribute: ParsedTagAttribute): string {
   }
 
   return `${attribute.name}=${attribute.rawValue}`;
+}
+
+function normalizeBasePath(base: string | undefined): string {
+  if (!base || base === '/') {
+    return '';
+  }
+
+  return base.replace(/\/$/, '');
+}
+
+function withBasePath(url: string, base: string | undefined): string {
+  const normalizedBase = normalizeBasePath(base);
+  if (!normalizedBase) {
+    return url;
+  }
+
+  if (!url.startsWith('/') || url.startsWith('//')) {
+    return url;
+  }
+
+  if (url === normalizedBase || url.startsWith(`${normalizedBase}/`)) {
+    return url;
+  }
+
+  return `${normalizedBase}${url}`;
+}
+
+function stripBasePath(url: string, base: string | undefined): string {
+  const normalizedBase = normalizeBasePath(base);
+  if (!normalizedBase) {
+    return url;
+  }
+
+  if (url === normalizedBase) {
+    return '/';
+  }
+
+  if (url.startsWith(`${normalizedBase}/`)) {
+    return url.slice(normalizedBase.length);
+  }
+
+  return url;
 }

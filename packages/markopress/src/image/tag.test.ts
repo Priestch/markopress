@@ -106,6 +106,29 @@ describe('resolveImageTag', () => {
     expect(html).toContain("style={ borderRadius: '8px' }");
   });
 
+  it('prefixes generated image urls with the configured base path', async () => {
+    const html = await resolveImageTagsInHtml(
+      `<image src="/images/sample.png" width=300 layout="fixed" />`,
+      { appRoot, base: '/markopress' }
+    );
+
+    expect(html).toContain('src="/markopress/_markopress/image/images/');
+    expect(html).toContain('srcset="/markopress/_markopress/image/images/');
+  });
+
+  it('resolves local images when the src already includes the base path', async () => {
+    const resolved = await resolveImageTag({
+      src: '/markopress/images/sample.png',
+      width: 300,
+      layout: 'fixed',
+      appRoot,
+      base: '/markopress',
+    });
+
+    expect(resolved.src).toContain('/markopress/_markopress/image/images/');
+    expect(resolved.srcset).toContain('/markopress/_markopress/image/images/');
+  });
+
   it('leaves tags with dynamic optimization props unchanged', async () => {
     const source = `<div><image
   src="/images/sample.png"
@@ -117,5 +140,25 @@ describe('resolveImageTag', () => {
     const html = await resolveImageTagsInHtml(source, { appRoot });
 
     expect(html).toBe(source);
+  });
+
+  it('does not prefix remote images with base path', async () => {
+    const resolved = await resolveImageTag({
+      src: 'https://example.com/hero.jpg',
+      base: '/markopress',
+      appRoot,
+    });
+
+    expect(resolved.src).toBe('https://example.com/hero.jpg');
+  });
+
+  it('does not modify data URLs with base path configured', async () => {
+    const resolved = await resolveImageTag({
+      src: 'data:image/png;base64,iVBORw0KG',
+      base: '/markopress',
+      appRoot,
+    });
+
+    expect(resolved.src).toBe('data:image/png;base64,iVBORw0KG');
   });
 });

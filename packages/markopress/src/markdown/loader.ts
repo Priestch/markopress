@@ -223,7 +223,9 @@ export async function parseMarkdown(
   const md = existingMd || await setupMarkdownIt(options, env);
 
   // Render to HTML
-  const html = await resolveImageTagsInHtml(md.render(content, env));
+  const html = await resolveImageTagsInHtml(md.render(content, env), {
+    base: options.base ?? undefined,
+  });
 
   // Extract headers only if TOC is enabled for this module
   const headers = env.extractToc ? extractHeaders(content) : [];
