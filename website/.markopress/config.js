@@ -32,7 +32,6 @@ export default defineConfig({
   content: {
     guides: { sidebar: true, toc: true },
     blog: { rss: true, list: true },
-    documentation: { sidebar: true },
     portfolio: {},
   },
   theme: {
