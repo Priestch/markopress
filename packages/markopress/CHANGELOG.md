@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.18] - 2026-03-23
+
+### 🐛 Bug Fixes
+
+- make image respect base_dir ([9a38665](https://github.com/Priestch/markopress/commit/9a38665))
+
+
 ## [0.0.17] - 2026-03-23
 
 ### 📝 Documentation
