@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.17] - 2026-03-23
+
+### 📝 Documentation
+
+- update docs to reflect the seo plugin ([c05cd9e](https://github.com/Priestch/markopress/commit/c05cd9e))
+
+
 ## [0.0.16] - 2026-03-06
 
 ### ✨ Features
