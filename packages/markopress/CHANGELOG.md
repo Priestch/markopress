@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.0.19] - 2026-05-11
+
+### ✨ Features
+
+- add content registry for cross-section content access ([26012eb](https://github.com/Priestch/markopress/commit/26012eb))
+
+### 📝 Documentation
+
+- condense CLAUDE.md with references to detailed docs
+
 ## [0.0.18] - 2026-03-23
 
 ### 🐛 Bug Fixes
