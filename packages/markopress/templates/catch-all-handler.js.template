@@ -8,6 +8,7 @@ const IS_BUILD = {{IS_BUILD}};
 let moduleEnhancements = {};
 let allMetadata = {};
 let contentModules = {};
+let contentRegistry = {};
 
 // {{IF_BUILD_START}}
 if (IS_BUILD) {
@@ -27,20 +28,34 @@ if (IS_BUILD) {
   } catch {
     moduleEnhancements = {};
   }
+  try {
+    contentRegistry = (await import('/src/.generated/content-registry.js')).default;
+  } catch {
+    contentRegistry = {};
+  }
 }
 // {{IF_BUILD_END}}
 
 // {{IF_DEV_START}}
 if (!IS_BUILD) {
   // Dev mode: load module enhancements for sidebar, etc.
-  try {
-    const { promises: fs } = await import('node:fs');
-    const { default: path } = await import('node:path');
-    const enhancementsPath = path.join(config.root, 'src/.generated/module-enhancements.json');
-    moduleEnhancements = await fs.readFile(enhancementsPath, 'utf-8').then(JSON.parse).catch(() => ({}));
-  } catch {
-    // Enhancements file not found, use empty object
+  // Resolve .generated/ by walking up to routes/ directory from handler location
+  const { promises: _fs } = await import('node:fs');
+  const { default: _path } = await import('node:path');
+  const { fileURLToPath: _fileURLToPath } = await import('node:url');
+  const _handlerDir = _path.dirname(_fileURLToPath(import.meta.url));
+  // Walk up to find the routes/ directory (handler can be at routes/$$slug/ or routes/module/$$slug/)
+  let _dir = _handlerDir;
+  while (_path.basename(_dir) !== 'routes' && _dir !== _path.dirname(_dir)) {
+    _dir = _path.dirname(_dir);
   }
+  const _generatedDir = _path.join(_dir, '..', '.generated');
+  try {
+    moduleEnhancements = JSON.parse(await _fs.readFile(_path.join(_generatedDir, 'module-enhancements.json'), 'utf-8'));
+  } catch {}
+  try {
+    contentRegistry = JSON.parse(await _fs.readFile(_path.join(_generatedDir, 'content-registry.json'), 'utf-8'));
+  } catch {}
 }
 // {{IF_DEV_END}}
 
@@ -143,6 +158,9 @@ export async function GET(context, next) {
   // Load module enhancements for this content type (sidebar, etc.)
   const enhancements = moduleEnhancements[contentType] || {};
   context.sidebar = enhancements.sidebar || null;
+
+  // Content registry: cross-section data (e.g., blog posts on homepage)
+  context.registry = contentRegistry;
 
   // TOC (table of contents)
   if (headers && headers.length > 0) {

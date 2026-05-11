@@ -23,6 +23,21 @@
       <${$global.contentComponent || {}}>
         <div>No content</div>
       </${$global.contentComponent || {}}>
+      <if=$global.registry?.blog?.length>
+        <section class="recent-posts">
+          <h2>Recent Posts</h2>
+          <ul>
+            <for|post| of=$global.registry.blog>
+              <if=post.metadata.date>
+                <li>
+                  <a href=post.urlPath>${post.metadata.title || post.urlPath}</a>
+                  <small>${new Date(post.metadata.date).toLocaleDateString()}</small>
+                </li>
+              </if>
+            </for>
+          </ul>
+        </section>
+      </if>
     </div>
     <if=$global.toc>
       <toc headers=$global.toc/>
@@ -65,5 +80,41 @@
     border-radius: 4px;
     margin-right: 0.5rem;
     font-size: 0.75rem;
+  }
+
+  .recent-posts {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .recent-posts h2 {
+    margin-bottom: 0.75rem;
+  }
+
+  .recent-posts ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .recent-posts li {
+    padding: 0.5rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .recent-posts li a {
+    color: var(--color-primary-2, #3b82f6);
+    text-decoration: none;
+  }
+
+  .recent-posts li a:hover {
+    text-decoration: underline;
+  }
+
+  .recent-posts small {
+    color: #6b7280;
+    font-size: 0.8rem;
   }
 </style>

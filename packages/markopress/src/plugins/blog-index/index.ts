@@ -25,8 +25,8 @@ let blogConfigData: Required<Omit<BlogIndexOptions, 'path'>> | null = null;
 function transformBlogPosts(module: ContentModule) {
   return [...module.files]
     .sort((a, b) => {
-      const dateA = new Date(a.processed.frontmatter.date || 0);
-      const dateB = new Date(b.processed.frontmatter.date || 0);
+      const dateA = new Date((a.processed.frontmatter.date as string | number) || 0);
+      const dateB = new Date((b.processed.frontmatter.date as string | number) || 0);
       return dateB.getTime() - dateA.getTime();
     })
     .map(post => ({

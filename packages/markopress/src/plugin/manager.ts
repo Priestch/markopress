@@ -150,7 +150,7 @@ export class PluginManager {
    */
   private resolvePluginPath(name: string): string {
     // Built-in plugins - simple names like 'sidenav', 'toc', 'blog-index', 'seo', 'head-inject'
-    const builtInPlugins = ['sidenav', 'toc', 'blog-index', 'seo', 'head-inject'];
+    const builtInPlugins = ['sidenav', 'toc', 'blog-index', 'seo', 'head-inject', 'content-registry'];
     if (builtInPlugins.includes(name)) {
       return `../plugins/${name}/index.js`;
     }

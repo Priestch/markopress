@@ -1,59 +1,50 @@
 /**
- * Module Registry Stub
+ * Content module types used by the plugin system.
  *
- * Kept for backward compatibility. Content modules have been removed
- * in favor of request-time rendering.
+ * The ContentRegistry class was removed — at runtime, registry data is a plain
+ * Record<string, ContentItem[]> produced by the build pipeline and written to
+ * .generated/content-registry.{js,json}.
  */
 
-/**
- * Stub ContentModule type for backward compatibility
- */
-export type ContentModule = any;
+import type { ContentItem } from './source.js';
 
-/**
- * Module registry stub - no-op since content is rendered at request time
- */
-export class ModuleRegistry {
-  register(_module: ContentModule): void {
-    // No-op: modules no longer used
-  }
-
-  get(_id: string): ContentModule | undefined {
-    return undefined;
-  }
-
-  getAll(): ContentModule[] {
-    return [];
-  }
-
-  getByType(_type: string): ContentModule[] {
-    return [];
-  }
-
-  enhance(_id: string, _key: string, _data: unknown): void {
-    // No-op
-  }
-
-  has(_id: string): boolean {
-    return false;
-  }
-
-  getIds(): string[] {
-    return [];
-  }
-
-  clear(): void {
-    // No-op
-  }
-
-  get size(): number {
-    return 0;
-  }
+/** Query filter for the registry (for future server-side query API) */
+export interface ContentQuery {
+  moduleId?: string;
+  limit?: number;
+  sort?: 'date-asc' | 'date-desc';
 }
 
 /**
- * Create a new module registry instance
+ * Content module passed to plugins during enhanceModules hook.
+ * Represents a content section (blog, docs, etc.) with its files and enhancement API.
  */
-export function createModuleRegistry(): ModuleRegistry {
-  return new ModuleRegistry();
+export interface ContentModule {
+  id: string;
+  dir: string;
+  config: Record<string, unknown>;
+  features: Record<string, unknown>;
+  files: ContentModuleFile[];
+  enhance(key: string, data: unknown): void;
+  getEnhancement<T = unknown>(key: string): T | undefined;
+  _enhancements: Map<string, unknown>;
 }
+
+/**
+ * File within a content module.
+ * Shape matches what the build pipeline creates at build/index.ts.
+ */
+export interface ContentModuleFile {
+  id: string;
+  slug: string;
+  filePath: string;
+  urlPath: string;
+  directory: string;
+  processed: {
+    frontmatter: Record<string, unknown>;
+    [key: string]: unknown;
+  };
+}
+
+/** Registry data shape: module ID → array of content items */
+export type ContentRegistryData = Record<string, ContentItem[]>;
