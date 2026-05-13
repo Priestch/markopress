@@ -398,3 +398,17 @@ export function validateFrontmatter(
     errors,
   };
 }
+
+/**
+ * Extract unique language identifiers from fenced code blocks in markdown content.
+ * Handles both ``` and ~~~ fences, and strips meta attributes (e.g. ```python {1,3}).
+ */
+export function scanCodeBlockLanguages(content: string): string[] {
+  const languages = new Set<string>();
+  const fenceRegex = /^```([\w+-]+)/gm;
+  let match: RegExpExecArray | null;
+  while ((match = fenceRegex.exec(content)) !== null) {
+    languages.add(match[1]);
+  }
+  return Array.from(languages);
+}

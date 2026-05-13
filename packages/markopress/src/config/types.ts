@@ -139,6 +139,15 @@ export interface MarkdownConfig {
   };
 
   /**
+   * Additional languages to preload for syntax highlighting.
+   * By default, markopress auto-detects languages from code blocks in your content.
+   * Use this to pre-load languages that may be missed or to speed up builds.
+   *
+   * @example ['python', 'vue', 'rust']
+   */
+  languages?: string[];
+
+  /**
    * Marko tags support
    */
   markoTags?: {

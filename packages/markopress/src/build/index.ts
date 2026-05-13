@@ -16,6 +16,7 @@ import { globalTagValidator, formatValidationError } from '../markdown/index.js'
 import { PluginManager } from '../plugin/manager.js';
 import { loadMarkdownModule, registerMarkdownContent, escapeMarkoText } from './vite-markdown-plugin.js';
 import { renderMarkdown } from '../markdown/renderer.js';
+import { preloadLanguages, scanCodeBlockLanguages } from '../markdown/loader.js';
 import { buildSearchIndex } from '../search/index.js';
 
 const BUILD_MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -307,6 +308,29 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     await syncPublicAssets(root, appRoot, debug);
     t_public.end();
     console.log('   Public assets synced\n');
+
+    // Preload syntax highlighting languages from content + config
+    const scannedLanguages = new Set<string>();
+    for (const mod of modules) {
+      for (const file of mod.files) {
+        try {
+          const content = await fs.readFile(file.filePath, 'utf-8');
+          for (const lang of scanCodeBlockLanguages(content)) {
+            scannedLanguages.add(lang);
+          }
+        } catch {
+          // Ignore read errors
+        }
+      }
+    }
+    const configLanguages = config.markdown?.languages || [];
+    const allLanguages = [...new Set([...scannedLanguages, ...configLanguages])];
+    if (allLanguages.length > 0) {
+      await preloadLanguages(allLanguages);
+      if (debug) {
+        console.log(`   Preloaded ${allLanguages.length} syntax highlighting languages: ${allLanguages.join(', ')}\n`);
+      }
+    }
 
     // Step 4a: Build search index
     if (config.search?.enabled !== false) {

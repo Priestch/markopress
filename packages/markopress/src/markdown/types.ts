@@ -10,6 +10,11 @@ export interface MarkdownOptions {
   };
 
   /**
+   * Additional languages to preload for syntax highlighting.
+   */
+  languages?: string[];
+
+  /**
    * Marko tags support
    */
   markoTags?: {

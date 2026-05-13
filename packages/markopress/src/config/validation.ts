@@ -100,6 +100,7 @@ const MarkdownConfigSchema = z.object({
     light: z.string().optional(),
     dark: z.string().optional(),
   }).optional(),
+  languages: z.array(z.string()).optional(),
   markoTags: z.object({
     enabled: z.boolean().optional(),
     tagsDir: z.string().optional(),
