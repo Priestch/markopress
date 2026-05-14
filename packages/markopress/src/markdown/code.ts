@@ -27,6 +27,11 @@ export interface CodeBlockOptions {
    * Language aliases
    */
   languageAlias?: Record<string, string>;
+
+  /**
+   * Shiki themes for dual-theme highlighting
+   */
+  theme?: { light?: string; dark?: string };
 }
 
 export interface CodeBlockMeta {
@@ -199,8 +204,8 @@ export function createEnhancedHighlighter(
       hast = highlighter.codeToHast(cleanCode, {
         lang: resolvedLang,
         themes: {
-          light: 'github-light',
-          dark: 'github-dark',
+          light: options.theme?.light || 'vitesse-light',
+          dark: options.theme?.dark || 'vitesse-dark',
         },
       });
     } catch (e) {
@@ -231,8 +236,9 @@ export function createEnhancedHighlighter(
 }
 
 /**
- * Enhance HAST with line numbers, highlights, and other features
- * Works directly on the tree structure for better performance than string manipulation
+ * Enhance HAST with line numbers, highlights, and other features.
+ * Shiki 1.x already wraps each line in <span class="line">, so we only
+ * need to find those spans and add classes/attributes.
  */
 function enhanceHastWithLineFeatures(
   hast: Root,
@@ -243,84 +249,42 @@ function enhanceHastWithLineFeatures(
   const preElement = findElement(hast, 'pre');
   if (!preElement) return;
 
-  // Update pre classes
-  const existingClasses = preElement.properties?.className || [];
+  // Update pre classes (Shiki uses 'class' property in HAST)
+  const existingRaw = preElement.properties?.class ?? preElement.properties?.className ?? [];
+  const existingClasses = (Array.isArray(existingRaw) ? existingRaw : [existingRaw]).filter(Boolean) as string[];
   const preClasses: string[] = [
-    ...(Array.isArray(existingClasses) ? existingClasses : [existingClasses]).filter(Boolean) as string[],
+    ...existingClasses,
     meta.lineNumbers ? 'line-numbers' : '',
     meta.highlightLines?.size ? 'has-highlights' : '',
   ].filter(Boolean);
-  preElement.properties = { ...preElement.properties, className: preClasses };
+  preElement.properties = { ...preElement.properties, class: preClasses };
+  delete preElement.properties.className;
 
   // Find the <code> element
   const codeElement = findElement(preElement, 'code');
   if (!codeElement) return;
 
-  // Split code children into lines and enhance each line
-  const lines = splitChildrenIntoLines(codeElement.children || []);
-  const enhancedChildren: ElementContent[] = [];
+  // Shiki 1.x wraps each line in <span class="line"> — find them and enhance
+  const lineSpans = (codeElement.children || []).filter(
+    (child): child is Element =>
+      child.type === 'element' && child.tagName === 'span' && hasClass(child, 'line')
+  );
 
-  for (let i = 0; i < lines.length; i++) {
-    const lineNodes = lines[i];
+  for (let i = 0; i < lineSpans.length; i++) {
+    const span = lineSpans[i];
     const lineNum = i + 1;
     const processed = processedLines[i] || { classes: [] };
 
-    // Skip empty lines
-    if (lineNodes.length === 0 || (lineNodes.length === 1 && isEmptyText(lineNodes[0]))) {
-      continue;
-    }
-
-    // Build classes for this line
-    const lineClasses: string[] = ['line'];
+    const classes: string[] = ['line'];
     if (meta.highlightLines?.has(lineNum)) {
-      lineClasses.push('highlighted');
+      classes.push('highlighted');
     }
-    lineClasses.push(...processed.classes);
+    classes.push(...processed.classes);
+    span.properties = { ...span.properties, class: classes };
+    delete span.properties.className;
 
-    // Find the first element node to attach classes/attributes
-    const firstElement = lineNodes.find((node): node is Element => node.type === 'element');
-
-    if (firstElement) {
-      // Add classes to existing element
-      const elemClasses = firstElement.properties?.className || [];
-      const combinedClasses: string[] = [
-        ...(Array.isArray(elemClasses) ? elemClasses : [elemClasses]).filter(Boolean) as string[],
-        ...lineClasses,
-      ];
-      firstElement.properties = {
-        ...firstElement.properties,
-        className: combinedClasses,
-      };
-
-      // Add data-line attribute if needed
-      if (meta.lineNumbers) {
-        firstElement.properties['data-line'] = lineNum;
-      }
-    } else if (lineNodes[0]) {
-      // Wrap text-only line in a span
-      const wrapper: Element = {
-        type: 'element',
-        tagName: 'span',
-        properties: {
-          className: lineClasses,
-          ...(meta.lineNumbers && { 'data-line': lineNum }),
-        },
-        children: lineNodes,
-      };
-      enhancedChildren.push(wrapper);
-      continue;
-    }
-
-    enhancedChildren.push(...lineNodes);
-  }
-
-  // Rebuild code children with newlines between lines
-  codeElement.children = [];
-  for (let i = 0; i < enhancedChildren.length; i++) {
-    codeElement.children.push(enhancedChildren[i]);
-    // Add newline between lines (but not after the last one)
-    if (i < enhancedChildren.length - 1) {
-      codeElement.children.push({ type: 'text', value: '\n' });
+    if (meta.lineNumbers) {
+      span.properties['data-line'] = lineNum;
     }
   }
 }
@@ -329,10 +293,9 @@ function enhanceHastWithLineFeatures(
  * Find an element by tag name in HAST tree
  */
 function findElement(parent: Root | Element, tagName: string): Element | null {
-  if (parent.type !== 'element') return null;
-  if (parent.tagName === tagName) return parent;
+  if (parent.type === 'element' && parent.tagName === tagName) return parent;
 
-  for (const child of parent.children || []) {
+  for (const child of (parent as { children?: ElementContent[] }).children || []) {
     if (child.type === 'element') {
       const found = findElement(child, tagName);
       if (found) return found;
@@ -343,47 +306,13 @@ function findElement(parent: Root | Element, tagName: string): Element | null {
 }
 
 /**
- * Split code element children into lines
- * Text nodes with newlines create line boundaries
+ * Check if an element has a specific class
  */
-function splitChildrenIntoLines(children: ElementContent[]): Array<Array<ElementContent>> {
-  const lines: Array<Array<ElementContent>> = [];
-  let currentLine: Array<ElementContent> = [];
-
-  for (const child of children) {
-    if (child.type === 'text') {
-      // Split text by newlines
-      const parts = child.value.split('\n');
-      for (let i = 0; i < parts.length; i++) {
-        if (i > 0) {
-          // Newline encountered - start a new line
-          lines.push(currentLine);
-          currentLine = [];
-        }
-        if (parts[i]) {
-          // Only add non-empty text
-          currentLine.push({ type: 'text', value: parts[i] });
-        }
-      }
-    } else {
-      // Element node - add to current line
-      currentLine.push(child);
-    }
-  }
-
-  // Don't forget the last line
-  if (currentLine.length > 0) {
-    lines.push(currentLine);
-  }
-
-  return lines;
-}
-
-/**
- * Check if a node is an empty text node
- */
-function isEmptyText(node: ElementContent): boolean {
-  return node.type === 'text' && !node.value;
+function hasClass(el: Element, cls: string): boolean {
+  const raw = el.properties?.class ?? el.properties?.className;
+  if (!raw) return false;
+  const classes = Array.isArray(raw) ? raw : [raw];
+  return classes.includes(cls);
 }
 
 /**

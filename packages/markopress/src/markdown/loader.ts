@@ -61,6 +61,9 @@ function resolveLanguageAlias(lang: string): string {
   return LANGUAGE_ALIASES[lang] || lang;
 }
 
+const DEFAULT_LIGHT_THEME = 'vitesse-light';
+const DEFAULT_DARK_THEME = 'vitesse-dark';
+
 /**
  * Get or create Shiki highlighter with lazy loading support
  *
@@ -69,12 +72,16 @@ function resolveLanguageAlias(lang: string): string {
  * 2. Load additional languages via preloadLanguages() as needed
  * 3. Cache loaded languages to avoid re-loading
  */
-async function getHighlighterInstance(): Promise<Awaited<ReturnType<typeof createHighlighter>>> {
+async function getHighlighterInstance(
+  theme?: { light?: string; dark?: string }
+): Promise<Awaited<ReturnType<typeof createHighlighter>>> {
   if (!highlighterInstance) {
+    const lightTheme = theme?.light || DEFAULT_LIGHT_THEME;
+    const darkTheme = theme?.dark || DEFAULT_DARK_THEME;
     // Start with essential languages (covers ~80% of use cases)
     // Additional languages are loaded via preloadLanguages() after scanning content
     highlighterInstance = await createHighlighter({
-      themes: ['github-light', 'github-dark'],
+      themes: [lightTheme, darkTheme],
       langs: Array.from(ESSENTIAL_LANGUAGES),
     });
 
@@ -130,11 +137,12 @@ export async function getMarkdownIt(
   options: MarkdownOptions = {},
   env: MarkdownEnv = {}
 ): Promise<MarkdownIt> {
-  const highlighter = await getHighlighterInstance();
+  const highlighter = await getHighlighterInstance(options.theme);
 
   // Create enhanced highlighter with line features
   const enhancedHighlight = createEnhancedHighlighter(highlighter, {
     lineNumbers: options.lineNumbers ?? true,
+    theme: options.theme,
   });
 
   const md = new MarkdownIt({
@@ -154,6 +162,38 @@ export async function getMarkdownIt(
       }
     },
   });
+
+  // Preserve the full info string (e.g. "python {1,3}") before markdown-it-attrs
+  // strips the {...} syntax. Override the fence renderer to reconstruct the meta
+  // from token.attrs and pass it through to the highlight function.
+  const defaultFenceRule = md.renderer.rules.fence!;
+  md.renderer.rules.fence = (tokens, idx, options, _env, self) => {
+    const token = tokens[idx];
+    const lang = (token.info || '').trim().split(/\s+/)[0] || '';
+
+    // Reconstruct meta from token.attrs (mdAttrs moves {1,3} there)
+    let meta = '';
+    if (token.attrs) {
+      for (const [key] of token.attrs) {
+        meta += `{${key}} `;
+      }
+      meta = meta.trim();
+    }
+
+    if (lang) {
+      const code = token.content;
+      try {
+        const highlighted = enhancedHighlight(code, lang, meta);
+        if (highlighted) {
+          return highlighted;
+        }
+      } catch {
+        // Fall through to default rendering
+      }
+    }
+
+    return defaultFenceRule(tokens, idx, options, _env, self);
+  };
 
   // Add plugins
   md.use(mdAnchor, {
