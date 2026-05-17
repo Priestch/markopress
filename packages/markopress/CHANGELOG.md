@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.0.20] - 2026-05-17
+
+### ✨ Features
+
+- configurable syntax highlighting themes and fix line highlighting ([0987bc1](https://github.com/Priestch/markopress/commit/0987bc1))
+- preload syntax highlighting languages at build/dev startup ([a01b355](https://github.com/Priestch/markopress/commit/a01b355))
+
+### ♻️ Refactoring
+
+- extract preloadContentLanguages, pass theme to dev renderer ([0edfac4](https://github.com/Priestch/markopress/commit/0edfac4))
+
+### 📝 Documentation
+
+- add changelog for unreleased syntax highlighting changes ([b733f9f](https://github.com/Priestch/markopress/commit/b733f9f))
+
+
 ## [Unreleased]
 
 ### ✨ Features
