@@ -6,6 +6,17 @@
 
 - init highlighter with theme before preloading languages ([9aa3238](https://github.com/Priestch/markopress/commit/9aa3238))
 
+### 🔧 Chores
+
+- update changelog ([0c62667](https://github.com/Priestch/markopress/commit/0c62667))
+
+
+## [0.0.21] - 2026-05-17
+
+### 🐛 Bug Fixes
+
+- init highlighter with theme before preloading languages ([9aa3238](https://github.com/Priestch/markopress/commit/9aa3238))
+
 - fix custom theme ignored when preloadLanguages runs before getMarkdownIt ([9aa3238](https://github.com/Priestch/markopress/commit/9aa3238))
 
 ## [0.0.20] - 2026-05-17
