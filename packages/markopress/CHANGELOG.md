@@ -1,5 +1,24 @@
 # Changelog
 
+## [Unreleased]
+
+### ✨ Features
+
+- configurable syntax highlighting themes via `markdown.theme` (defaults to vitesse-light/vitesse-dark)
+- configurable language preloading via `markdown.languages` config field
+- pass `markdown.theme` and `markdown.languages` to dev server renderer
+
+### 🐛 Bug Fixes
+
+- fix line highlighting (`{1,3}` syntax): override fence renderer to reconstruct meta from `token.attrs` since `markdown-it-attrs` strips `{...}` from info string
+- fix `enhanceHastWithLineFeatures` to work with Shiki 1.x native `<span class="line">` structure
+- fix `findElement` rejecting `Root` nodes in HAST tree
+- use `class` property instead of `className` in HAST to match Shiki's output format
+
+### 📦 Refactor
+
+- extract `preloadContentLanguages()` to deduplicate language scanning between build and dev pipelines
+
 ## [0.0.19] - 2026-05-11
 
 ### ✨ Features
