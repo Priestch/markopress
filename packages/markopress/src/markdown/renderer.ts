@@ -42,12 +42,14 @@ export async function renderMarkdown(
       }
     };
 
-    // Preload configured languages before creating the highlighter
+    // Create MarkdownIt first (initializes highlighter with correct theme),
+    // then preload additional languages
+    mdInstance = await getMarkdownIt(opts);
+
     if (opts.languages?.length) {
       await preloadLanguages(opts.languages);
     }
 
-    mdInstance = await getMarkdownIt(opts);
     mdOptions = opts;
     languagesPreloaded = true;
   } else if (!languagesPreloaded && options?.languages?.length) {
