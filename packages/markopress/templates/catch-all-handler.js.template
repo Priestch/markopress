@@ -124,7 +124,7 @@ export async function GET(context, next) {
         return next();
       }
 
-      const rendered = await renderMarkdown(source, { base: base !== '/' ? base : undefined, languages: config.markdown?.languages });
+      const rendered = await renderMarkdown(source, { base: base !== '/' ? base : undefined, languages: config.markdown?.languages, theme: config.markdown?.theme });
       frontmatter = rendered.frontmatter;
       headers = rendered.headers || [];
 

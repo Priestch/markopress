@@ -166,6 +166,11 @@ export async function getMarkdownIt(
   // Preserve the full info string (e.g. "python {1,3}") before markdown-it-attrs
   // strips the {...} syntax. Override the fence renderer to reconstruct the meta
   // from token.attrs and pass it through to the highlight function.
+  //
+  // NOTE: This assumes markdown-it-attrs stores each {...} group as a single
+  // attribute key in token.attrs. If mdAttrs changes its internal representation
+  // (e.g., to named attributes like data-lang="..."), this reconstruction will
+  // produce incorrect meta strings.
   const defaultFenceRule = md.renderer.rules.fence!;
   md.renderer.rules.fence = (tokens, idx, options, _env, self) => {
     const token = tokens[idx];
@@ -187,8 +192,8 @@ export async function getMarkdownIt(
         if (highlighted) {
           return highlighted;
         }
-      } catch {
-        // Fall through to default rendering
+      } catch (e) {
+        console.warn(`[MarkoPress] Failed to highlight code block (lang: ${lang}):`, e instanceof Error ? e.message : e);
       }
     }
 
@@ -440,8 +445,8 @@ export function validateFrontmatter(
 }
 
 /**
- * Extract unique language identifiers from fenced code blocks in markdown content.
- * Handles both ``` and ~~~ fences, and strips meta attributes (e.g. ```python {1,3}).
+ * Extract unique language identifiers from backtick-fenced code blocks in markdown content.
+ * Strips meta attributes (e.g. ```python {1,3} → "python").
  */
 export function scanCodeBlockLanguages(content: string): string[] {
   const languages = new Set<string>();
@@ -451,4 +456,37 @@ export function scanCodeBlockLanguages(content: string): string[] {
     languages.add(match[1]);
   }
   return Array.from(languages);
+}
+
+/**
+ * Scan content modules for code block languages, merge with config languages,
+ * and preload them into the Shiki highlighter.
+ */
+export async function preloadContentLanguages(
+  modules: Array<{ files: Array<{ filePath: string }> }>,
+  configLanguages: string[] = [],
+  debug = false
+): Promise<void> {
+  const scannedLanguages = new Set<string>();
+  for (const mod of modules) {
+    for (const file of mod.files) {
+      try {
+        const content = await import('node:fs/promises').then(fs => fs.readFile(file.filePath, 'utf-8'));
+        for (const lang of scanCodeBlockLanguages(content)) {
+          scannedLanguages.add(lang);
+        }
+      } catch (e) {
+        if (debug) {
+          console.warn(`   Warning: Could not read ${file.filePath} for language scanning:`, e instanceof Error ? e.message : e);
+        }
+      }
+    }
+  }
+  const allLanguages = [...new Set([...scannedLanguages, ...configLanguages])];
+  if (allLanguages.length > 0) {
+    await preloadLanguages(allLanguages);
+    if (debug) {
+      console.log(`   Preloaded ${allLanguages.length} syntax highlighting languages: ${allLanguages.join(', ')}\n`);
+    }
+  }
 }

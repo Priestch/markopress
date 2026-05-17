@@ -12,7 +12,7 @@ import { PluginManager } from '../plugin/manager.js';
 import { generateRoutes, copyThemeCSS, generateCatchAllRoutes, filePathToUrl, extractStylesFromMarkoTags, syncPublicAssets } from '../build/index.js';
 import { buildSearchIndex } from '../search/index.js';
 import { renderMarkdown } from '../markdown/renderer.js';
-import { preloadLanguages, scanCodeBlockLanguages } from '../markdown/loader.js';
+import { preloadContentLanguages } from '../markdown/loader.js';
 
 interface DevServerOptions {
   port?: number;
@@ -150,24 +150,7 @@ export async function startDevServer(options: DevServerOptions = {}) {
   }
 
   // Preload syntax highlighting languages from content + config
-  const scannedLanguages = new Set<string>();
-  for (const mod of modules) {
-    for (const file of mod.files) {
-      try {
-        const content = await fs.readFile(file.filePath, 'utf-8');
-        for (const lang of scanCodeBlockLanguages(content)) {
-          scannedLanguages.add(lang);
-        }
-      } catch {
-        // Ignore read errors
-      }
-    }
-  }
-  const configLanguages = config.markdown?.languages || [];
-  const allLanguages = [...new Set([...scannedLanguages, ...configLanguages])];
-  if (allLanguages.length > 0) {
-    await preloadLanguages(allLanguages);
-  }
+  await preloadContentLanguages(modules, config.markdown?.languages);
 
   // Build search index
   if (config.search?.enabled !== false) {

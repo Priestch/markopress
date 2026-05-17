@@ -295,7 +295,7 @@ function enhanceHastWithLineFeatures(
 function findElement(parent: Root | Element, tagName: string): Element | null {
   if (parent.type === 'element' && parent.tagName === tagName) return parent;
 
-  for (const child of (parent as { children?: ElementContent[] }).children || []) {
+  for (const child of parent.children || []) {
     if (child.type === 'element') {
       const found = findElement(child, tagName);
       if (found) return found;
