@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.0.22] - 2026-05-19
+
+### ♻️ Refactoring
+
+- extract page layouts into dedicated theme components ([03fb450](https://github.com/Priestch/markopress/commit/03fb450))
+
+### 🔧 Chores
+
+- update changelog for v0.0.22 ([c350e5c](https://github.com/Priestch/markopress/commit/c350e5c))
+
+
 ## [Unreleased]
 
 ### ♻️ Refactoring
