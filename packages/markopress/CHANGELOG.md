@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.22] - 2026-05-19
+
+### ♻️ Refactoring
+
+- replace monolithic catch-all page template with layout delegation: dispatches to `blog-layout`, `root-layout`, or `page-layout` based on content type ([03fb450](https://github.com/Priestch/markopress/commit/03fb450))
+- add `context.layout` resolution in handler: frontmatter `layout` field > content type > `'page'` fallback
+- add `context.contentTypeClass` for per-content-type CSS class (`content-blog`, `content-page`, etc.)
+- move blog metadata rendering (date, author, tags) and TOC into `blog-layout` component
+- move recent posts listing with date sorting into `root-layout` component
+- move generic page rendering (title, description, TOC) into `page-layout` component
+
+
 ## [0.0.21] - 2026-05-17
 
 ### 🐛 Bug Fixes
