@@ -1,0 +1,23 @@
+<div class="content content-${$global.contentTypeClass}">
+  <theme-body-top/>
+  <${$global.contentComponent || {}}>
+    <div>No content</div>
+  </${$global.contentComponent || {}}>
+  <if=$global.registry?.root?.length>
+    <section class="recent-posts">
+      <h2>Recent Posts</h2>
+      <ul>
+        <for|post| of=$global.registry.root
+          .filter(post => post.metadata.date)
+          .sort((a, b) => new Date(b.metadata.date) - new Date(a.metadata.date))
+          .slice(0, 3)>
+          <li>
+            <a href=post.urlPath>${post.metadata.title || post.urlPath}</a>
+            <small>${new Date(post.metadata.date).toLocaleDateString()}</small>
+          </li>
+        </for>
+      </ul>
+    </section>
+  </if>
+  <theme-body-bottom/>
+</div>

@@ -1,0 +1,19 @@
+<div class="content content-${$global.contentTypeClass}">
+  <theme-body-top/>
+  <div class="content-layout">
+    <div class="content-body">
+      <h1>${$global.title}</h1>
+      <if=$global.description>
+        <p class="description">${$global.description}</p>
+      </if>
+      <hr>
+      <${$global.contentComponent || {}}>
+        <div>No content</div>
+      </${$global.contentComponent || {}}>
+    </div>
+    <if=$global.toc>
+      <toc headers=$global.toc/>
+    </if>
+  </div>
+  <theme-body-bottom/>
+</div>

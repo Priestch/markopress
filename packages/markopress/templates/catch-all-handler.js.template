@@ -177,4 +177,8 @@ export async function GET(context, next) {
   if (frontmatter.tags) {
     context.tags = frontmatter.tags;
   }
+
+  // Layout resolution
+  context.layout = frontmatter.layout || contentType || 'page';
+  context.contentTypeClass = '{{CONTENT_TYPE_CLASS}}';
 }

@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### ♻️ Refactoring
+
+- extract page layouts into dedicated components: `blog-layout`, `root-layout`, `page-layout`
+- delegate catch-all page template to layout components based on content type
+- add layout resolution via frontmatter `layout` field with content type fallback
+
+
 ## [0.0.21] - 2026-05-17
 
 ### 🐛 Bug Fixes
