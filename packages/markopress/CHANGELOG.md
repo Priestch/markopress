@@ -4,6 +4,22 @@
 
 ### ♻️ Refactoring
 
+- extract page layouts into dedicated theme components ([03fb450](https://github.com/Priestch/markopress/commit/03fb450))
+
+### 📝 Documentation
+
+- update changelog with detailed change descriptions ([f660913](https://github.com/Priestch/markopress/commit/f660913))
+- clean up changelog, let release script regenerate ([ed83ef1](https://github.com/Priestch/markopress/commit/ed83ef1))
+
+### 🔧 Chores
+
+- update changelog for v0.0.22 ([a7e7a67](https://github.com/Priestch/markopress/commit/a7e7a67))
+
+
+## [0.0.22] - 2026-05-19
+
+### ♻️ Refactoring
+
 - replace monolithic catch-all page template with layout delegation: dispatches to `blog-layout`, `root-layout`, or `page-layout` based on content type ([03fb450](https://github.com/Priestch/markopress/commit/03fb450))
 - add `context.layout` resolution in handler: frontmatter `layout` field > content type > `'page'` fallback
 - add `context.contentTypeClass` for per-content-type CSS class (`content-blog`, `content-page`, etc.)
