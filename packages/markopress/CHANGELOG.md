@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.0.23] - 2026-05-24
+
+### 🐛 Bug Fixes
+
+- pass markdown theme to preloadContentLanguages for correct shiki initialization ([c1930c0](https://github.com/Priestch/markopress/commit/c1930c0))
+
+### 🔧 Chores
+
+- update changelog ([c5660bc](https://github.com/Priestch/markopress/commit/c5660bc))
+
+
 
 ## [0.0.22] - 2026-05-19
 
