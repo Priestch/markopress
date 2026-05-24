@@ -465,8 +465,13 @@ export function scanCodeBlockLanguages(content: string): string[] {
 export async function preloadContentLanguages(
   modules: Array<{ files: Array<{ filePath: string }> }>,
   configLanguages: string[] = [],
-  debug = false
+  debug = false,
+  theme?: { light?: string; dark?: string }
 ): Promise<void> {
+  // Ensure highlighter is initialized with the correct theme before loading languages
+  if (!highlighterInstance && theme) {
+    await getHighlighterInstance(theme);
+  }
   const scannedLanguages = new Set<string>();
   for (const mod of modules) {
     for (const file of mod.files) {

@@ -310,7 +310,7 @@ export async function build(options: BuildOptions = {}): Promise<BuildResult> {
     console.log('   Public assets synced\n');
 
     // Preload syntax highlighting languages from content + config
-    await preloadContentLanguages(modules, config.markdown?.languages, debug);
+    await preloadContentLanguages(modules, config.markdown?.languages, debug, config.markdown?.theme);
 
     // Step 4a: Build search index
     if (config.search?.enabled !== false) {
