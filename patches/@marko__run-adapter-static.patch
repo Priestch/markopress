@@ -1,0 +1,158 @@
+diff --git a/dist/index.js b/dist/index.js
+index 988d2fc13cb15a6406d8f9ed53b153f1a5a01af2..68516be8d565c9191cc83138b837fb15fd9f44e3 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -22,8 +22,26 @@ function createCrawler(makeRequest, opts = {}) {
+   const out = nodePath.resolve(opts.out || "dist");
+   const notFoundPath = opts.notFoundPath && resolvePath(opts.notFoundPath, origin);
+   let seen;
+-  let queue;
+   let pending;
++  // Patched (markopress): bounded-concurrency crawler.
++  // Upstream 2.0.10 fires every queued path at once — `startPaths.map(visit)`
++  // plus every link discovered mid-flight — with no concurrency cap, so peak
++  // memory scales with (concurrent visits x per-render cost): quadratic on
++  // nav-heavy sites (every page linking every page). The start queue is also
++  // not deduplicated (`seen` only guards link discovery), so overlapping
++  // entries in `paths` each spawn their own visit. Here the promise-wave
++  // queue becomes a path queue drained by MAX_CONCURRENT_VISITS workers.
++  const MAX_CONCURRENT_VISITS = 100;
++  let nextPaths = [];
++  let active = 0;
++  let firstError;
++  let idle;
++  function scheduleVisit(path2) {
++    if (!seen.has(path2)) {
++      seen.add(path2);
++      nextPaths.push(path2);
++    }
++  }
+   async function visit(path2) {
+     var _a, _b;
+     const url = new URL(path2, origin);
+@@ -31,9 +49,8 @@ function createCrawler(makeRequest, opts = {}) {
+       onopentag(name, attrs) {
+         const href = getTagHref(name, attrs);
+         const found = href && resolvePath(href, url);
+-        if (found !== void 0 && !seen.has(found)) {
+-          seen.add(found);
+-          queue.push(visit(found));
++        if (found !== void 0) {
++          scheduleVisit(found);
+         }
+       }
+     });
+@@ -82,9 +99,8 @@ function createCrawler(makeRequest, opts = {}) {
+           redirect = resolvePathWithHash(location, url);
+           if (redirect) {
+             const redirectPath = resolvePath(location, url);
+-            if (redirectPath && !seen.has(redirectPath)) {
+-              seen.add(redirectPath);
+-              queue.push(visit(redirectPath));
++            if (redirectPath) {
++              scheduleVisit(redirectPath);
+             }
+           } else {
+             redirect = location;
+@@ -127,7 +143,7 @@ function createCrawler(makeRequest, opts = {}) {
+       if (pending) {
+         await pending;
+       }
+-      const startPaths = paths.map((path2) => resolvePath(path2, origin)).concat(notFoundPath).filter(Boolean);
++      const startPaths = [...new Set(paths.map((path2) => resolvePath(path2, origin)).concat(notFoundPath).filter(Boolean))];
+       seen = new Set(startPaths);
+       const results = {
+         success: [],
+@@ -136,37 +152,64 @@ function createCrawler(makeRequest, opts = {}) {
+         failure: [],
+         records: []
+       };
+-      try {
+-        queue = startPaths.map(visit);
+-        while (queue.length) {
+-          pending = Promise.all(queue);
+-          queue = [];
+-          for (const result of await pending) {
+-            const { ok, status, path: path2 } = result;
+-            const seeded404 = status === 404 && !!notFoundPath && withoutTrailingSlash(path2) === withoutTrailingSlash(notFoundPath);
+-            if (!ok) {
+-              results.failure.push(result);
+-            } else if (status >= 300 && status < 400) {
+-              results.redirect.push(result);
+-            } else if (status === 404 && !seeded404) {
+-              results.notFound.push(result);
+-            } else {
+-              results.success.push(result);
++      const record = (result) => {
++        const { ok, status, path: path2 } = result;
++        const seeded404 = status === 404 && !!notFoundPath && withoutTrailingSlash(path2) === withoutTrailingSlash(notFoundPath);
++        if (!ok) {
++          results.failure.push(result);
++        } else if (status >= 300 && status < 400) {
++          results.redirect.push(result);
++        } else if (status === 404 && !seeded404) {
++          results.notFound.push(result);
++        } else {
++          results.success.push(result);
++        }
++        switch (status) {
++          case 200:
++          case 301:
++          case 302:
++          case 307:
++          case 308:
++            break;
++          default:
++            if (!seeded404) {
++              results.records.push(result);
+             }
+-            switch (status) {
+-              case 200:
+-              case 301:
+-              case 302:
+-              case 307:
+-              case 308:
+-                break;
+-              default:
+-                if (!seeded404) {
+-                  results.records.push(result);
+-                }
++        }
++      };
++      const pump = () => {
++        while (!firstError && active < MAX_CONCURRENT_VISITS && nextPaths.length > 0) {
++          const path2 = nextPaths.shift();
++          active++;
++          visit(path2).then(record).catch((err) => {
++            firstError ??= err;
++          }).then(() => {
++            active--;
++            pump();
++            if (idle) {
++              const wake = idle;
++              idle = void 0;
++              wake();
+             }
+-          }
++          });
+         }
++      };
++      nextPaths = [...startPaths];
++      active = 0;
++      firstError = void 0;
++      try {
++        pending = (async () => {
++          pump();
++          while (firstError ? active > 0 : active > 0 || nextPaths.length > 0) {
++            await new Promise((resolve2) => {
++              idle = resolve2;
++            });
++          }
++          if (firstError) {
++            throw firstError;
++          }
++        })();
++        await pending;
+       } finally {
+         pending = void 0;
+       }

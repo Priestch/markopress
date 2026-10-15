@@ -1,0 +1,32 @@
+{
+  "name": "markopress",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/rspack-dev.ts",
+    "build": "node scripts/rspack-build.ts",
+    "dev:vite": "marko-run dev",
+    "build:vite": "marko-run build",
+    "preview": "node scripts/rspack-preview.ts",
+    "preview:vite": "marko-run preview",
+    "dev:perf": "MP_CONTENT_CONFIG=content.perf.config.ts node scripts/rspack-dev.ts",
+    "build:perf": "MP_CONTENT_CONFIG=content.perf.config.ts node scripts/rspack-build.ts",
+    "gen": "node scripts/gen-routes.ts"
+  },
+  "dependencies": {
+    "@marko/run": "^0.11.13",
+    "@marko/run-adapter-static": "^2.0.10",
+    "@markopack/adapter-static": "link:../markopack/packages/adapter-static",
+    "@markopack/rspack": "link:../markopack/packages/rspack",
+    "@markopress/content": "workspace:*",
+    "@markopress/markdown": "workspace:*",
+    "marko": "^6.4.5",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@marko/runtime-tags": "6.4.5",
+    "@rspack/core": "2.2.9",
+    "vite": "^8.3.4"
+  }
+}

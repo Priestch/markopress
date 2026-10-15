@@ -1,0 +1,108 @@
+// 内容模块产出端 —— 「virtual:mp/content/…」的模块源码唯一来源，双后端共用：
+//
+//   Vite  路径：markopress-plugin.ts 的 load() 调 renderContentModule，走内存虚拟模块；
+//   Rspack 路径：writeContentModules 落盘 .markopress/vcontent/<collection>/<id>.js 真实文件，
+//               经 NormalModuleReplacementPlugin 重写解析（scripts/rspack-shared.ts），失效走
+//               Rspack 原生 watcher（文件在编译图 fileDependencies 内，改写即重编译）。
+//
+// Rspack 侧不维持 Vite 式惰性渲染：冷启动是全图编译（所有页面都是 router 的入口模板），
+// 渲染迟早都要发生；真实文件因此是最简正确解（无需自管 VirtualModulesPlugin 双实例）。
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import type { DataEntry } from "@markopress/content";
+import type { MarkdownRenderer } from "@markopress/markdown";
+import { ROOT, ensureSynced } from "./content.ts";
+
+export const VCONTENT_DIR = join(ROOT, ".markopress", "vcontent");
+
+/** entry → 内容模块绝对路径：id 含 `/` 时嵌套目录（a/b → vcontent/<c>/a/b.js） */
+export function contentModuleFile(collection: string, id: string): string {
+  return join(VCONTENT_DIR, collection, `${id}.js`);
+}
+
+/** 渲染虚拟模块源码：data / segments / headings 三导出。JSON 序列化：Date 等富类型退化为字符串（够用）。 */
+export async function renderContentModule(
+  entry: DataEntry,
+  renderer: MarkdownRenderer,
+): Promise<string> {
+  if (entry.contentType !== "text/markdown" || entry.body === undefined) {
+    throw new Error(
+      `[markopress] no renderer for contentType ${String(entry.contentType)} ("${entry.id}")`,
+    );
+  }
+  const { segments, headings } = await renderer.render({
+    digest: entry.digest ?? entry.id,
+    body: entry.body,
+  });
+  return [
+    `export const data = ${JSON.stringify(entry.data)}`,
+    `export const segments = ${JSON.stringify(segments)}`,
+    `export const headings = ${JSON.stringify(headings)}`,
+    ``,
+  ].join("\n");
+}
+
+export interface ContentModulesResult {
+  written: Array<string>;
+  removed: Array<string>;
+}
+
+function writeIfChanged(file: string, content: string, result: ContentModulesResult): void {
+  if (existsSync(file) && readFileSync(file, "utf-8") === content) return;
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, content);
+  result.written.push(file);
+}
+
+/** 递归清掉 expected 之外的孤儿文件（md 删除/改名后的差集；空目录留下无害） */
+function cleanStale(dir: string, expected: Set<string>, result: ContentModulesResult): void {
+  if (!existsSync(dir)) return;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) cleanStale(full, expected, result);
+    else if (!expected.has(full)) {
+      rmSync(full);
+      result.removed.push(full);
+    }
+  }
+}
+
+/**
+ * 落盘内容模块。
+ *   scope 省略   —— 全量 + 孤儿清理（启动 / config 变更后的全量重建）。
+ *   scope 给定   —— 只重写 changed、删除 removed（md 编辑批次的增量路径，O(事件数)）。
+ */
+export async function writeContentModules(scope?: {
+  changed?: Array<{ collection: string; id: string }>;
+  removed?: Array<{ collection: string; id: string }>;
+}): Promise<ContentModulesResult> {
+  const { store, config, renderer } = await ensureSynced();
+  const result: ContentModulesResult = { written: [], removed: [] };
+
+  if (scope) {
+    for (const { collection, id } of scope.changed ?? []) {
+      const entry = store.get(collection, id);
+      if (!entry) continue; // 已被同批 removed 或撞车清理
+      writeIfChanged(contentModuleFile(collection, id), await renderContentModule(entry, renderer), result);
+    }
+    for (const { collection, id } of scope.removed ?? []) {
+      const file = contentModuleFile(collection, id);
+      if (existsSync(file)) {
+        rmSync(file);
+        result.removed.push(file);
+      }
+    }
+    return result;
+  }
+
+  const expected = new Set<string>();
+  for (const name of Object.keys(config.collections)) {
+    for (const entry of store.values(name)) {
+      const file = contentModuleFile(name, entry.id);
+      expected.add(file);
+      writeIfChanged(file, await renderContentModule(entry as DataEntry, renderer), result);
+    }
+  }
+  cleanStale(VCONTENT_DIR, expected, result);
+  return result;
+}

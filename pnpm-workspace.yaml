@@ -1,0 +1,8 @@
+packages:
+  - packages/*
+patchedDependencies:
+  '@marko/run-adapter-static': patches/@marko__run-adapter-static.patch
+onlyBuiltDependencies:
+  - esbuild
+allowBuilds:
+  esbuild: true
