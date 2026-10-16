@@ -1,5 +1,7 @@
 ---
 title: Home
+date: 2026-10-15
+description: markopress spike —— .md 即页面的内容框架（Rspack 主链路）。
 ---
 
 # markopress spike

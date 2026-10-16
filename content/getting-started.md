@@ -1,5 +1,7 @@
 ---
 title: Getting Started
+date: 2026-10-16
+description: 创建页面、代码高亮与容器语法、dev 期间的编辑行为。
 ---
 
 ## Create a page

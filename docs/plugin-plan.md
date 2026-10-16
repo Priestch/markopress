@@ -8,8 +8,12 @@
 > `markopress.config.ts`（装配点）、`packages/plugin-sitemap`（双路 build/dev + 增量验证通过）。
 > R1 已落地：`createMarkdownRenderer` 支持 remarkPlugins/rehypePlugins 直通、shiki 双主题默认开
 >（`shiki: false` 关闭）、`:::name` 容器（remark-directive → `mp-container` div，主题样式在
-> layout `<style>`）；20 测试全绿，双路（rspack/vite）build + 浏览器亮暗验收通过（样式提取依赖
-> markopack 侧的 style 通道修复，见其 changeset）。rss / search 未动工。
+> layout `<style>`）；21 测试全绿，双路（rspack/vite）build + 浏览器亮暗验收通过（样式提取依赖
+> markopack 侧的 style 通道修复，见其 changeset）。shiki 语言懒加载（`langs: []` + `lazy`）：
+> 渲染器冷启动 3256ms → 94ms（@shikijs/rehype 默认全量预载 ~280 语言），5000 页端到端无感
+>（perf 复测见 docs/perf-rspack-vs-vite.md §2.1）。rss / search 未动工 → **rss 已落地（试金石
+> #2）**：`packages/plugin-rss`（contentSynced 数据投影 + /rss.xml handler），双路 build +
+> dev 增量验证通过；search 未动工。
 
 ## 0. 一句话结论
 

@@ -2,6 +2,7 @@
 // 契约：docs/plugin-design.md。变更本文件 → 两路 dev watcher 都触发全量重建。
 import { defineMarkoPressConfig } from "./scripts/plugins.ts";
 import { sitemap } from "@markopress/plugin-sitemap";
+import { rss } from "@markopress/plugin-rss";
 
 export default defineMarkoPressConfig({
   // markdown 管线（R1）：shiki 默认开；remarkPlugins/rehypePlugins 直通 unified。
@@ -11,5 +12,10 @@ export default defineMarkoPressConfig({
   },
   plugins: [
     sitemap({ site: "https://markopress.example.com" }),
+    rss({
+      site: "https://markopress.example.com",
+      title: "markopress",
+      description: "markopress 文档站（dogfood）",
+    }),
   ],
 });
