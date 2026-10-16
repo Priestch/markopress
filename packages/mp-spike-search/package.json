@@ -1,0 +1,6 @@
+{
+  "name": "mp-spike-search",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "SPIKE: fake plugin package (docs/plugin-design.md §8 item 4)"
+}
