@@ -8,7 +8,9 @@ export {
 	createMarkdownRenderer,
 	type MarkdownHeading,
 	type MarkdownRenderer,
+	type MarkdownRendererOptions,
 	type MarkdownSegment,
+	type MarkdownShikiOptions,
 	type RenderedMarkdown,
 	type RenderInput,
 }

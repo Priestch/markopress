@@ -115,7 +115,7 @@ async function setup(): Promise<SyncedContent> {
     outPath: TYPES_FILE,
   });
 
-  const renderer = createMarkdownRenderer();
+  const renderer = createMarkdownRenderer(pressConfig.markdown);
   const pluginCtx: PluginCtx = {
     store,
     config,

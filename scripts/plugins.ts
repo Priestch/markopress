@@ -15,7 +15,10 @@ import type {
   EntryType,
   MutableStore,
 } from "@markopress/content";
-import type { RenderedMarkdown } from "@markopress/markdown";
+import type {
+  MarkdownRendererOptions,
+  RenderedMarkdown,
+} from "@markopress/markdown";
 import { ROOT } from "./paths.ts";
 
 /** 插件数据模块的虚拟前缀：virtual:mp/plugin/<name>（与 content 模块同机制，双后端各自解析） */
@@ -70,6 +73,12 @@ export interface MarkoPressPlugin {
 
 export interface MarkoPressConfig {
   plugins: Array<MarkoPressPlugin>;
+  /**
+   * markdown 管线配置（R1）：unified 直通 + shiki。核心配置而非插件——
+   * 变更本文件（含此字段）即触发两路 watcher 的 resetSynced 全量重建，
+   * renderer 实例随 setup() 重建，缓存天然新鲜（无跨配置缓存投毒）。
+   */
+  markdown?: MarkdownRendererOptions;
 }
 
 export function defineMarkoPressConfig(config: MarkoPressConfig): MarkoPressConfig {

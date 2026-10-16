@@ -54,6 +54,49 @@ function layoutTemplate(): string {
   return `import nav from "../nav.json"
 import Counter from "../../src/components/counter.marko"
 
+// Marko 6 的 <style> 块 = 提取且全局（scoped 是 <style/styles> 的事）——
+// 这里的选择器要命中 $!{seg.html} 注入的动态内容，必须全局。
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; line-height: 1.6; color: #1f2328; background: #fff; }
+  nav { display: flex; gap: 12px; align-items: baseline; padding: 10px 24px; border-bottom: 1px solid #d0d7de; }
+  nav strong { margin-right: 8px; }
+  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+  footer { border-top: 1px solid #d0d7de; padding: 12px 24px; font-size: 13px; color: #57606a; }
+  pre.shiki { padding: 12px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.5; }
+  .shiki code, code[class*="language-"] {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 14px;
+  }
+
+  /* ::: 容器（remark-directive → mp-container） */
+  .mp-container { border-left: 3px solid #6e7781; background: #f6f8fa; padding: 10px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+  .mp-container > :first-child { margin-top: 0; }
+  .mp-container > :last-child { margin-bottom: 0; }
+  .mp-tip { border-color: #0969da; background: #ddf4ff; }
+  .mp-info { border-color: #1a7f37; background: #dafbe1; }
+  .mp-warn { border-color: #9a6700; background: #fff8c5; }
+  .mp-danger { border-color: #cf222e; background: #ffebe9; }
+
+  /* shiki 双主题切换 + 容器暗色：light 为默认（上方），dark 覆盖必须在后——
+     同特异性下后者胜，放前面会被亮色规则盖掉（实测踩坑） */
+  @media (prefers-color-scheme: dark) {
+    body { color: #e6edf3; background: #0d1117; }
+    nav, footer { border-color: #30363d; }
+    .shiki, .shiki span {
+      color: var(--shiki-dark) !important;
+      background-color: var(--shiki-dark-bg) !important;
+      font-style: var(--shiki-dark-font-style) !important;
+      font-weight: var(--shiki-dark-font-weight) !important;
+      text-decoration: var(--shiki-dark-text-decoration) !important;
+    }
+    .mp-container { background: #161b22; }
+    .mp-tip { background: #121d2f; }
+    .mp-info { background: #12261e; }
+    .mp-warn { background: #241d10; }
+    .mp-danger { background: #2d1517; }
+  }
+</style>
+
 <!DOCTYPE html>
 <html>
 <head>
