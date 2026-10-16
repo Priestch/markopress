@@ -37,6 +37,20 @@ scripts/perf-dev-probe.mjs dev 探针（启动/编辑/增/删时延 + 进程树�
 
 结构差异：Vite 产物 `dist/public/`；Rspack 产物 `dist/client/`（浏览器 bundle）+ `dist/server/public/`（HTML；adapter crawl 后删 server entry）。`dist/client/index.html` 是 HtmlRspackPlugin 的模板残留，无路由用途。
 
+### 2.1 R1 后复测（2026-10-16：shiki 上线 + markopack 样式通道修复后，仅 Rspack 侧）
+
+同一夹具与方法学（冷 store + 干净 dist + `/usr/bin/time -v`），同机：
+
+| 指标 | R1 前（10-15 基线） | shiki 关 | shiki 开（×2） | shiki 净成本 |
+|---|---|---|---|---|
+| 墙钟 | 1:59.2 | 1:57.6 | 1:56.3 / 1:57.8 | ≈0（淹没在 ±1.3% 方差内） |
+| prepare（内容层） | 3.2s | 3.0s | 4.8 / 4.9s | **+1.9s**（5000 页 × 各 1 个 js 块，含一次性语法加载） |
+| 峰值 RSS | 6.26GB | 3.92GB | 4.10 / 3.95GB | +~0.1GB（wasm + 语法 + 高亮缓存） |
+
+- shiki 懒加载（`langs: []` + `lazy`）：渲染器冷启动 3256ms → 94ms；语言按种类付费（本夹具 1 种 = 1 次加载），5000 页端到端墙钟无感。
+- 峰值 RSS 6.26GB → ~4GB（**-35%**）与 R1 无关，来自期间 markopack 侧变化（workspace 直连修复 / css 通道落地 / crawler flush），未逐一归因——数字如实记录，后续有需要再拆。
+
+
 ## 3. Dev 对比（`scripts/perf-dev-probe.mjs`，5003 路由）
 
 | 指标 | Vite | Rspack（3 次） | 评 |
