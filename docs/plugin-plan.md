@@ -4,9 +4,12 @@
 > 生态目录抽查（awesome-astro-integrations、官方 docs，周下载为 2026-10 近似值）。
 > 钩子契约的具体设计见 `docs/plugin-design.md`（已定稿 + spike 验证）。
 >
-> **进度（2026-10-15）**：R2 的装配层与试金石 #1 已落地——`scripts/plugins.ts`（接口 + 助手）、
+> **进度（2026-10-16）**：R2 的装配层与试金石 #1 已落地——`scripts/plugins.ts`（接口 + 助手）、
 > `markopress.config.ts`（装配点）、`packages/plugin-sitemap`（双路 build/dev + 增量验证通过）。
-> R1（markdown 直通 + shiki）未动工；rss / search 未动工。
+> R1 已落地：`createMarkdownRenderer` 支持 remarkPlugins/rehypePlugins 直通、shiki 双主题默认开
+>（`shiki: false` 关闭）、`:::name` 容器（remark-directive → `mp-container` div，主题样式在
+> layout `<style>`）；20 测试全绿，双路（rspack/vite）build + 浏览器亮暗验收通过（样式提取依赖
+> markopack 侧的 style 通道修复，见其 changeset）。rss / search 未动工。
 
 ## 0. 一句话结论
 
