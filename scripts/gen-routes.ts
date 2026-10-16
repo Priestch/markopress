@@ -13,21 +13,16 @@
 // spike 验证过；死锁纪律见 docs/spike-notes.md）。
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { DataEntry } from "@markopress/content";
 import { ensureSynced } from "./content.ts";
+import { ROOT } from "./paths.ts";
+import { handlerRouteFileFor, handlerWrapperSource, routeFor } from "./plugins.ts";
 
-const ROOT = fileURLToPath(new URL("..", import.meta.url));
 export const ROUTES_DIR = join(ROOT, ".markopress", "routes");
 export const NAV_FILE = join(ROOT, ".markopress", "nav.json");
 const URLS_FILE = join(ROOT, ".markopress", "urls.json");
 
 const SITE_NAME = "markopress spike";
-
-/** entry id → 路由：index 特殊化为根；a/b → /a/b */
-function routeFor(id: string): string {
-  return id === "index" ? "/" : `/${id}`;
-}
 
 /** entry id → 扁平路由文件名：index → +page.marko；a/b → a.b+page.marko */
 function pageFileFor(id: string): string {
@@ -97,7 +92,7 @@ export interface GenerateResult {
 }
 
 export async function generateRoutes(): Promise<GenerateResult> {
-  const { store, config } = await ensureSynced();
+  const { store, config, plugins, pluginCtx } = await ensureSynced();
   mkdirSync(ROUTES_DIR, { recursive: true });
 
   // 多集合 → 同一路由空间（id 撞车是配置错误，重复覆盖会在 store 层先撞 digest）
@@ -127,6 +122,18 @@ export async function generateRoutes(): Promise<GenerateResult> {
   if (writeIfChanged(join(ROUTES_DIR, "+layout.marko"), layoutTemplate())) written.push("+layout.marko");
   if (writeIfChanged(NAV_FILE, `${JSON.stringify(nav, null, 2)}\n`)) written.push("../nav.json");
   if (writeIfChanged(URLS_FILE, `${JSON.stringify(pages.map((p) => p.route), null, 2)}\n`)) written.push("../urls.json");
+
+  // 插件产出路由（routes 钩子，生成期一次；docs/plugin-design.md §3）。
+  // 死锁审计：路由文件只在生成期出现/消失，内容编辑零事件；动词是静态导出。
+  for (const plugin of plugins) {
+    for (const route of plugin.routes?.(pluginCtx) ?? []) {
+      const file = handlerRouteFileFor(route.path);
+      expected.add(file);
+      if (writeIfChanged(join(ROUTES_DIR, file), handlerWrapperSource(route))) {
+        written.push(file);
+      }
+    }
+  }
 
   // 清理失效的路由文件（md 删除/改名后的差集）
   for (const entry of readdirSync(ROUTES_DIR)) {

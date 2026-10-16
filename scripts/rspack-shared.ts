@@ -13,17 +13,24 @@ import { VIRTUAL_PREFIX } from "./content.ts";
 import { writeContentModules, VCONTENT_DIR } from "./content-modules.ts";
 import { ensureSynced } from "./content.ts";
 import { generateRoutes } from "./gen-routes.ts";
+import { PLUGIN_DATA_DIR, PLUGIN_VIRTUAL_PREFIX } from "./plugins.ts";
 
 export function mpRspack() {
   return (config: Configuration, side: "browser" | "server") => {
     config.plugins.push(
       new rspack.NormalModuleReplacementPlugin(
-        new RegExp(`^${VIRTUAL_PREFIX}`),
+        // virtual:mp/content/<c>/<id> → vcontent/<c>/<id>.js；
+        // virtual:mp/plugin/<name> → plugin-data/<name>.js（真实文件在编译图内 ⇒ 原生 watcher 失效）
+        new RegExp(`^(?:${VIRTUAL_PREFIX}|${PLUGIN_VIRTUAL_PREFIX})`),
         (resource: { request: string }) => {
-          // request 形如 virtual:mp/content/<c>/<id>（无扩展名）→ 直接拼完整绝对路径，
-          // 绕开 resolve extensions 歧义
-          const rest = resource.request.slice(VIRTUAL_PREFIX.length);
-          resource.request = path.join(VCONTENT_DIR, `${rest}.js`);
+          // request 形如前缀+rest（无扩展名）→ 直接拼完整绝对路径，绕开 resolve extensions 歧义
+          if (resource.request.startsWith(VIRTUAL_PREFIX)) {
+            const rest = resource.request.slice(VIRTUAL_PREFIX.length);
+            resource.request = path.join(VCONTENT_DIR, `${rest}.js`);
+          } else {
+            const name = resource.request.slice(PLUGIN_VIRTUAL_PREFIX.length);
+            resource.request = path.join(PLUGIN_DATA_DIR, `${name}.js`);
+          }
         },
       ),
     );
@@ -38,7 +45,10 @@ export function mpRspack() {
 
 export async function prepare(): Promise<void> {
   const started = performance.now();
-  await ensureSynced();
+  const synced = await ensureSynced();
+  // 等插件产物落盘：handler 模块 import 的 plugin-data 必须在编译图构建前存在
+  // （rspack-build 与 rspack-dev 共用；全量 contentSynced 是串行链，量级 = 读 store + 序列化）
+  await synced.pluginsReady;
   const { routes, written } = await generateRoutes();
   const modules = await writeContentModules();
   const elapsed = Math.round(performance.now() - started);

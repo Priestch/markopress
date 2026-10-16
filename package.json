@@ -21,7 +21,9 @@
     "@markopack/rspack": "link:../markopack/packages/rspack",
     "@markopress/content": "workspace:*",
     "@markopress/markdown": "workspace:*",
+    "@markopress/plugin-sitemap": "workspace:*",
     "marko": "^6.4.5",
+    "mp-spike-search": "workspace:*",
     "zod": "^4.0.0"
   },
   "devDependencies": {

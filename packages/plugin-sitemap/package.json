@@ -1,0 +1,13 @@
+{
+  "name": "@markopress/plugin-sitemap",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "markopress 插件：生成 sitemap.xml（docs/plugin-design.md R2 试金石 #1）",
+  "exports": {
+    ".": "./src/index.ts",
+    "./handler": "./src/handler.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

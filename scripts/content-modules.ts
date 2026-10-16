@@ -9,9 +9,9 @@
 // 渲染迟早都要发生；真实文件因此是最简正确解（无需自管 VirtualModulesPlugin 双实例）。
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import type { DataEntry } from "@markopress/content";
+import { getGenerateDigest, type DataEntry } from "@markopress/content";
 import type { MarkdownRenderer } from "@markopress/markdown";
-import { ROOT, ensureSynced } from "./content.ts";
+import { ensureSynced, ROOT } from "./content.ts";
 
 export const VCONTENT_DIR = join(ROOT, ".markopress", "vcontent");
 
@@ -19,6 +19,13 @@ export const VCONTENT_DIR = join(ROOT, ".markopress", "vcontent");
 export function contentModuleFile(collection: string, id: string): string {
   return join(VCONTENT_DIR, collection, `${id}.js`);
 }
+
+// ── 页面级插件钩子的缓存（docs/plugin-design.md §2：按 entry digest × 插件链）──
+
+/** 变换链缓存：digest(entry.digest + 链标识) → 变换后 body。变换是纯函数 ⇒ 可缓存 */
+const transformCache = new Map<string, string>();
+/** pageData 缓存：有效 digest → 各插件合并结果（链变了 digest 随之失配，天然失效） */
+const pageDataCache = new Map<string, Record<string, unknown>>();
 
 /** 渲染虚拟模块源码：data / segments / headings 三导出。JSON 序列化：Date 等富类型退化为字符串（够用）。 */
 export async function renderContentModule(
@@ -30,12 +37,50 @@ export async function renderContentModule(
       `[markopress] no renderer for contentType ${String(entry.contentType)} ("${entry.id}")`,
     );
   }
+  const { plugins, pluginCtx } = await ensureSynced();
+
+  // transformBody 链（声明序）。有效 digest = digest(原 digest + 链标识)——
+  // 原始与变换后的渲染缓存互不污染（纯函数 ⇒ 同键必同值）
+  let body = entry.body;
+  let effectiveDigest = entry.digest ?? entry.id;
+  const transformers = plugins.filter((p) => p.transformBody);
+  if (transformers.length) {
+    const chainId = transformers.map((p) => p.name).join("|");
+    const generateDigest = await getGenerateDigest();
+    effectiveDigest = generateDigest(`${entry.digest ?? entry.id}::${chainId}`);
+    const cached = transformCache.get(effectiveDigest);
+    if (cached !== undefined) {
+      body = cached;
+    } else {
+      for (const plugin of transformers) {
+        body = await plugin.transformBody!(body, entry, pluginCtx);
+      }
+      transformCache.set(effectiveDigest, body);
+    }
+  }
+
   const { segments, headings } = await renderer.render({
-    digest: entry.digest ?? entry.id,
-    body: entry.body,
+    digest: effectiveDigest,
+    body,
   });
+
+  // pageData 合并（浅合并进 data 导出；同名键后者覆盖——插件自己起好名字）
+  let data = entry.data as Record<string, unknown>;
+  const dataPlugins = plugins.filter((p) => p.pageData);
+  if (dataPlugins.length) {
+    let bucket = pageDataCache.get(effectiveDigest);
+    if (!bucket) {
+      bucket = {};
+      for (const plugin of dataPlugins) {
+        Object.assign(bucket, await plugin.pageData!(entry, pluginCtx));
+      }
+      pageDataCache.set(effectiveDigest, bucket);
+    }
+    data = { ...entry.data, ...bucket };
+  }
+
   return [
-    `export const data = ${JSON.stringify(entry.data)}`,
+    `export const data = ${JSON.stringify(data)}`,
     `export const segments = ${JSON.stringify(segments)}`,
     `export const headings = ${JSON.stringify(headings)}`,
     ``,

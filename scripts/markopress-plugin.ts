@@ -14,12 +14,19 @@ import type { Plugin, ViteDevServer } from "vite";
 import { renderContentModule } from "./content-modules.ts";
 import {
   CONFIG_FILE,
+  PRESS_CONFIG_FILE,
   ensureSynced,
   resetSynced,
+  ROOT,
   STORE_DIR,
   VIRTUAL_PREFIX,
 } from "./content.ts";
 import { generateRoutes } from "./gen-routes.ts";
+import {
+  enqueueContentSynced,
+  PLUGIN_DATA_DIR,
+  PLUGIN_VIRTUAL_PREFIX,
+} from "./plugins.ts";
 
 const RESOLVED_PREFIX = "\0" + VIRTUAL_PREFIX;
 
@@ -66,18 +73,34 @@ export function markopressPlugin(): Plugin {
     name: "markopress",
     enforce: "pre",
 
-    async config() {
-      const { config } = await ensureSynced();
-      for (const collection of Object.values(config.collections)) {
+    async config(_config, env) {
+      const synced = await ensureSynced();
+      for (const collection of Object.values(synced.config.collections)) {
         for (const dir of collection.loader.watchDirs ?? []) watchDirs.add(resolve(dir));
       }
       await generateRoutes();
       knownDigests = await snapshot();
+      // build 必须等插件产物（handler 模块 import 的 plugin-data 要在编译前落盘）；
+      // dev 后台跑即可——数据模块解析为真实文件进模块图，Vite 自动 watch/失效（nav.json 同款）
+      if (env?.command === "build") {
+        await synced.pluginsReady;
+      }
     },
 
     resolveId(id) {
       if (id.startsWith(VIRTUAL_PREFIX)) {
         return RESOLVED_PREFIX + id.slice(VIRTUAL_PREFIX.length);
+      }
+      // 插件数据模块：直接解析到落盘真实文件（进模块图 ⇒ Vite 自动 watch/失效，
+      // 与 nav.json 同款路径，无需自管 load/失效）
+      if (id.startsWith(PLUGIN_VIRTUAL_PREFIX)) {
+        return resolve(PLUGIN_DATA_DIR, `${id.slice(PLUGIN_VIRTUAL_PREFIX.length)}.js`);
+      }
+      // 插件产出路由（docs/plugin-design.md §8 修复 2）：rolldown 对 routes 目录内
+      // +handler.* 的（%2E 转义）相对导入解析失败（页面能过是因为 .marko 走 @marko/vite
+      // 自有解析）。垫片：相对导入 → 绝对路径。spike 已双路验证，常驻。
+      if (id.includes(".markopress/routes/") && /\+handler\.(mjs|js|ts)$/.test(id)) {
+        return resolve(ROOT, id.replace(/^(?:\.\.\/|\.\/)+/, ""));
       }
     },
 
@@ -100,7 +123,7 @@ export function markopressPlugin(): Plugin {
       for (const dir of watchDirs) server.watcher.add(dir);
       server.watcher.on("all", (event, file) => {
         if (typeof file !== "string") return;
-        if (file === CONFIG_FILE) {
+        if (file === CONFIG_FILE || file === PRESS_CONFIG_FILE) {
           // 配置文件变了：重装配（新 digest ⇒ store 全量重建），随后走全量路径
           resetSynced();
           enqueue(server, { kind: "full" });
@@ -140,13 +163,24 @@ export function markopressPlugin(): Plugin {
           if (jobs.some((j) => j.kind === "full")) {
             await fullResync(server);
           } else {
+            const changed: Array<{ collection: string; id: string }> = [];
+            const removed: Array<{ collection: string; id: string }> = [];
             let touched = false;
             for (const job of jobs) {
-              if (job.kind === "file") touched = (await syncOne(server, job.type, job.file)) || touched;
+              if (job.kind !== "file") continue;
+              const outcome = await syncOne(server, job.type, job.file);
+              touched = touched || outcome.touched;
+              changed.push(...outcome.changed);
+              removed.push(...outcome.removed);
             }
             if (touched) {
               // 批末一次：slug 增删才有 routes 文件事件（模板不变则 write-if-changed 全跳过）
               await generateRoutes();
+              // 插件增量（contentSynced：O(变更)，后台链；plugin-data 落盘自动失效）
+              const { plugins, pluginCtx } = await ensureSynced();
+              if (plugins.some((p) => p.contentSynced)) {
+                void enqueueContentSynced(plugins, pluginCtx, { changed, removed });
+              }
               server.ws.send({ type: "full-reload" });
             }
           }
@@ -161,15 +195,14 @@ export function markopressPlugin(): Plugin {
     }
   }
 
-  /** 单文件增量。返回是否有 entry 实际变化（决定批末要不要重生成路由/刷新）。 */
+  /** 单文件增量。返回 outcome（changed/removed 给插件增量用）+ 是否有实际变化。 */
   async function syncOne(
     server: ViteDevServer,
     type: "add" | "change" | "unlink",
     file: string,
-  ): Promise<boolean> {
+  ): Promise<{ touched: boolean; changed: Array<{ collection: string; id: string }>; removed: Array<{ collection: string; id: string }> }> {
     const { store, syncer, config } = await ensureSynced();
     const outcome = await syncer.syncFile(config, { type, path: file });
-    if (!outcome.handled) return false;
     for (const { collection, id } of outcome.changed) {
       invalidate(server, `${collection}/${id}`);
       knownDigests.set(`${collection}/${id}`, store.get(collection, id)?.digest ?? "");
@@ -178,13 +211,18 @@ export function markopressPlugin(): Plugin {
       invalidate(server, `${collection}/${id}`);
       knownDigests.delete(`${collection}/${id}`);
     }
-    return outcome.changed.length + outcome.removed.length > 0;
+    return {
+      touched: outcome.changed.length + outcome.removed.length > 0,
+      changed: [...outcome.changed],
+      removed: [...outcome.removed],
+    };
   }
 
   /** 全量重建（config 文件变更后）。ensureSynced 已在装配时全量 sync，这里只做收尾。 */
   async function fullResync(server: ViteDevServer): Promise<void> {
-    const { config } = await ensureSynced();
+    const { config, pluginsReady } = await ensureSynced();
     adoptWatchDirs(server, config);
+    await pluginsReady; // 插件数据产物先落盘（handler 模块重编译时必须可解析）
     const current = await snapshot();
     const changed: Array<string> = [];
     for (const [key, digest] of current) {

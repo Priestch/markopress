@@ -29,9 +29,15 @@ importers:
       '@markopress/markdown':
         specifier: workspace:*
         version: link:packages/markdown
+      '@markopress/plugin-sitemap':
+        specifier: workspace:*
+        version: link:packages/plugin-sitemap
       marko:
         specifier: ^6.4.5
         version: 6.4.5
+      mp-spike-search:
+        specifier: workspace:*
+        version: link:packages/mp-spike-search
       zod:
         specifier: ^4.0.0
         version: 4.6.7
@@ -110,6 +116,14 @@ importers:
       vitest:
         specifier: ^4.0.0
         version: 4.1.11(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2))
+
+  packages/mp-spike-search: {}
+
+  packages/plugin-sitemap:
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
 packages:
 

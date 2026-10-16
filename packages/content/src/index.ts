@@ -27,6 +27,7 @@ export { ContentSyncer, createConsoleLogger } from './sync.ts'
 export type { ContentSyncerOptions, SyncCallOptions, SyncFileOutcome } from './sync.ts'
 export { ContentEntryDataError } from './parse-data.ts'
 export { generateTypes } from './typegen.ts'
+export { getGenerateDigest } from './digest.ts'
 
 /**
  * 集合名 → data 形状的合并点：`.markopress/content.d.ts`（typegen 生成）对本接口做

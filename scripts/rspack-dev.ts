@@ -12,9 +12,10 @@ import { resolve } from "node:path";
 import { dev } from "@markopack/rspack";
 import staticAdapter from "@markopack/adapter-static";
 import type { ContentConfig } from "@markopress/content";
-import { CONFIG_FILE, ROOT, ensureSynced, resetSynced } from "./content.ts";
+import { CONFIG_FILE, PRESS_CONFIG_FILE, ROOT, ensureSynced, resetSynced } from "./content.ts";
 import { generateRoutes } from "./gen-routes.ts";
 import { writeContentModules } from "./content-modules.ts";
+import { enqueueContentSynced } from "./plugins.ts";
 import { mpRspack, prepare } from "./rspack-shared.ts";
 
 /** 队列任务：file = 单文件事件；full = config 变更的全量重建（覆盖同批文件事件） */
@@ -48,11 +49,12 @@ console.log(`[markopress] content watcher active: ${[...watchDirs].join(", ")}`)
 
 function startWatchers(): void {
   for (const dir of watchDirs) watchTree(dir);
-  // 项目根（非递归）：只关心 content.config.ts
+  // 项目根（非递归）：content.config.ts / markopress.config.ts 都触发全量重建
   watchers.add(
     watch(ROOT, { recursive: false }, (_event, filename) => {
       if (typeof filename !== "string") return;
-      if (resolve(ROOT, filename) === CONFIG_FILE) {
+      const file = resolve(ROOT, filename);
+      if (file === CONFIG_FILE || file === PRESS_CONFIG_FILE) {
         resetSynced();
         enqueue({ kind: "full" });
       }
@@ -158,6 +160,11 @@ async function drain(): Promise<void> {
             const modules = await writeContentModules({ changed, removed });
             // slug 增/删才有 routes 文件事件（模板不变则 write-if-changed 全跳过）
             await generateRoutes();
+            // 插件增量（contentSynced：O(变更)，后台链；plugin-data 落盘走原生 watcher 失效）
+            const { plugins, pluginCtx } = await ensureSynced();
+            if (plugins.some((p) => p.contentSynced)) {
+              void enqueueContentSynced(plugins, pluginCtx, { changed, removed });
+            }
             console.log(
               `[markopress] ${modules.written.length} content module(s) updated, ` +
                 `${modules.removed.length} removed — refresh browser to see changes`,
@@ -183,8 +190,9 @@ async function syncOne(job: Extract<Job, { kind: "file" }>) {
 
 /** 全量重建（config 文件变更后）。resetSynced 已触发重装配（新 digest ⇒ store 全量重建）。 */
 async function fullResync(): Promise<void> {
-  const { config } = await ensureSynced();
+  const { config, pluginsReady } = await ensureSynced();
   adoptWatchDirs(config);
+  await pluginsReady; // 新插件配置的数据产物先落盘，再让路由/模块重编译
   await writeContentModules();
   await generateRoutes();
   console.log("[markopress] full content resync done — refresh browser to see changes");
