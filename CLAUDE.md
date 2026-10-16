@@ -37,24 +37,29 @@ Node ≥ 22.18（原生 type stripping，workspace 包以 TS 源码分发，无�
 ```
 content.config.ts：集合定义（loader: glob + zod schema），docs→content/（默认仅此一个；
      perf→content-perf/ 在 content.perf.config.ts，经 MP_CONTENT_CONFIG 启用）
+markopress.config.ts：管线与插件（defineMarkoPressConfig({ plugins })；契约 = docs/plugin-design.md，
+     装配点 = content.ts setup()，两路 watcher 都监听它的变更 → resetSynced 全量重建）
      │
-     ▼  scripts/content.ts（ensureSynced 单例：装载 store/meta → sync → typegen）
+     ▼  scripts/content.ts（ensureSynced 单例：装载 store/meta → sync → typegen → 插件注册/通知）
 content*/ ──glob loader(markdownEntryType)──▶ .markopress/store/<collection>.json（devalue）
      │
-     ▼  scripts/gen-routes.ts（数据源 = store.values()）
+     ▼  scripts/gen-routes.ts（数据源 = store.values()；含插件 routes 钩子产出的 +handler.mjs）
 .markopress/（gitignore，全部生成物）
   ├─ routes/+layout.marko      静态外壳（import nav.json + Counter，永不变化）
   ├─ routes/<name>+page.marko  极小包装：import 虚拟模块，正文不内联
+  ├─ routes/<seg%2E…>+handler.mjs  插件路由包装（路径段含 `.` 必须 %2E，动词逐个 export const）
+  ├─ plugin-data/<name>.js     插件数据模块（setData 产物；经 virtual:mp/plugin/<name> 消费）
   ├─ nav.json / urls.json      nav 数据（模块 import）/ SSG 显式清单
      │
      ▼  scripts/markopress-plugin.ts（markopress() Vite 插件）
 虚拟模块 virtual:mp/content/<collection>/<id> → { data, segments, headings }
-  （惰性渲染 + digest 内存缓存；segments 数组为 md 内 Marko 组件段留门，本期只有 html 段）
+  （惰性渲染 + digest 内存缓存；segments 数组为 md 内 Marko 组件段留门，本期只有 html 段；
+   transformBody/pageData 钩子在渲染路径上，按有效 digest 缓存——scripts/content-modules.ts）
 vite.config.ts：markopressPlugin() 包裹 markoRun({ routesDir, adapter: staticAdapter() })
   （不传 urls——adapter 自动爬无参数路由，显式清单会每页爬两次；见硬约束 3）
 ```
 
-- **失效路径（死锁纪律的落地点）**：md 编辑 → `syncer.syncFile`（O(1)：只读事件文件，load 建立的 fileToId 映射定位）→ 只失效该 entry 的虚拟模块（Vite 模块图）→ full-reload；routes 目录零写入。slug 增/删才产生单 `+page.marko` 文件事件，marko-run dev watcher 对此 re-walk——「再生成 × re-walk」是核心机制（`docs/spike-notes.md`）。config 文件变更 → resetSynced 全量重建。
+- **失效路径（死锁纪律的落地点）**：md 编辑 → `syncer.syncFile`（O(1)：只读事件文件，load 建立的 fileToId 映射定位）→ 只失效该 entry 的虚拟模块（Vite 模块图）→ full-reload；routes 目录零写入。slug 增/删才产生单 `+page.marko` 文件事件，marko-run dev watcher 对此 re-walk——「再生成 × re-walk」是核心机制（`docs/spike-notes.md`）。config 文件变更（content/markopress 两者）→ resetSynced 全量重建。插件 `contentSynced(changed)` 在批次末后台入队（进程级单飞链），plugin-data 落盘走模块图/原生 watcher 失效，同样不碰 routes 目录。
 - watcher 监听所有集合 loader 声明的 `watchDirs`（多集合多 base 目录都覆盖）。
 - **Rspack 双胞胎路径**（`scripts/rspack-*.ts`）：同样的 sync/gen 前置，虚拟模块改为落盘 `.markopress/vcontent/`（`NormalModuleReplacementPlugin` 重写 `virtual:mp/content/`），失效走 Rspack 原生 watcher；slug 增/删由 markopack 内置 watchRoutes re-walk（进程内增量，无 marko-run 的全量 re-walk 风暴）。模块源码唯一来源在 `scripts/content-modules.ts`（两后端共用）。
 - 已知边界：store flush 整集合 JSON 重写（写放大，deltas #3 的分块持久化是升级路径）；dev 启动若新增数千路由文件，marko-run watcher re-walk 风暴会卡首个请求 ~1min（路由规模问题，与内容增量无关）。
