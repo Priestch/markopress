@@ -14,6 +14,21 @@
   （工作区 `workspace:*`），否则 tag 不被 Marko 编译器发现。
 - 换主题 = 实现同槽位名的另一个包 + `markopress.config.ts` 改 `theme` 一行。
 
+## 可选功能槽位（`mp-*` 保留命名空间）
+
+- 结构槽位（mp-layout/mp-page）必有实现；**功能槽位可选**，接线机制：
+  1. 插件注册面声明 `slots: ["mp-search"]`（装配期撞名 fail fast，scripts/content.ts
+     validateSlots；`mp-*` 保留命名空间强制）；
+  2. **生成器**在 +layout.marko 生成 `<@search><mp-search/></@search>` 属性体
+     （仅当有插件声明该槽位——Marko 对未知 tag 是**硬错误**，无「空元素透传」；
+     且 taglib 依赖探测从模板就近 package.json 出发，主题包内看不到 app 依赖的
+     插件 taglib，只有生成物（app 根下）能解析到）；
+  3. 主题在选定位位置渲染 `<if=input.search><${input.search}/></if>`
+     （**位置归主题，实现归插件**；缺省不渲染）。
+- 当前功能槽位：`search`（顶栏，`@markopress/plugin-search` 实现）。换搜索方案 =
+  换声明同槽位的插件包，主题/生成器零改动。
+- 实现方纪律：槽位组件自备样式且只吃 `--mp-*` 令牌（零自带色值，暗色/预设自动适配）。
+
 ## 风格预设（themeOptions.style → sidebar.json → `<html data-style>`）
 
 `default | vitepress | starlight | nextra | docusaurus`——纯 CSS 变量层切换

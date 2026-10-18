@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 markopress：基于 Marko 6 + `@marko/run` 的内容框架（VitePress/Astro 形态，`.md` 文件即页面）。当前处于 **Phase 1（content 层）进行中：markdown 已接入 content layer，单文件增量同步已落地**。技术决策（D1–D6）已定稿于 `docs/background.md`，不要重新讨论；五份调研报告在 `docs/research/`（与实际不符时以 `node_modules/@marko/run` 安装源码为准；`rspack-watcher.md` 是 markopack/Rspack 迁移评估依据）。
 
-仓库是 pnpm workspace：`packages/content`（@markopress/content，内容层契约 + store，整体抄 Astro Content Layer 契约）、`packages/markdown`（@markopress/markdown，`.md` EntryType + unified 渲染器）、`packages/theme-docs`（默认文档主题）、`packages/plugin-rss` / `plugin-sitemap`（插件）——**在工作目录对应的包前先读其 AGENTS.md**。root 暂时兼任 spike app（收包为 `packages/site` 的定案见 `docs/plan-site-package.md`，等 markopack 发版后执行，勿提前讨论）。
+仓库是 pnpm workspace：`packages/content`（@markopress/content，内容层契约 + store，整体抄 Astro Content Layer 契约）、`packages/markdown`（@markopress/markdown，`.md` EntryType + unified 渲染器）、`packages/theme-docs`（默认文档主题）、`packages/plugin-rss` / `plugin-sitemap` / `plugin-search`（插件，search = MiniSearch 本地搜索 + 首个 UI 槽位插件）——**在工作目录对应的包前先读其 AGENTS.md**。root 暂时兼任 spike app（收包为 `packages/site` 的定案见 `docs/plan-site-package.md`，等 markopack 发版后执行，勿提前讨论）。
 
 ## 常用命令
 
@@ -26,6 +26,7 @@ pnpm gen       # 手动跑路由生成器（dev/build 会自动跑，一般不�
 
 pnpm --filter @markopress/content test    # 内容层包 vitest（含单文件增量）
 pnpm --filter @markopress/markdown test   # markdown 包 vitest
+pnpm --filter @markopress/plugin-search test  # search 包 vitest（节切分 + 索引往返）
 ```
 
 **双路并行纪律（同树双命令，不用 git 分支）**：内容层/store/`gen-routes.ts`/`content-modules.ts` 为两路共享，新功能落共享层；打包器特定代码只允许出现在 `virtual:mp/content/` 解析与 watcher 层（Vite = markopress-plugin.ts，Rspack = rspack-*.ts）。对比数据见 `docs/perf-rspack-vs-vite.md`。
@@ -47,8 +48,12 @@ content*/ ──glob loader(markdownEntryType)──▶ .markopress/store/<colle
      ▼  scripts/gen-routes.ts（数据源 = store.values()；含插件 routes 钩子产出的 +handler.mjs；
         sidebar.ts 纯函数派生侧边栏树 + flat 序）
 .markopress/（gitignore，全部生成物）
-  ├─ routes/+layout.marko      静态外壳：<mp-layout> 槽位（import sidebar.json，永不变化）
-  ├─ routes/<name>+page.marko  极小包装：<mp-page> 槽位（import 虚拟模块 + page-nav.js）
+  ├─ routes/+layout.marko      静态外壳：<mp-layout> 槽位（import sidebar.json，永不变化；
+  │                              插件 UI 槽位接线 <@search><mp-search/></@search> 在此生成，
+  │                              由插件 slots 声明 gating——Marko 对未知 tag 是硬错误，且
+  │                              taglib 探测从模板就近 package.json 出发，只有生成物能解析
+  │                              插件包 taglib；位置归主题（<if=input.search>），实现归插件）
+  ├─ routes/<name>+page.marko  极小包装：<mp-page> 槽位（虚拟模块 + page-nav）
   ├─ routes/<seg%2E…>+handler.mjs  插件路由包装（路径段含 `.` 必须 %2E，动词逐个 export const）
   ├─ plugin-data/<name>.js     插件数据模块（setData 产物；经 virtual:mp/plugin/<name> 消费）
   ├─ sidebar.json              侧边栏树+flat 序（模块 import；重写走模块图失效——prev/next 同源）

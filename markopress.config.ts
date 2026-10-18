@@ -3,6 +3,7 @@
 import { defineMarkoPressConfig } from "./scripts/plugins.ts";
 import { sitemap } from "@markopress/plugin-sitemap";
 import { rss } from "@markopress/plugin-rss";
+import { search } from "@markopress/plugin-search";
 
 export default defineMarkoPressConfig({
   // 主题（D5：主题 = npm 包；槽位契约 <mp-layout>/<mp-page>，themes.md §9）。
@@ -27,5 +28,8 @@ export default defineMarkoPressConfig({
       title: "markopress",
       description: "markopress 文档站（dogfood）",
     }),
+    // 本地全文搜索（MiniSearch）：dev/build 都可搜（store 常驻服务端）。
+    // 换搜索方案 = 换实现 <mp-search> 槽位的另一个插件包（plugin-design.md §5.3）。
+    search({ collections: ["docs"] }),
   ],
 });

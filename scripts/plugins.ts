@@ -57,6 +57,13 @@ export interface MarkoPressPlugin {
 
   // —— 注册面（装配期求值一次，纯声明）——
   entryTypes?: Array<EntryType>;
+  /**
+   * 本包 taglib 实现的保留槽位名（如 ["mp-search"]）。装配期撞名 fail fast——
+   * Marko taglib 同名注册是静默 last-wins，不可依赖；且槽位名必须 `mp-*` 开头
+   * （保留命名空间）。无 UI 的插件省略。槽位 = 固定 tag 名，实现方任意：
+   * 换搜索方案 = 换实现同一槽位的另一个插件包，主题/生成器零改动。
+   */
+  slots?: Array<string>;
 
   // —— 读路径（store 就绪后；dev 后台执行，不阻塞 ready）——
   contentSynced?(ctx: PluginCtx, changed?: ContentChange): Promise<void>;
@@ -172,6 +179,33 @@ export async function writePluginData(name: string, value: unknown): Promise<boo
   writeFileSync(file, source);
   writtenPluginData.add(name);
   return true;
+}
+
+// ── 槽位声明校验（UI 槽位契约，docs/plugin-design.md §5.3）──────────────────
+
+/**
+ * 一个槽位只允许一个实现（Marko taglib 同名注册是静默 last-wins，两个搜索插件
+ * 同装会得到无声的错误那个）；槽位名必须在保留命名空间 `mp-*` 内。
+ * 装配期调用（content.ts setup），fail fast。
+ */
+export function validatePluginSlots(plugins: Array<MarkoPressPlugin>): void {
+  const owners = new Map<string, string>();
+  for (const plugin of plugins) {
+    for (const slot of plugin.slots ?? []) {
+      if (!/^mp-[a-z][a-z0-9-]*$/.test(slot)) {
+        throw new Error(
+          `[markopress] plugin "${plugin.name}" declares slot "${slot}" — slot names must be in the reserved "mp-*" namespace`,
+        );
+      }
+      const owner = owners.get(slot);
+      if (owner) {
+        throw new Error(
+          `[markopress] slot <${slot}> is claimed by both "${owner}" and "${plugin.name}" — one slot, one implementation (swap = swap the plugin)`,
+        );
+      }
+      owners.set(slot, plugin.name);
+    }
+  }
 }
 
 // ── contentSynced 编排（全局单链：同插件串行、跨插件按声明序）──────────────

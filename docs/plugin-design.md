@@ -210,6 +210,21 @@ export function rss(opts: { collection: string; site: string; limit?: number }):
      契约不感知。
 - 走查结论：**✅ 跑通（带上述两条编排规则）**。
 
+**落地注记（R3 已实现，`packages/plugin-search`，逼出两条契约事实）**：
+
+1. **槽位接线归生成器，不归主题模板**。Marko 对未注册 tag 是**硬错误**（无「空 custom element
+   透传」）；且 taglib 依赖探测从模板**就近 package.json** 出发（lasso-package-root），主题包内
+   看不到 app 依赖里的插件 taglib——只有 `.markopress/` 下生成物（就近 root = app 根）能解析。
+   ⇒ 机制：插件注册面声明 `slots: ["mp-search"]`（装配期 `validatePluginSlots` 撞名/命名空间
+   fail fast）→ gen-routes 在 +layout.marko 生成 `<@search><mp-search/></@search>` 属性体
+   （无声明则不生成）→ 主题在选定位位置 `<if=input.search><${input.search}/></if>`。
+   **位置归主题，实现归插件，可选性由生成器 gating**——换搜索方案 = 换声明同槽位的插件包。
+2. **MiniSearch options 双端同源**：`loadJSON(json, options)` 不序列化函数（tokenize），
+   服务端建索引与浏览器重建必须共用一份配置（`src/search-options.ts`）；CJK 需自定义
+   tokenize 逐字切分（默认按标点/空白切，无空格语言整句变单 token 不可搜）。
+3. dev 已加载的索引可能滞后一轮 full-reload（contentSynced 批次末后台与虚拟模块失效的
+   reload 有竞态）——刷新即新，v1 可带版本号驱动 UI 失效。
+
 ## 6. 四纪律的落点（审计清单）
 
 | 纪律 | 落点 |
@@ -230,6 +245,7 @@ renderer 以有效 digest 为键——原始 digest 与变换后的缓存互不�
 | renderers 注册面 | 只有 md 一个渲染器（YAGNI；content AGENTS 红线「ctx 按需加」） | 第二个渲染器（mdx / 纯 html）出现 |
 | injectScript / head 面 | seo / analytics 需求真实但量小；先看 R2 三插件是否真撞上 | R3 做 og / seo 时定 |
 | 拉取式惰性数据模块 | 当前只有 search 一个消费者 | search 的 dev 启动成本实测不可接受时 |
+| buildEnd / postbuild 钩子 | 只有产物索引类方案（Pagefind：postbuild 爬 dist HTML）需要；dev 搜索是 MiniSearch 路线的既有优势，不为它开钩子 | 有人真的做 pagefind 类插件（槽位契约已留缝：实现 `mp-search` 槽位 + buildEnd 索引） |
 | pageData 的 typegen | content.d.ts 不知插件字段；模板内可用但弱类型 | 首个 dogfood 痛点出现 |
 
 ## 8. spike 验证结果（2026-10-15，双路实测：markopack/Rspack + @marko/run/Vite，dev + build）
@@ -250,9 +266,9 @@ renderer 以有效 digest 为键——原始 digest 与变换后的缓存互不�
    （`%2E`/反引号）相对导入解析失败（页面能过是因为 `.marko` 走 @marko/vite 自有解析器）→ 插件把
    这类导入映射为绝对路径。build:vite 由必挂转全过。
 
-**spike 遗物（R2 实现的种子，勿当垃圾清掉）**：`gen-routes.ts` 的 SPIKE 块（= routes 钩子生成器的雏形）、
-`packages/mp-spike-search`（workspace 假包 = 插件包样例，`"tags-dir"` 写法参考）、
+**spike 遗物（R2 实现的种子）**：`gen-routes.ts` 的 SPIKE 块（= routes 钩子生成器的雏形）、
 `.markopress/spike-plugins/` + `.markopress/plugin-data/`（= handlerModule 与 setData 产物样例）。
+（`packages/mp-spike-search` 假包已被 `packages/plugin-search` 取代删除——taglib 写法参考后者。）
 
 ## 9. 契约对照清单（走查逼出的要求 → 实现义务）
 

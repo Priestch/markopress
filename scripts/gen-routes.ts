@@ -44,11 +44,24 @@ function pageTemplate(collection: string, id: string, route: string): string {
 // 布局刻意静态：sidebar 数据走 ../sidebar.json 模块 import（非 routes 目录文件事件）。
 // 「新增 page + 修改 layout 同一 watcher 批次」会触发 marko-run dev server 竞态
 // 死锁（docs/spike-notes.md）——布局内容恒定 + write-if-changed ⇒ 永不重写。
-function layoutTemplate(): string {
+// 唯一变量是功能槽位接线（slots 集变化 ⇔ config 变化 ⇔ resetSynced 全量重建路径，
+// 与 md 编辑批次无关，死锁纪律不受影响）。
+//
+// 槽位接线：插件声明 slots: ["mp-search"] ⇒ 生成 <@search><mp-search/></@search> 属性体。
+// 必须由生成器 gating——Marko 对未知 tag 是硬错误（无「空元素透传」），且 taglib 依赖探测
+// 从模板就近 package.json 出发（lasso-package-root），主题包内看不到 app 依赖里的插件 taglib；
+// 生成物在 .markopress/ 下，就近 root = app 根 ⇒ 探测命中（与 <mp-layout> 的发现同机制）。
+function layoutTemplate(slots: Array<string>): string {
+  const bodies = slots
+    .filter((slot) => slot !== "mp-layout" && slot !== "mp-page")
+    .map((slot) => [`  <@${slot.replace(/^mp-/, "")}>`, `    <${slot}/>`, `  </@${slot.replace(/^mp-/, "")}>`])
+    .flat();
   return [
     `import sidebar from "../sidebar.json"`,
     ``,
-    `<mp-layout site=sidebar.site tree=sidebar.tree style=sidebar.style content=input.content/>`,
+    `<mp-layout site=sidebar.site tree=sidebar.tree style=sidebar.style content=input.content>`,
+    ...bodies,
+    `</mp-layout>`,
     ``,
   ].join("\n");
 }
@@ -126,7 +139,10 @@ export async function generateRoutes(): Promise<GenerateResult> {
       written.push(p.file);
     }
   }
-  if (writeIfChanged(join(ROUTES_DIR, "+layout.marko"), layoutTemplate())) written.push("+layout.marko");
+  if (writeIfChanged(
+    join(ROUTES_DIR, "+layout.marko"),
+    layoutTemplate([...new Set(plugins.flatMap((p) => p.slots ?? []))]),
+  )) written.push("+layout.marko");
   if (writeIfChanged(SIDEBAR_FILE, `${JSON.stringify(sidebarJson, null, 2)}\n`)) written.push("../sidebar.json");
   if (writeIfChanged(PAGE_NAV_FILE, PAGE_NAV_SOURCE)) written.push("../page-nav.js");
   if (writeIfChanged(URLS_FILE, `${JSON.stringify(pages.map((p) => p.route), null, 2)}\n`)) written.push("../urls.json");

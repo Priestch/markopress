@@ -5,6 +5,8 @@
 //   tree    侧边栏树（sidebar.json 的 tree 字段；渲染在 mp-sidebar，active 态客户端标注）
 //   style   风格预设名（sidebar.json 的 style 字段 → <html data-style>，CSS 变量层切换）
 //   content marko-run 布局融合注入的页面 render body（<${input.content}/>）
+//   search? 可选功能槽位 render body（生成器在有插件声明 slots: ["mp-search"] 时注入；
+//           主题只定位置，实现归插件包。缺省 = 无搜索插件，不渲染）
 //
 // 暗色（themes.md §5 四家共识）：html[data-theme] 属性 + head 内联脚本 pre-paint 解析
 // （亮/暗/系统三态，localStorage 键 markopress-theme）+ data-theme-choice 暴露选择供用户 CSS。
@@ -293,6 +295,11 @@
     </button>
     <a class="mp-site" href="/">${input.site}</a>
     <span class="mp-topbar-spacer"/>
+    <!-- 可选功能槽位（render body；生成器在有插件声明槽位时经 <@search> 注入，见 AGENTS.md）：
+         主题决定位置（此处 = 顶栏），插件决定实现。input.search 缺省 = 无搜索插件，什么都不渲染 -->
+    <if=input.search>
+      <${input.search}/>
+    </if>
     <button class="mp-icon-button mp-theme-toggle" data-mp-theme-toggle aria-label="Toggle theme" title="Theme (light / dark / system)">
       <svg data-icon="light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
       <svg data-icon="dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>

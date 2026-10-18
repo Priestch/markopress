@@ -1,0 +1,256 @@
+// <mp-search> 保留槽位实现（markopress 主题契约：theme-docs 顶栏预留位，见其 AGENTS.md）。
+//
+// 索引懒加载：首次打开才动态 import（minisearch + virtual:mp/plugin/search 数据模块
+// 同一跳拉取）——minisearch 不进首屏包，页面加载零搜索成本。
+// 索引实例放模块级 cache（static const 的可变内容），不进组件 state：
+// resume 只序列化 UI 态（open/query/results/active），不序列化索引。
+//
+// 方案契约 = 槽位 tag：换搜索方案（Pagefind/Algolia…）= 换实现本槽位的另一个
+// 插件包（plugins 数组改一行），主题/生成器零改动。见 docs/plugin-design.md §5.3。
+import type MiniSearch from "minisearch";
+import type { SearchDoc } from "../src/search-options.ts";
+
+static const LIMIT = 12;
+static const cache: { engine: MiniSearch<SearchDoc> | null } = { engine: null };
+
+// static = 模块级（跨实例共享），不参与 resume 序列化
+static async function loadEngine(): Promise<MiniSearch<SearchDoc> | null> {
+  if (cache.engine) return cache.engine;
+  try {
+    const [{ default: MiniSearchCtor }, { default: data }] = await Promise.all([
+      import("minisearch"),
+      import("virtual:mp/plugin/search"),
+    ]);
+    // loadJSON 要 options（含函数，不序列化）——与服务端建索引共用 src/search-options.ts
+    const { SEARCH_OPTIONS } = await import("../src/search-options.ts");
+    cache.engine = MiniSearchCtor.loadJSON(JSON.stringify(data.index), SEARCH_OPTIONS);
+    return cache.engine;
+  } catch {
+    // dev 冷启动：contentSynced 是后台任务，数据模块可能尚未落盘——不 latch，
+    // 下次打开重试（此时模块图已有新文件）
+    return null;
+  }
+}
+
+static function escapeRe(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// 命中词高亮：捕获组 split ⇒ 偶数位原文 / 奇数位命中（<mark> 由模板按奇偶渲染）
+static function highlight(text: string, terms?: string[]): string[] {
+  if (!text) return [];
+  if (!terms?.length) return [text];
+  const pattern = [...new Set(terms)].map(escapeRe).join("|");
+  return text.split(new RegExp(`(${pattern})`, "gi"));
+}
+
+<let/open=false>
+<let/query="">
+<let/results=null>
+<let/active=0>
+<let/loading=false>
+
+// 全局 "/" 快捷键：纯 DOM 派发到按钮（不复用组件 handler——lifecycle 的 this 不跨组件
+// state；click 复用 onClick 的完整打开逻辑）。输入框/文本域/可编辑区内不触发。
+<lifecycle
+  onMount() {
+    this.onKeydown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        (target?.isContentEditable ?? false);
+      if (event.key === "/" && !typing && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        document.querySelector<HTMLButtonElement>("[data-mp-search-toggle]")?.click();
+      }
+    };
+    document.addEventListener("keydown", this.onKeydown);
+  }
+  onDestroy() {
+    document.removeEventListener("keydown", this.onKeydown);
+  }
+/>
+
+<span class="mp-search">
+  <button
+    type="button"
+    class="mp-search-toggle"
+    data-mp-search-toggle
+    aria-label="搜索文档"
+    async onClick() {
+      if (open) return;
+      open = true;
+      loading = !cache.engine;
+      const engine = await loadEngine();
+      loading = false;
+      if (engine) inputEl()?.focus();
+    }
+  >
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <span class="mp-search-toggle-label">搜索</span>
+    <kbd>/</kbd>
+  </button>
+
+  <if=open>
+    // 遮罩：点击面板外关闭（fixed 全屏垫层，免 document 级监听与清理）
+    <div class="mp-search-backdrop" onClick() { open = false }/>
+    <div class="mp-search-panel" role="dialog" aria-label="搜索文档">
+      <input/inputEl
+        class="mp-search-input"
+        type="text"
+        placeholder="搜索文档…"
+        aria-label="搜索文档"
+        autocomplete="off"
+        spellcheck="false"
+        onInput(event) {
+          query = (event.target as HTMLInputElement).value;
+          const q = query.trim();
+          if (!cache.engine || !q) {
+            results = null;
+            return;
+          }
+          results = cache.engine.search(q, { limit: LIMIT });
+          active = 0;
+        }
+        onKeydown(event) {
+          if (event.key === "ArrowDown" && results) {
+            event.preventDefault();
+            active = Math.min(active + 1, results.length - 1);
+          } else if (event.key === "ArrowUp" && results) {
+            event.preventDefault();
+            active = Math.max(active - 1, 0);
+          } else if (event.key === "Enter" && results) {
+            const hit = results[active];
+            if (hit) location.assign(hit.url);
+          } else if (event.key === "Escape") {
+            open = false;
+          }
+        }
+      />
+      <if=loading>
+        <div class="mp-search-status">索引加载中…</div>
+      </if>
+      <if=!loading && !cache.engine>
+        <div class="mp-search-status">索引尚未就绪，请稍后重试</div>
+      </if>
+      <if=results !== null && !loading>
+        <if=results.length>
+          <ul class="mp-search-results" role="listbox">
+            <for|result, i| of=results>
+              <li class=["mp-search-result", { active: i === active }] role="option" aria-selected=(i === active ? "true" : "false")
+                onMouseenter() { active = i }
+              >
+                <a href=result.url onClick() { open = false }>
+                  <div class="mp-search-result-title">
+                    <for|part, j| of=highlight(result.title, result.terms)>
+                      <if=j % 2>
+                        <mark>${part}</mark>
+                      </if>
+                      <else>
+                        ${part}
+                      </else>
+                    </for>
+                  </div>
+                  <if=result.heading>
+                    <div class="mp-search-result-heading">
+                      <for|part, j| of=highlight(result.heading, result.terms)>
+                        <if=j % 2>
+                          <mark>${part}</mark>
+                        </if>
+                        <else>
+                          ${part}
+                        </else>
+                      </for>
+                    </div>
+                  </if>
+                </a>
+              </li>
+            </for>
+          </ul>
+        </if>
+        <else>
+          <div class="mp-search-status">没有匹配「${query.trim()}」的结果</div>
+        </else>
+      </if>
+    </div>
+  </if>
+</span>
+
+<style>
+  /* 全部吃主题的 --mp-* 令牌（含暗色与风格预设）——本组件零自带色值 */
+  .mp-search { position: relative; display: inline-flex; }
+  .mp-search-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid var(--mp-border);
+    border-radius: var(--mp-radius);
+    background: var(--mp-bg-soft);
+    color: var(--mp-fg-muted);
+    cursor: pointer;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .mp-search-toggle:hover { color: var(--mp-fg); border-color: var(--mp-accent); }
+  .mp-search-toggle kbd {
+    font-family: var(--mp-font-mono);
+    font-size: 11px;
+    border: 1px solid var(--mp-border);
+    border-radius: 4px;
+    padding: 0 5px;
+    background: var(--mp-bg);
+  }
+  @media (max-width: 600px) {
+    .mp-search-toggle-label { display: none; }
+  }
+
+  .mp-search-backdrop { position: fixed; inset: 0; z-index: 40; }
+  .mp-search-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: min(520px, calc(100vw - 32px));
+    background: var(--mp-bg);
+    border: 1px solid var(--mp-border);
+    border-radius: var(--mp-radius);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    z-index: 41;
+    overflow: hidden;
+  }
+  .mp-search-input {
+    width: 100%;
+    box-sizing: border-box;
+    border: none;
+    border-bottom: 1px solid var(--mp-border);
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: inherit;
+    background: transparent;
+    color: var(--mp-fg);
+    outline: none;
+  }
+  .mp-search-input::placeholder { color: var(--mp-fg-muted); }
+
+  .mp-search-results { list-style: none; margin: 0; padding: 4px; max-height: 60vh; overflow-y: auto; }
+  .mp-search-result a {
+    display: block;
+    padding: 8px 10px;
+    border-radius: var(--mp-radius);
+    text-decoration: none;
+    color: var(--mp-fg);
+  }
+  .mp-search-result.active a { background: var(--mp-bg-soft); }
+  .mp-search-result-title { font-size: 14px; font-weight: 500; }
+  .mp-search-result-title mark,
+  .mp-search-result-heading mark {
+    background: transparent;
+    color: var(--mp-accent);
+    font-weight: 700;
+    padding: 0;
+  }
+  .mp-search-result-heading { font-size: 12px; color: var(--mp-fg-muted); margin-top: 2px; }
+  .mp-search-status { padding: 16px 14px; font-size: 13px; color: var(--mp-fg-muted); }
+</style>
