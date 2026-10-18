@@ -99,8 +99,10 @@ export class MutableStore extends ImmutableStore {
 					throw new Error(`File path must be relative to the site root. Got: ${entry.filePath}`)
 				}
 				const stored: DataEntry = { id: entry.id, slug: entry.slug ?? entry.id, data: entry.data }
-				// 只在有值时落字段，省序列化体积（Astro 同款）
-				if (entry.body) stored.body = entry.body
+				// 只在有值时落字段，省序列化体积（Astro 同款）。body 例外：空串是合法值
+				// （纯 frontmatter 页——如博客的列表页壳），falsy 判定会把它丢成 undefined，
+				// 下游 renderer 对 undefined body 直接抛错
+				if (entry.body !== undefined) stored.body = entry.body
 				if (entry.contentType) stored.contentType = entry.contentType
 				if (entry.filePath) stored.filePath = entry.filePath
 				if (entry.digest) stored.digest = entry.digest
