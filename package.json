@@ -23,6 +23,7 @@
     "@markopress/markdown": "workspace:*",
     "@markopress/plugin-rss": "workspace:*",
     "@markopress/plugin-sitemap": "workspace:*",
+    "@markopress/theme-docs": "workspace:*",
     "marko": "^6.4.5",
     "mp-spike-search": "workspace:*",
     "zod": "^4.0.0"

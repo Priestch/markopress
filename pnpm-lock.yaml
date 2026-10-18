@@ -32,15 +32,18 @@ importers:
       '@markopress/plugin-rss':
         specifier: workspace:*
         version: link:packages/plugin-rss
+      '@markopress/plugin-search':
+        specifier: workspace:*
+        version: link:packages/plugin-search
       '@markopress/plugin-sitemap':
         specifier: workspace:*
         version: link:packages/plugin-sitemap
+      '@markopress/theme-docs':
+        specifier: workspace:*
+        version: link:packages/theme-docs
       marko:
         specifier: ^6.4.5
         version: 6.4.5
-      mp-spike-search:
-        specifier: workspace:*
-        version: link:packages/mp-spike-search
       zod:
         specifier: ^4.0.0
         version: 4.6.7
@@ -129,19 +132,32 @@ importers:
         specifier: ^4.0.0
         version: 4.1.11(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2))
 
-  packages/mp-spike-search: {}
-
   packages/plugin-rss:
     devDependencies:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/plugin-search:
+    dependencies:
+      minisearch:
+        specifier: ^7.2.0
+        version: 7.2.0
+    devDependencies:
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.0
+        version: 4.1.11(@types/node@24.19.2)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2))
+
   packages/plugin-sitemap:
     devDependencies:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  packages/theme-docs: {}
 
 packages:
 
@@ -1437,6 +1453,9 @@ packages:
   minipass@7.1.3:
     resolution: {integrity: sha512-tEBHqDnIoM/1rXME1zgka9g6Q2lcoCkxHLuc7ODJ5BxbP5d4c2Z5cGgtXAku59200Cx7diuHTOYfSBD8n6mm8A==}
     engines: {node: '>=16 || 14 >=14.17'}
+
+  minisearch@7.2.0:
+    resolution: {integrity: sha512-dqT2XBYUOZOiC5t2HRnwADjhNS2cecp9u+TJRiJ1Qp/f5qjkeT5APcGPjHw+bz89Ms8Jp+cG4AlE+QZ/QnDglg==}
 
   mri@1.2.0:
     resolution: {integrity: sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA==}
@@ -3211,6 +3230,8 @@ snapshots:
       brace-expansion: 5.0.12
 
   minipass@7.1.3: {}
+
+  minisearch@7.2.0: {}
 
   mri@1.2.0: {}
 

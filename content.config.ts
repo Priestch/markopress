@@ -13,11 +13,13 @@ export default defineContentConfig({
     docs: defineCollection({
       loader: glob({ pattern: "**/*.md", base: "./content" }),
       // date/description 可选：rss 插件按字段名读取（plugin-rss dateField 默认 "date"）；
+      // order 可选：侧边栏显式排序键（scripts/sidebar.ts 排序链首位）。
       // schema 变更 → 集合 digest 变 → store 全量重建（自愈，见 docs/plugin-design.md）
       schema: z.object({
         title: z.string(),
         date: z.coerce.date().optional(),
         description: z.string().optional(),
+        order: z.number().optional(),
       }),
     }),
   },

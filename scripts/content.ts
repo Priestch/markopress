@@ -7,7 +7,8 @@
 // 插件装配（docs/plugin-design.md）：markopress.config.ts 与 content.config.ts 一起加载，
 // 注册面（entryTypes）在 sync 前合并；全量 contentSynced 经进程级单飞链后台执行
 // （build 等待、dev 不阻塞 ready——等待策略由调用方决定，见 rspack-shared/markopress-plugin）。
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -31,6 +32,7 @@ import {
   type MarkoPressConfig,
   type MarkoPressPlugin,
   type PluginCtx,
+  type ThemeOptions,
   routeFor,
   writePluginData,
 } from "./plugins.ts";
@@ -52,6 +54,11 @@ export const PRESS_CONFIG_FILE = join(ROOT, "markopress.config.ts");
 /** 虚拟模块前缀：virtual:mp/content/<collection>/<id> */
 export const VIRTUAL_PREFIX = "virtual:mp/content/";
 
+export interface ResolvedTheme {
+  name: string;
+  options: ThemeOptions;
+}
+
 export interface SyncedContent {
   store: MutableStore;
   meta: PersistentMetaStore;
@@ -60,6 +67,8 @@ export interface SyncedContent {
   renderer: MarkdownRenderer;
   plugins: Array<MarkoPressPlugin>;
   pluginCtx: PluginCtx;
+  /** 主题（装配期解析 + 槽位校验，fail fast；themes.md §9 #1 的字符串槽位契约） */
+  theme: ResolvedTheme;
   /** 全量 contentSynced 的完成信号。build 必须等待（产物要齐）；dev 可不阻塞 */
   pluginsReady: Promise<void>;
 }
@@ -85,6 +94,44 @@ async function loadPressConfig(): Promise<MarkoPressConfig> {
     if ((error as NodeJS.ErrnoException).code === "ERR_MODULE_NOT_FOUND") return { plugins: [] };
     throw error;
   }
+}
+
+/** 省略 theme 时的默认主题（零配置路径的目标形态；themes.md §9 #1） */
+export const DEFAULT_THEME = "@markopress/theme-docs";
+
+/**
+ * 解析 + 校验主题包（fail fast）：
+ *  ① 从 app 上下文解析包目录（node_modules/workspace 链接——主题包不得用 exports
+ *     限制 package.json 子路径，见 theme-docs/AGENTS.md）；
+ *  ② marko.json 的 tags-dir（缺省 "tags"）下必须存在槽位实现 mp-layout/mp-page
+ *     （生成器写死槽位名，缺实现是硬错误而非静默降级）。
+ */
+function resolveTheme(pressConfig: MarkoPressConfig): ResolvedTheme {
+  const name = pressConfig.theme ?? DEFAULT_THEME;
+  const require = createRequire(join(ROOT, "package.json"));
+  let dir: string;
+  try {
+    dir = dirname(require.resolve(`${name}/package.json`));
+  } catch {
+    throw new Error(
+      `[markopress] theme "${name}" not found — install it (pnpm add ${name}) or fix "theme" in markopress.config.ts`,
+    );
+  }
+  let tagsDir = "tags";
+  const markoJson = join(dir, "marko.json");
+  if (existsSync(markoJson)) {
+    const parsed = JSON.parse(readFileSync(markoJson, "utf-8")) as { "tags-dir"?: string };
+    if (parsed["tags-dir"]) tagsDir = parsed["tags-dir"];
+  }
+  for (const slot of ["mp-layout", "mp-page"]) {
+    const file = join(dir, tagsDir, `${slot}.marko`);
+    if (!existsSync(file)) {
+      throw new Error(
+        `[markopress] theme "${name}" is missing slot <${slot}> (expected ${relative(ROOT, file) || file}) — theme contract: docs/research/themes.md §9`,
+      );
+    }
+  }
+  return { name, options: pressConfig.themeOptions ?? {} };
 }
 
 async function setup(): Promise<SyncedContent> {
@@ -116,6 +163,7 @@ async function setup(): Promise<SyncedContent> {
   });
 
   const renderer = createMarkdownRenderer(pressConfig.markdown);
+  const theme = resolveTheme(pressConfig);
   const pluginCtx: PluginCtx = {
     store,
     config,
@@ -142,6 +190,7 @@ async function setup(): Promise<SyncedContent> {
     renderer,
     plugins: pressConfig.plugins,
     pluginCtx,
+    theme,
     pluginsReady,
   };
 }

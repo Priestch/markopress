@@ -79,7 +79,33 @@ export interface MarkoPressConfig {
    * renderer 实例随 setup() 重建，缓存天然新鲜（无跨配置缓存投毒）。
    */
   markdown?: MarkdownRendererOptions;
+  /**
+   * 主题包名（D5：主题 = npm 包；marko.json tags-dir 经 root 包依赖探测全局发现，
+   * docs/research/themes.md §9）。省略 = 默认主题 @markopress/theme-docs。
+   * 生成器只认槽位名 <mp-layout>/<mp-page>，实现由主题包提供——换主题零改生成器。
+   */
+  theme?: string;
+  /** 主题选项：site/sidebar 等数据面配置（装配期校验后经 SyncedContent 透传） */
+  themeOptions?: ThemeOptions;
 }
+
+export interface ThemeOptions {
+  /** 站名（顶栏 / <title> / sidebar.json 的 site 字段） */
+  site?: string;
+  /**
+   * 侧边栏来源集合。默认全部集合——注意 perf 夹具这类万页集合必须显式排除，
+   * 否则整树内嵌每页 HTML（写放大，themes.md §8）。
+   */
+  sidebar?: { collections?: Array<string> };
+  /**
+   * 风格预设（纯样式层，四家文档站的视觉近似）：default（GitHub 中性）/
+   * vitepress / starlight / nextra / docusaurus。色值取自各家源码（见
+   * theme-docs 的 mp-layout 预设块注释）。经 sidebar.json → <html data-style> 驱动。
+   */
+  style?: ThemeStyle;
+}
+
+export type ThemeStyle = "default" | "vitepress" | "starlight" | "nextra" | "docusaurus";
 
 export function defineMarkoPressConfig(config: MarkoPressConfig): MarkoPressConfig {
   return config;

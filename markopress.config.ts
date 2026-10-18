@@ -5,6 +5,16 @@ import { sitemap } from "@markopress/plugin-sitemap";
 import { rss } from "@markopress/plugin-rss";
 
 export default defineMarkoPressConfig({
+  // 主题（D5：主题 = npm 包；槽位契约 <mp-layout>/<mp-page>，themes.md §9）。
+  // 换主题 = 改这一行 + 装对应包；省略则默认 @markopress/theme-docs。
+  theme: "@markopress/theme-docs",
+  themeOptions: {
+    site: "markopress",
+    // 风格预设（纯样式）：default | vitepress | starlight | nextra | docusaurus
+    style: "docusaurus",
+    // perf 集合（5000 页夹具）不进侧边栏——整树会内嵌每页 HTML（写放大，themes.md §8）
+    sidebar: { collections: ["docs"] },
+  },
   // markdown 管线（R1）：shiki 默认开；remarkPlugins/rehypePlugins 直通 unified。
   // 改这里 → 两路 watcher 都触发全量重建（renderer 重建，缓存新鲜）。
   markdown: {

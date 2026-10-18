@@ -1,126 +1,71 @@
 // markopress 路由生成器 —— 数据源是 content store（不再扫文件）。
 //
 // 生成物（@marko/run 经 routesDir 原样消费）：
-//   .markopress/routes/+layout.marko     静态外壳（import nav.json + Counter，永不变化）
-//   .markopress/routes/+page.marko       content/index.md → /
-//   .markopress/routes/<name>+page.marko a/b.md → a.b+page.marko（扁平路由）
-//   .markopress/nav.json                 nav 数据（布局以模块 import；变化走模块图）
-//   .markopress/urls.json                static adapter 的显式 URL 清单
+//   .markopress/routes/+layout.marko      静态外壳：<mp-layout> 槽位（import sidebar.json）
+//   .markopress/routes/<name>+page.marko  极小包装：<mp-page> 槽位（虚拟模块 + page-nav）
+//   .markopress/sidebar.json              侧边栏树 + flat 序（布局/prev-next 数据；变化走模块图）
+//   .markopress/page-nav.js               静态邻居助手（生成一次，永不变化）
+//   .markopress/urls.json                 SSG 显式 URL 清单（未来带参数路由用）
 //
-// 页面正文不再内联：+page.marko 是极小包装，import 虚拟模块 virtual:mp/content/…。
-// 因此 md 内容编辑时模板不变 ⇒ write-if-changed 全部跳过 ⇒ 本目录零文件事件；
-// 只有 slug 增/删产生单个 +page.marko 事件（marko-run dev watcher 对此是安全的，
-// spike 验证过；死锁纪律见 docs/spike-notes.md）。
+// 主题槽位契约（docs/research/themes.md §9）：生成器只写死 <mp-layout>/<mp-page> tag 名，
+// 实现由主题包提供（marko.json tags-dir 经 root 包依赖探测全局发现）——数据面与实现面解耦。
+// md 内容编辑 ⇒ 模板不变（write-if-changed 全跳过）⇒ routes 目录零文件事件；
+// slug 增/删 ⇒ 单个 +page.marko 事件 + sidebar.json 重写（模块图失效，非 routes 目录文件事件）。
+// prev/next 走 sidebar.json 的 flat 序（跨文件数据不能进 per-entry digest 缓存的虚拟模块，
+// 否则重排后邻居过期；真实文件 + 模块图失效是零新机制的正确解）。
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DataEntry } from "@markopress/content";
 import { ensureSynced } from "./content.ts";
 import { ROOT } from "./paths.ts";
 import { handlerRouteFileFor, handlerWrapperSource, routeFor } from "./plugins.ts";
+import { buildSidebar } from "./sidebar.ts";
 
 export const ROUTES_DIR = join(ROOT, ".markopress", "routes");
-export const NAV_FILE = join(ROOT, ".markopress", "nav.json");
+export const SIDEBAR_FILE = join(ROOT, ".markopress", "sidebar.json");
+const PAGE_NAV_FILE = join(ROOT, ".markopress", "page-nav.js");
 const URLS_FILE = join(ROOT, ".markopress", "urls.json");
-
-const SITE_NAME = "markopress spike";
 
 /** entry id → 扁平路由文件名：index → +page.marko；a/b → a.b+page.marko */
 function pageFileFor(id: string): string {
   return id === "index" ? "+page.marko" : `${id.replaceAll("/", ".")}+page.marko`;
 }
 
-function pageTemplate(collection: string, id: string): string {
-  // segments 循环而非 join：为 md 内 Marko 组件段留门（component 段将来只需在
-  // <if> 链上加分支，不改本模板）。$!{} 插值必须包在显式标签内（concise 陷阱）。
+function pageTemplate(collection: string, id: string, route: string): string {
   return [
-    `import { data, segments } from "virtual:mp/content/${collection}/${id}"`,
+    `import { data, segments, headings } from "virtual:mp/content/${collection}/${id}"`,
+    `import { neighbors } from "../page-nav.js"`,
     ``,
-    `<article>`,
-    `  <h1>\${data.title}</h1>`,
-    `  <for|seg| of=segments>`,
-    `    <if=seg.type === "html">`,
-    `      $!{seg.html}`,
-    `    </if>`,
-    `  </for>`,
-    `</article>`,
+    `<mp-page page={ data, segments, headings } nav=neighbors("${route}")/>`,
     ``,
   ].join("\n");
 }
 
-// 布局刻意静态：nav 数据走 ../nav.json 模块 import（非 routes 目录文件事件）。
+// 布局刻意静态：sidebar 数据走 ../sidebar.json 模块 import（非 routes 目录文件事件）。
 // 「新增 page + 修改 layout 同一 watcher 批次」会触发 marko-run dev server 竞态
 // 死锁（docs/spike-notes.md）——布局内容恒定 + write-if-changed ⇒ 永不重写。
 function layoutTemplate(): string {
-  return `import nav from "../nav.json"
-import Counter from "../../src/components/counter.marko"
-
-// Marko 6 的 <style> 块 = 提取且全局（scoped 是 <style/styles> 的事）——
-// 这里的选择器要命中 $!{seg.html} 注入的动态内容，必须全局。
-<style>
-  body { margin: 0; font-family: system-ui, sans-serif; line-height: 1.6; color: #1f2328; background: #fff; }
-  nav { display: flex; gap: 12px; align-items: baseline; padding: 10px 24px; border-bottom: 1px solid #d0d7de; }
-  nav strong { margin-right: 8px; }
-  main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
-  footer { border-top: 1px solid #d0d7de; padding: 12px 24px; font-size: 13px; color: #57606a; }
-  pre.shiki { padding: 12px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.5; }
-  .shiki code, code[class*="language-"] {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-size: 14px;
-  }
-
-  /* ::: 容器（remark-directive → mp-container） */
-  .mp-container { border-left: 3px solid #6e7781; background: #f6f8fa; padding: 10px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; }
-  .mp-container > :first-child { margin-top: 0; }
-  .mp-container > :last-child { margin-bottom: 0; }
-  .mp-tip { border-color: #0969da; background: #ddf4ff; }
-  .mp-info { border-color: #1a7f37; background: #dafbe1; }
-  .mp-warn { border-color: #9a6700; background: #fff8c5; }
-  .mp-danger { border-color: #cf222e; background: #ffebe9; }
-
-  /* shiki 双主题切换 + 容器暗色：light 为默认（上方），dark 覆盖必须在后——
-     同特异性下后者胜，放前面会被亮色规则盖掉（实测踩坑） */
-  @media (prefers-color-scheme: dark) {
-    body { color: #e6edf3; background: #0d1117; }
-    nav, footer { border-color: #30363d; }
-    .shiki, .shiki span {
-      color: var(--shiki-dark) !important;
-      background-color: var(--shiki-dark-bg) !important;
-      font-style: var(--shiki-dark-font-style) !important;
-      font-weight: var(--shiki-dark-font-weight) !important;
-      text-decoration: var(--shiki-dark-text-decoration) !important;
-    }
-    .mp-container { background: #161b22; }
-    .mp-tip { background: #121d2f; }
-    .mp-info { background: #12261e; }
-    .mp-warn { background: #241d10; }
-    .mp-danger { background: #2d1517; }
-  }
-</style>
-
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${SITE_NAME}</title>
-</head>
-<body>
-  <nav>
-    <strong>${SITE_NAME}</strong>
-    <for|item| of=nav>
-      <a href=item.href>${"${"}item.title}</a>
-    </for>
-  </nav>
-  <main>
-    <\${input.content}/>
-  </main>
-  <footer>
-    <Counter/>
-  </footer>
-</body>
-</html>
-`;
+  return [
+    `import sidebar from "../sidebar.json"`,
+    ``,
+    `<mp-layout site=sidebar.site tree=sidebar.tree style=sidebar.style content=input.content/>`,
+    ``,
+  ].join("\n");
 }
+
+// 静态助手（生成一次）：flat 序 → prev/next。sidebar.json 变更经模块图自动失效本模块的
+// 引用者（+page.marko 们）——重排/增删后邻居全站刷新，无新增失效机制。
+const PAGE_NAV_SOURCE = `// 静态生成（scripts/gen-routes.ts）：sidebar.json 的 flat 序 → prev/next 邻居。
+// 本文件永不变化；sidebar.json 变更走模块图失效（nav.json 时代的同款路径）。
+import sidebar from "./sidebar.json"
+
+export function neighbors(href) {
+  const i = sidebar.flat.findIndex((page) => page.href === href)
+  return i < 0
+    ? { prev: null, next: null }
+    : { prev: sidebar.flat[i - 1] ?? null, next: sidebar.flat[i + 1] ?? null }
+}
+`;
 
 /** Write only when content differs, so no-op regenerations don't churn the watcher. */
 function writeIfChanged(file: string, content: string): boolean {
@@ -135,35 +80,55 @@ export interface GenerateResult {
 }
 
 export async function generateRoutes(): Promise<GenerateResult> {
-  const { store, config, plugins, pluginCtx } = await ensureSynced();
+  const { store, config, plugins, pluginCtx, theme } = await ensureSynced();
   mkdirSync(ROUTES_DIR, { recursive: true });
 
   // 多集合 → 同一路由空间（id 撞车是配置错误，重复覆盖会在 store 层先撞 digest）
-  const pages: Array<{ file: string; route: string; title: string; collection: string; id: string }> = [];
+  const pages: Array<{
+    file: string;
+    route: string;
+    title: string;
+    order?: number;
+    collection: string;
+    id: string;
+  }> = [];
   for (const [name] of Object.entries(config.collections)) {
-    for (const entry of store.values(name) as Array<DataEntry<{ title: string }>>) {
+    for (const entry of store.values(name) as Array<DataEntry<{ title: string; order?: number }>>) {
       pages.push({
         collection: name,
         id: entry.id,
         file: pageFileFor(entry.id),
         route: routeFor(entry.id),
         title: entry.data.title,
+        order: entry.data.order,
       });
     }
   }
   pages.sort((a, b) => a.route.localeCompare(b.route));
 
-  const nav = pages.map(({ route, title }) => ({ href: route, title }));
+  // 侧边栏：配置声明的集合（默认全部——万页夹具须显式排除，themes.md §8）
+  const sidebarCollections = new Set(
+    theme.options.sidebar?.collections ?? Object.keys(config.collections),
+  );
+  const sidebar = buildSidebar(pages.filter((p) => sidebarCollections.has(p.collection)));
+  const sidebarJson = {
+    site: theme.options.site ?? "markopress",
+    style: theme.options.style ?? "default",
+    tree: sidebar.tree,
+    flat: sidebar.flat,
+  };
+
   const expected = new Set(["+layout.marko", ...pages.map((p) => p.file)]);
 
   const written: Array<string> = [];
   for (const p of pages) {
-    if (writeIfChanged(join(ROUTES_DIR, p.file), pageTemplate(p.collection, p.id))) {
+    if (writeIfChanged(join(ROUTES_DIR, p.file), pageTemplate(p.collection, p.id, p.route))) {
       written.push(p.file);
     }
   }
   if (writeIfChanged(join(ROUTES_DIR, "+layout.marko"), layoutTemplate())) written.push("+layout.marko");
-  if (writeIfChanged(NAV_FILE, `${JSON.stringify(nav, null, 2)}\n`)) written.push("../nav.json");
+  if (writeIfChanged(SIDEBAR_FILE, `${JSON.stringify(sidebarJson, null, 2)}\n`)) written.push("../sidebar.json");
+  if (writeIfChanged(PAGE_NAV_FILE, PAGE_NAV_SOURCE)) written.push("../page-nav.js");
   if (writeIfChanged(URLS_FILE, `${JSON.stringify(pages.map((p) => p.route), null, 2)}\n`)) written.push("../urls.json");
 
   // 插件产出路由（routes 钩子，生成期一次；docs/plugin-design.md §3）。

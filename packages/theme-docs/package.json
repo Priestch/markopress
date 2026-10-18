@@ -1,0 +1,7 @@
+{
+  "name": "@markopress/theme-docs",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "markopress 默认文档主题：mp-layout / mp-page 槽位实现（设计依据 docs/research/themes.md §9）",
+  "dependencies": {}
+}

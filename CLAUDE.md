@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 markopress：基于 Marko 6 + `@marko/run` 的内容框架（VitePress/Astro 形态，`.md` 文件即页面）。当前处于 **Phase 1（content 层）进行中：markdown 已接入 content layer，单文件增量同步已落地**。技术决策（D1–D6）已定稿于 `docs/background.md`，不要重新讨论；五份调研报告在 `docs/research/`（与实际不符时以 `node_modules/@marko/run` 安装源码为准；`rspack-watcher.md` 是 markopack/Rspack 迁移评估依据）。
 
-仓库是 pnpm workspace：`packages/content`（@markopress/content，内容层契约 + store，整体抄 Astro Content Layer 契约）与 `packages/markdown`（@markopress/markdown，`.md` EntryType + unified 渲染器）——**在工作目录对应的包前先读其 AGENTS.md**。root 暂时兼任 spike app（收包为 `packages/site` 的定案见 `docs/plan-site-package.md`，等 markopack 发版后执行，勿提前讨论）。
+仓库是 pnpm workspace：`packages/content`（@markopress/content，内容层契约 + store，整体抄 Astro Content Layer 契约）、`packages/markdown`（@markopress/markdown，`.md` EntryType + unified 渲染器）、`packages/theme-docs`（默认文档主题）、`packages/plugin-rss` / `plugin-sitemap`（插件）——**在工作目录对应的包前先读其 AGENTS.md**。root 暂时兼任 spike app（收包为 `packages/site` 的定案见 `docs/plan-site-package.md`，等 markopack 发版后执行，勿提前讨论）。
 
 ## 常用命令
 
@@ -37,24 +37,31 @@ Node ≥ 22.18（原生 type stripping，workspace 包以 TS 源码分发，无�
 ```
 content.config.ts：集合定义（loader: glob + zod schema），docs→content/（默认仅此一个；
      perf→content-perf/ 在 content.perf.config.ts，经 MP_CONTENT_CONFIG 启用）
-markopress.config.ts：管线与插件（defineMarkoPressConfig({ plugins })；契约 = docs/plugin-design.md，
-     装配点 = content.ts setup()，两路 watcher 都监听它的变更 → resetSynced 全量重建）
+markopress.config.ts：管线与插件 + 主题（defineMarkoPressConfig({ theme, themeOptions, plugins })；
+     契约 = docs/plugin-design.md，主题契约 = docs/research/themes.md §9；装配点 = content.ts
+     setup()（theme 解析 + 槽位校验 fail fast），两路 watcher 都监听它的变更 → resetSynced 全量重建）
      │
      ▼  scripts/content.ts（ensureSynced 单例：装载 store/meta → sync → typegen → 插件注册/通知）
 content*/ ──glob loader(markdownEntryType)──▶ .markopress/store/<collection>.json（devalue）
      │
-     ▼  scripts/gen-routes.ts（数据源 = store.values()；含插件 routes 钩子产出的 +handler.mjs）
+     ▼  scripts/gen-routes.ts（数据源 = store.values()；含插件 routes 钩子产出的 +handler.mjs；
+        sidebar.ts 纯函数派生侧边栏树 + flat 序）
 .markopress/（gitignore，全部生成物）
-  ├─ routes/+layout.marko      静态外壳（import nav.json + Counter，永不变化）
-  ├─ routes/<name>+page.marko  极小包装：import 虚拟模块，正文不内联
+  ├─ routes/+layout.marko      静态外壳：<mp-layout> 槽位（import sidebar.json，永不变化）
+  ├─ routes/<name>+page.marko  极小包装：<mp-page> 槽位（import 虚拟模块 + page-nav.js）
   ├─ routes/<seg%2E…>+handler.mjs  插件路由包装（路径段含 `.` 必须 %2E，动词逐个 export const）
   ├─ plugin-data/<name>.js     插件数据模块（setData 产物；经 virtual:mp/plugin/<name> 消费）
-  ├─ nav.json / urls.json      nav 数据（模块 import）/ SSG 显式清单
+  ├─ sidebar.json              侧边栏树+flat 序（模块 import；重写走模块图失效——prev/next 同源）
+  ├─ page-nav.js / urls.json   静态邻居助手（永不变化）/ SSG 显式清单
      │
      ▼  scripts/markopress-plugin.ts（markopress() Vite 插件）
 虚拟模块 virtual:mp/content/<collection>/<id> → { data, segments, headings }
   （惰性渲染 + digest 内存缓存；segments 数组为 md 内 Marko 组件段留门，本期只有 html 段；
-   transformBody/pageData 钩子在渲染路径上，按有效 digest 缓存——scripts/content-modules.ts）
+   transformBody/pageData 钩子在渲染路径上，按有效 digest 缓存——scripts/content-modules.ts。
+   prev/next 不进虚拟模块：跨文件数据，per-entry digest 缓存会在重排后过期——走 sidebar.json）
+packages/theme-docs：@markopress/theme-docs 主题包（mp-layout/mp-sidebar/mp-page 槽位实现；
+  marko.json tags-dir 经 root 包依赖探测全局发现；暗色 = data-theme 属性 + <html-script>
+  内联 pre-paint 脚本；契约细节见其 AGENTS.md）
 vite.config.ts：markopressPlugin() 包裹 markoRun({ routesDir, adapter: staticAdapter() })
   （不传 urls——adapter 自动爬无参数路由，显式清单会每页爬两次；见硬约束 3）
 ```
@@ -75,7 +82,7 @@ vite.config.ts：markopressPlugin() 包裹 markoRun({ routesDir, adapter: static
 
 ## Marko 6 语法速查（本仓库用到过的）
 
-状态 `<let/count=0>`（更新直接赋值 `count++`）；事件 `onClick() { … }`；循环 `<for|item| of=nav>`；动态标签/布局体 `<${input.content}/>`；原始 HTML `$!{html}`（须平衡片段）；模块级常量 `static const`；`.marko` 内可 `import nav from "../nav.json"`（走 Vite 管线）。
+状态 `<let/count=0>`（更新直接赋值 `count++`）；事件 `onClick() { … }`；循环 `<for|item| of=nav>`；动态标签/布局体 `<${input.content}/>`；原始 HTML `$!{html}`（须平衡片段）；模块级常量 `static const`；**模板级每次渲染的常量是 `<const/x=…>` 标签**（裸 `const x = …` 会被解析成 `<const>` 标签报错，除非前缀 `static`）；`.marko` 内可 `import nav from "../nav.json"`（走打包管线）；**内联 `<script>` 会被编译进浏览器 bundle（延迟执行）**——要字面内联 HTML（如 pre-paint 反闪脚本）必须用 `<html-script>`。
 
 ## 生成目录与 git
 

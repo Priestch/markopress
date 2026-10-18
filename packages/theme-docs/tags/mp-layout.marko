@@ -1,0 +1,391 @@
+// 站点级布局槽位（docs/research/themes.md §9）：文档骨架 = 顶栏 + 侧边栏 + 页脚 + 暗色切换。
+//
+// input 契约（生成器 + .markopress/sidebar.json 提供）：
+//   site    站名（顶栏 logo 链接 / <title> / 页脚）
+//   tree    侧边栏树（sidebar.json 的 tree 字段；渲染在 mp-sidebar，active 态客户端标注）
+//   style   风格预设名（sidebar.json 的 style 字段 → <html data-style>，CSS 变量层切换）
+//   content marko-run 布局融合注入的页面 render body（<${input.content}/>）
+//
+// 暗色（themes.md §5 四家共识）：html[data-theme] 属性 + head 内联脚本 pre-paint 解析
+// （亮/暗/系统三态，localStorage 键 markopress-theme）+ data-theme-choice 暴露选择供用户 CSS。
+// 主题状态不进 Marko state——纯 DOM attribute + 手写脚本，resume 零负担（Marko 与 React
+// 不同，连 hydration mismatch 都不存在，但保持零状态仍有省 resume 数据的好处）。
+//
+// Marko 6 <style> 块 = 提取且全局（scoped 是 <style/styles> 的事）——选择器要命中
+// $!{html} 注入的动态内容，必须全局；正文元素选择器一律 .mp-doc scope（在 mp-page）。
+<style>
+  :root {
+    --mp-bg: #ffffff;
+    --mp-bg-soft: #f6f8fa;
+    --mp-fg: #1f2328;
+    --mp-fg-muted: #57606a;
+    --mp-border: #d0d7de;
+    --mp-accent: #0969da;
+    --mp-radius: 6px;
+    --mp-sidebar-w: 260px;
+    --mp-toc-w: 200px;
+    --mp-content-w: 760px;
+    --mp-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  /* 暗色 = 同 token 重声明（themes.md §7）。dark 覆盖必须在亮色之后——同特异性下
+     后者胜（R1 实测踩坑）；属性选择器使手动切换生效（media 查询只跟随系统） */
+  html[data-theme="dark"] {
+    --mp-bg: #0d1117;
+    --mp-bg-soft: #161b22;
+    --mp-fg: #e6edf3;
+    --mp-fg-muted: #8b949e;
+    --mp-border: #30363d;
+    --mp-accent: #4493f8;
+  }
+
+  /* ── 风格预设（themeOptions.style → sidebar.json → <html data-style>）──
+     四家视觉近似，色值取自各自源码：vitepress theme-default vars.css
+     （--vp-c-indigo-1 #3451b2）、starlight props.css（accent hsl(234,90%,60%)，
+     暗色 hsl(224,100%,60%)）、nextra head.tsx（hue 212/204, sat 100, light 45/55；
+     bg rgb(250,250,250)/rgb(17,17,17)）、docusaurus website custom.css
+     （hue-saturation 167 68%；暗色为近似调亮）。各家暗色 accent 为保持对比度的近似调亮。
+     级联纪律：html[data-style] 特异性 (0,1,1) 与 html[data-theme=dark] 相同——
+     预设块必须在基础暗色块之后，且每组预设的暗色块紧跟其亮色块（覆盖完整配对）。 */
+
+  html[data-style="vitepress"] {
+    --mp-accent: #3451b2;
+    --mp-bg: #ffffff;
+    --mp-bg-soft: #f6f6f7;
+    --mp-fg: #3c3c43;
+    --mp-fg-muted: #76767f;
+    --mp-border: #c2c2c4;
+    --mp-radius: 8px;
+  }
+  html[data-style="vitepress"][data-theme="dark"] {
+    --mp-accent: #7387ff;
+    --mp-bg: #1b1b1f;
+    --mp-bg-soft: #161618;
+    --mp-fg: #eaeaf0;
+    --mp-fg-muted: #91919c;
+    --mp-border: #3c3c41;
+  }
+
+  html[data-style="starlight"] {
+    --mp-accent: hsl(234, 90%, 55%);
+    --mp-bg: #ffffff;
+    --mp-bg-soft: #f1f3f6;
+    --mp-fg: #26282d;
+    --mp-fg-muted: #5c5f66;
+    --mp-border: #d9dee4;
+    --mp-radius: 8px;
+  }
+  html[data-style="starlight"][data-theme="dark"] {
+    --mp-accent: hsl(224, 100%, 66%);
+    --mp-bg: #101014;
+    --mp-bg-soft: #17171c;
+    --mp-fg: #eceef2;
+    --mp-fg-muted: #9b9ba7;
+    --mp-border: #2a2a33;
+  }
+
+  html[data-style="nextra"] {
+    --mp-accent: hsl(212, 100%, 45%);
+    --mp-bg: rgb(250, 250, 250);
+    --mp-bg-soft: #f4f4f4;
+    --mp-fg: #111111;
+    --mp-fg-muted: #666666;
+    --mp-border: #eaeaea;
+    --mp-radius: 8px;
+  }
+  html[data-style="nextra"][data-theme="dark"] {
+    --mp-accent: hsl(204, 100%, 60%);
+    --mp-bg: rgb(17, 17, 17);
+    --mp-bg-soft: #212121;
+    --mp-fg: #ededed;
+    --mp-fg-muted: #a0a0a0;
+    --mp-border: #303030;
+  }
+
+  html[data-style="docusaurus"] {
+    --mp-accent: hsl(167, 68%, 32%);
+    --mp-bg: #ffffff;
+    --mp-bg-soft: #f7f8fa;
+    --mp-fg: #373a3c;
+    --mp-fg-muted: #6e6e6e;
+    --mp-border: #dadde1;
+    --mp-radius: 4px;
+  }
+  html[data-style="docusaurus"][data-theme="dark"] {
+    --mp-accent: hsl(167, 58%, 56%);
+    --mp-bg: #18191a;
+    --mp-bg-soft: #202123;
+    --mp-fg: #e3e6e8;
+    --mp-fg-muted: #9aa0a6;
+    --mp-border: #3e4145;
+  }
+
+  /* 预设的组件级差异（纯 CSS）：Nextra 无顶栏分割线 + 卡片式上下页；
+     Docusaurus 同为卡片式（Infima pagination 形态） */
+  html[data-style="nextra"] .mp-topbar { border-bottom-color: transparent; }
+  html[data-style="nextra"] .mp-pagination a,
+  html[data-style="docusaurus"] .mp-pagination a {
+    border: 1px solid var(--mp-border);
+    border-radius: var(--mp-radius);
+    padding: 10px 16px;
+  }
+  html[data-style="nextra"] .mp-pagination a:hover,
+  html[data-style="docusaurus"] .mp-pagination a:hover {
+    border-color: var(--mp-accent);
+    text-decoration: none;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    line-height: 1.6;
+    color: var(--mp-fg);
+    background: var(--mp-bg);
+  }
+
+  /* 顶栏 */
+  .mp-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 56px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--mp-border);
+    position: sticky;
+    top: 0;
+    background: var(--mp-bg);
+    z-index: 30;
+  }
+  .mp-site { font-weight: 700; color: var(--mp-fg); text-decoration: none; }
+  .mp-topbar-spacer { flex: 1; }
+  .mp-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid transparent;
+    border-radius: var(--mp-radius);
+    background: none;
+    color: var(--mp-fg-muted);
+    cursor: pointer;
+    padding: 0;
+  }
+  .mp-icon-button:hover { color: var(--mp-fg); border-color: var(--mp-border); }
+
+  /* 三态图标按 data-theme-choice 显隐：脚本只翻属性，按钮内容零 JS 更新 */
+  .mp-theme-toggle svg { display: none; }
+  html[data-theme-choice="light"] .mp-theme-toggle svg[data-icon="light"],
+  html[data-theme-choice="dark"] .mp-theme-toggle svg[data-icon="dark"],
+  html[data-theme-choice="system"] .mp-theme-toggle svg[data-icon="system"] { display: block; }
+
+  /* 主体两栏：侧边栏 sticky，main 吃剩余宽度 */
+  .mp-shell { display: flex; min-height: calc(100vh - 56px); }
+  .mp-sidebar {
+    width: var(--mp-sidebar-w);
+    flex-shrink: 0;
+    border-right: 1px solid var(--mp-border);
+    position: sticky;
+    top: 56px;
+    max-height: calc(100vh - 56px);
+    overflow-y: auto;
+    padding: 16px 12px 32px;
+  }
+  .mp-main { flex: 1; min-width: 0; }
+  .mp-footer {
+    border-top: 1px solid var(--mp-border);
+    padding: 14px 24px;
+    font-size: 13px;
+    color: var(--mp-fg-muted);
+  }
+
+  /* 侧边栏树（mp-sidebar 渲染；active 由页尾脚本按 location.pathname 标注） */
+  .mp-sidebar-list { list-style: none; margin: 0; padding: 0; }
+  .mp-sidebar-list .mp-sidebar-list { padding-left: 12px; }
+  .mp-sidebar-heading {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mp-fg-muted);
+    padding: 6px 10px;
+    text-decoration: none;
+    display: block;
+  }
+  a.mp-sidebar-heading:hover { color: var(--mp-fg); }
+  .mp-sidebar-link {
+    display: block;
+    padding: 5px 10px;
+    font-size: 14px;
+    color: var(--mp-fg);
+    text-decoration: none;
+    border-radius: var(--mp-radius);
+  }
+  .mp-sidebar-link:hover { background: var(--mp-bg-soft); }
+  .mp-sidebar-link.active { background: var(--mp-bg-soft); color: var(--mp-accent); font-weight: 600; }
+  /* 分组入口页（guide/index.md 吸收为分组链接）当前页时的高亮 */
+  a.mp-sidebar-heading.active { color: var(--mp-accent); }
+
+  /* 无障碍跳转（四家都有；聚焦前移出视口） */
+  .mp-skip {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+    background: var(--mp-accent);
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 0 0 6px 0;
+    text-decoration: none;
+  }
+  .mp-skip:focus { left: 0; }
+
+  /* 移动端（≤960px）：侧边栏变抽屉（html[data-sidebar] 由页尾脚本翻属性） */
+  .mp-sidebar-toggle { display: none; }
+  @media (max-width: 960px) {
+    .mp-sidebar-toggle { display: inline-flex; }
+    .mp-sidebar {
+      position: fixed;
+      left: 0;
+      top: 56px;
+      bottom: 0;
+      z-index: 20;
+      background: var(--mp-bg);
+      transform: translateX(-100%);
+      transition: transform 0.2s ease;
+      box-shadow: none;
+      max-height: none;
+    }
+    html[data-sidebar="open"] .mp-sidebar {
+      transform: none;
+      box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.4);
+    }
+  }
+</style>
+
+<!DOCTYPE html>
+<html data-style=(input.style ?? "default")>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%20viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📑</text></svg>">
+  <title>${input.site}</title>
+  <!-- pre-paint：SSG 静态 HTML 对所有用户相同，主题必须在首帧前解析（themes.md §5）。
+       注意用 <html-script>（原样透传）——裸 <script> 会被 Marko 编译进浏览器 bundle
+       变成延迟执行的模块，首帧前不运行，反闪就白做了 -->
+  <html-script>
+    (function () {
+      var KEY = "markopress-theme"
+      var choice = "system"
+      try { choice = localStorage.getItem(KEY) || "system" } catch (e) {}
+      var dark = choice === "dark" ||
+        (choice !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+      var root = document.documentElement
+      root.setAttribute("data-theme", dark ? "dark" : "light")
+      root.setAttribute("data-theme-choice", choice)
+    })()
+  </html-script>
+</head>
+<body>
+  <a class="mp-skip" href="#mp-main">Skip to content</a>
+  <header class="mp-topbar">
+    <button class="mp-icon-button mp-sidebar-toggle" data-mp-sidebar-toggle aria-label="Toggle sidebar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
+    </button>
+    <a class="mp-site" href="/">${input.site}</a>
+    <span class="mp-topbar-spacer"/>
+    <button class="mp-icon-button mp-theme-toggle" data-mp-theme-toggle aria-label="Toggle theme" title="Theme (light / dark / system)">
+      <svg data-icon="light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <svg data-icon="dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      <svg data-icon="system" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+    </button>
+  </header>
+  <div class="mp-shell">
+    <aside class="mp-sidebar">
+      <nav>
+        <mp-sidebar items=input.tree/>
+      </nav>
+    </aside>
+    <main class="mp-main" id="mp-main">
+      <${input.content}/>
+    </main>
+  </div>
+  <footer class="mp-footer">${input.site} · built with markopress</footer>
+  <!-- 行为脚本同样 <html-script> 内联：暗色切换/抽屉/active 标注/TOC scrollspy
+       （每页一份内联 HTML，避免进 per-page bundle） -->
+  <html-script>
+    (function () {
+      var root = document.documentElement
+      var THEME_KEY = "markopress-theme"
+      var THEME_ORDER = ["light", "dark", "system"]
+
+      function applyTheme(choice) {
+        var dark = choice === "dark" ||
+          (choice !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+        root.setAttribute("data-theme", dark ? "dark" : "light")
+        root.setAttribute("data-theme-choice", choice)
+      }
+
+      var themeToggle = document.querySelector("[data-mp-theme-toggle]")
+      if (themeToggle) {
+        themeToggle.addEventListener("click", function () {
+          var current = root.getAttribute("data-theme-choice") || "system"
+          var next = THEME_ORDER[(THEME_ORDER.indexOf(current) + 1) % THEME_ORDER.length]
+          try { localStorage.setItem(THEME_KEY, next) } catch (e) {}
+          applyTheme(next)
+        })
+      }
+
+      // 系统偏好变化时，仅「跟随系统」态跟随（显式选择不动）
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+        if ((root.getAttribute("data-theme-choice") || "system") === "system") applyTheme("system")
+      })
+
+      // 移动端抽屉
+      var sidebarToggle = document.querySelector("[data-mp-sidebar-toggle]")
+      if (sidebarToggle) {
+        sidebarToggle.addEventListener("click", function () {
+          root.setAttribute("data-sidebar", root.getAttribute("data-sidebar") === "open" ? "closed" : "open")
+        })
+      }
+      // 抽屉关闭：点抽屉外任意处 / Esc（遮罩是 box-shadow 画的不接事件，走 document 委托）
+      document.addEventListener("click", function (e) {
+        if (root.getAttribute("data-sidebar") !== "open") return
+        if (e.target.closest && e.target.closest(".mp-sidebar, [data-mp-sidebar-toggle]")) return
+        root.setAttribute("data-sidebar", "closed")
+      })
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && root.getAttribute("data-sidebar") === "open") {
+          root.setAttribute("data-sidebar", "closed")
+        }
+      })
+
+      // 侧边栏 active：SSG 下布局不感知当前路由（每页共用同一布局融合产物），
+      // 客户端按 pathname 标注；纯视觉态，无功能依赖，闪一下可接受
+      var path = location.pathname.replace(/\/+$/, "") || "/"
+      var active = document.querySelector('.mp-sidebar a[href="' + path + '"]')
+      if (active) {
+        active.classList.add("active")
+        active.setAttribute("aria-current", "page")
+      }
+
+      // TOC scrollspy（mp-page 的 aside；脚本放布局尾部，避免每页重复内联同一段代码）
+      var tocLinks = Array.prototype.slice.call(document.querySelectorAll(".mp-toc a[href^='#']"))
+      if (tocLinks.length) {
+        var observer = new IntersectionObserver(function (entries) {
+          for (var i = 0; i < entries.length; i++) {
+            if (!entries[i].isIntersecting) continue
+            var hash = "#" + entries[i].target.id
+            for (var j = 0; j < tocLinks.length; j++) {
+              tocLinks[j].classList.toggle("active", tocLinks[j].hash === hash)
+            }
+          }
+        }, { rootMargin: "0px 0px -75% 0px" })
+        for (var k = 0; k < tocLinks.length; k++) {
+          var section = document.getElementById(decodeURIComponent(tocLinks[k].hash.slice(1)))
+          if (section) observer.observe(section)
+        }
+      }
+    })()
+  </html-script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+// 侧边栏树渲染（递归自引用——taglib 含自身是 Marko 树形组件的标准手法）。
+// input：items = sidebar.json 的 tree 节点（type: page | group）。
+// active 态由 mp-layout 的页尾脚本按 location.pathname 标注（见彼处注释）。
+<ul class="mp-sidebar-list">
+  <for|node| of=input.items>
+    <if=node.type === "group">
+      <li>
+        <if=node.href>
+          <a class="mp-sidebar-heading" href=node.href>${node.title}</a>
+        </if>
+        <else>
+          <div class="mp-sidebar-heading">${node.title}</div>
+        </else>
+        <mp-sidebar items=node.children/>
+      </li>
+    </if>
+    <else>
+      <li>
+        <a class="mp-sidebar-link" href=node.href>${node.title}</a>
+      </li>
+    </else>
+  </for>
+</ul>
