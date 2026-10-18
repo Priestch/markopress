@@ -64,6 +64,15 @@ content*/ ──glob loader(markdownEntryType)──▶ .markopress/store/<colle
   （惰性渲染 + digest 内存缓存；segments 数组为 md 内 Marko 组件段留门，本期只有 html 段；
    transformBody/pageData 钩子在渲染路径上，按有效 digest 缓存——scripts/content-modules.ts。
    prev/next 不进虚拟模块：跨文件数据，per-entry digest 缓存会在重排后过期——走 sidebar.json）
+资产管线（scripts/images.ts，app 共享层，两后端共用）：md 块级 <image …/>（blog 兼容语法，
+  行尾内联形态归一；fenced code 安全）→ 预提取占位符 → sharp webp srcset 梯 + blur 占位 +
+  原图拷贝 → public/_markopress/image/<源内容 sha1 前8>/ 内容寻址落盘（vite 原生服务
+  publicDir；rspack 靠 markopack dev sirv 链 + adapter-static buildEnd 拷贝——两处 public/
+  约定是本次在 markopack 配套落地的）。资产不进 store、不进核心包（content AGENTS.md
+  红线）；资产 digest 折进 entry 有效 digest（渲染/变换/pageData 缓存全级联），watcher 资产
+  事件 → assetOwners（同目录/同名子目录）→ 重渲染归属 entry。v1 边界：AVIF/<picture>/
+  远程图/`image()` helper 不做；解析缓存键必须含源内容 digest——同路径换字节不折叠键的话
+  vcontent 逐字节不变、失效断链（踩过）。
 packages/theme-docs：@markopress/theme-docs 主题包（mp-layout/mp-sidebar/mp-page 槽位实现；
   marko.json tags-dir 经 root 包依赖探测全局发现；暗色 = data-theme 属性 + <html-script>
   内联 pre-paint 脚本；契约细节见其 AGENTS.md）

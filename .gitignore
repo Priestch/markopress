@@ -4,3 +4,6 @@ dist/
 .markopress/
 content-perf/
 .playwright-mcp/
+
+# 资产管线产物（scripts/images.ts 写入；用户自己的 public 资产照常跟踪）
+public/_markopress/

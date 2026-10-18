@@ -15,6 +15,7 @@ import type { ContentConfig } from "@markopress/content";
 import { CONFIG_FILE, PRESS_CONFIG_FILE, ROOT, ensureSynced, resetSynced } from "./content.ts";
 import { generateRoutes } from "./gen-routes.ts";
 import { writeContentModules } from "./content-modules.ts";
+import { assetOwners } from "./images.ts";
 import { enqueueContentSynced } from "./plugins.ts";
 import { mpRspack, prepare } from "./rspack-shared.ts";
 
@@ -155,9 +156,22 @@ async function drain(): Promise<void> {
             changed.push(...outcome.changed);
             removed.push(...outcome.removed);
           }
-          if (changed.length + removed.length > 0) {
+          // 资产事件（图片文件，syncFile 不认领）→ 归属 entry 重渲染：资产 digest 折进
+          // 有效 digest（content-modules.ts），vcontent 重写即原生 watcher 失效。
+          // moduleChanged 专供内容模块重写；插件增量仍用 changed——纯资产变更不影响
+          // 文本索引/RSS/sitemap，不必跑。
+          const moduleChanged = [...changed];
+          for (const job of jobs) {
+            if (job.kind !== "file") continue;
+            for (const owner of await assetOwners(job.file)) {
+              if (!moduleChanged.some((c) => c.collection === owner.collection && c.id === owner.id)) {
+                moduleChanged.push(owner);
+              }
+            }
+          }
+          if (moduleChanged.length + removed.length > 0) {
             // 先落内容模块再生成路由：新路由编译时 import 的文件必须已存在
-            const modules = await writeContentModules({ changed, removed });
+            const modules = await writeContentModules({ changed: moduleChanged, removed });
             // slug 增/删才有 routes 文件事件（模板不变则 write-if-changed 全跳过）
             await generateRoutes();
             // 插件增量（contentSynced：O(变更)，后台链；plugin-data 落盘走原生 watcher 失效）

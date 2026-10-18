@@ -21,6 +21,7 @@ import {
   STORE_DIR,
   VIRTUAL_PREFIX,
 } from "./content.ts";
+import { assetOwners, isImageFile } from "./images.ts";
 import { generateRoutes } from "./gen-routes.ts";
 import {
   enqueueContentSynced,
@@ -116,7 +117,7 @@ export function markopressPlugin(): Plugin {
         throw new Error(`[markopress] no content entry "${collection}/${entryId}" (stale generated route? rerun sync)`);
       }
       // 模块源码唯一来源在 content-modules.ts（Rspack 路径落盘共用）
-      return renderContentModule(entry, renderer);
+      return renderContentModule(collection, entry, renderer);
     },
 
     configureServer(server) {
@@ -203,6 +204,19 @@ export function markopressPlugin(): Plugin {
   ): Promise<{ touched: boolean; changed: Array<{ collection: string; id: string }>; removed: Array<{ collection: string; id: string }> }> {
     const { store, syncer, config } = await ensureSynced();
     const outcome = await syncer.syncFile(config, { type, path: file });
+    // 资产事件（图片文件，syncFile 不认领）：归属 entry 失效重渲染——资产 digest
+    // 折进有效 digest（content-modules.ts），load 时产出新 srcset/blur。纯资产变更
+    // 不进 changed/removed：文本索引/RSS/sitemap 不受影响，插件增量不必跑。
+    if (outcome.changed.length + outcome.removed.length === 0 && isImageFile(file)) {
+      let touchedAsset = false;
+      for (const { collection, id } of await assetOwners(file)) {
+        invalidate(server, `${collection}/${id}`);
+        touchedAsset = true;
+      }
+      if (touchedAsset) {
+        return { touched: true, changed, removed };
+      }
+    }
     for (const { collection, id } of outcome.changed) {
       invalidate(server, `${collection}/${id}`);
       knownDigests.set(`${collection}/${id}`, store.get(collection, id)?.digest ?? "");

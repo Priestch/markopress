@@ -12,6 +12,7 @@ import { dirname, join } from "node:path";
 import { getGenerateDigest, type DataEntry } from "@markopress/content";
 import type { MarkdownRenderer } from "@markopress/markdown";
 import { ensureSynced, ROOT } from "./content.ts";
+import { entryAssetDigest, extractImageTags, resolveEntryDir, resolveImageSegments } from "./images.ts";
 
 export const VCONTENT_DIR = join(ROOT, ".markopress", "vcontent");
 
@@ -29,6 +30,7 @@ const pageDataCache = new Map<string, Record<string, unknown>>();
 
 /** 渲染虚拟模块源码：data / segments / headings 三导出。JSON 序列化：Date 等富类型退化为字符串（够用）。 */
 export async function renderContentModule(
+  collection: string,
   entry: DataEntry,
   renderer: MarkdownRenderer,
 ): Promise<string> {
@@ -38,16 +40,19 @@ export async function renderContentModule(
     );
   }
   const { plugins, pluginCtx } = await ensureSynced();
+  const generateDigest = await getGenerateDigest();
 
-  // transformBody 链（声明序）。有效 digest = digest(原 digest + 链标识)——
-  // 原始与变换后的渲染缓存互不污染（纯函数 ⇒ 同键必同值）
+  // 有效 digest 的两级折叠（渲染器/transformBody/pageData 三处缓存共用的失效键）：
+  //   资产 digest —— 旁挂图片内容变化（md 未动）也要重渲染，否则 srcset/blur 过期
+  //   变换链 id  —— 原始与变换后的渲染缓存互不污染（纯函数 ⇒ 同键必同值）
   let body = entry.body;
   let effectiveDigest = entry.digest ?? entry.id;
+  const assetDigest = await entryAssetDigest(collection, entry);
+  if (assetDigest) effectiveDigest = generateDigest(`${effectiveDigest}::assets:${assetDigest}`);
   const transformers = plugins.filter((p) => p.transformBody);
   if (transformers.length) {
     const chainId = transformers.map((p) => p.name).join("|");
-    const generateDigest = await getGenerateDigest();
-    effectiveDigest = generateDigest(`${entry.digest ?? entry.id}::${chainId}`);
+    effectiveDigest = generateDigest(`${effectiveDigest}::${chainId}`);
     const cached = transformCache.get(effectiveDigest);
     if (cached !== undefined) {
       body = cached;
@@ -59,10 +64,17 @@ export async function renderContentModule(
     }
   }
 
+  // <image> 块级预提取 → 渲染 → 解析回填（scripts/images.ts；占位符是 HTML 注释，
+  // remark 原样透传，解析失败的标签回填原文=透传，与未接管线行为一致）
+  const { tags, body: withPlaceholders } = extractImageTags(body);
   const { segments, headings } = await renderer.render({
     digest: effectiveDigest,
-    body,
+    body: withPlaceholders,
   });
+  if (tags.length) {
+    const entryDir = await resolveEntryDir(collection, entry);
+    if (entryDir) await resolveImageSegments(segments, tags, entryDir);
+  }
 
   // pageData 合并（浅合并进 data 导出；同名键后者覆盖——插件自己起好名字）
   let data = entry.data as Record<string, unknown>;
@@ -128,7 +140,7 @@ export async function writeContentModules(scope?: {
     for (const { collection, id } of scope.changed ?? []) {
       const entry = store.get(collection, id);
       if (!entry) continue; // 已被同批 removed 或撞车清理
-      writeIfChanged(contentModuleFile(collection, id), await renderContentModule(entry, renderer), result);
+      writeIfChanged(contentModuleFile(collection, id), await renderContentModule(collection, entry, renderer), result);
     }
     for (const { collection, id } of scope.removed ?? []) {
       const file = contentModuleFile(collection, id);
@@ -145,7 +157,7 @@ export async function writeContentModules(scope?: {
     for (const entry of store.values(name)) {
       const file = contentModuleFile(name, entry.id);
       expected.add(file);
-      writeIfChanged(file, await renderContentModule(entry as DataEntry, renderer), result);
+      writeIfChanged(file, await renderContentModule(name, entry as DataEntry, renderer), result);
     }
   }
   cleanStale(VCONTENT_DIR, expected, result);
