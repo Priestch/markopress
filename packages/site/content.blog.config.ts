@@ -9,7 +9,7 @@ import { z } from "zod";
 export default defineContentConfig({
   collections: {
     posts: defineCollection({
-      loader: glob({ pattern: "**/*.md", base: "../blog/content" }),
+      loader: glob({ pattern: "**/*.md", base: "../../../blog/content" }),
       schema: z.object({
         title: z.string(),
         date: z.coerce.date().optional(),

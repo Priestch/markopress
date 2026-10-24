@@ -15,6 +15,7 @@
     "minisearch": "^7.2.0"
   },
   "devDependencies": {
+    "@marko/runtime-tags": "6.4.5",
     "typescript": "^5.9.3",
     "vitest": "^4.0.0"
   }

@@ -1,7 +1,7 @@
 # Plan：站点收包为 VitePress 式自包含目录（`packages/site`）
 
-> 状态：**已定案、暂缓执行**。触发条件：**markopack 发版到 npm**（届时 `link:../markopack/...` 换成版本化依赖，正好一起动）。
-> 定案日期：2026-10-15。在此之前 root 继续兼任 spike app（CLAUDE.md「暂时」的含义即此）。
+> 状态：**已执行完毕**（2026-10-25，随 markopack 0.4.0 发版一起落地）。本文档保留作迁移记录。
+> 定案 2026-10-15；执行时的偏离：theme-docs/plugin-search 补了 `@marko/runtime-tags` devDep（root 上溯解析随收包失效）。
 
 ## 为什么是这个形态（定案理由，勿重新讨论）
 

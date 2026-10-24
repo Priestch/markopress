@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 markopress：基于 Marko 6 + `@marko/run` 的内容框架（VitePress/Astro 形态，`.md` 文件即页面）。当前处于 **Phase 1（content 层）进行中：markdown 已接入 content layer，单文件增量同步已落地**。技术决策（D1–D6）已定稿于 `docs/background.md`，不要重新讨论；五份调研报告在 `docs/research/`（与实际不符时以 `node_modules/@marko/run` 安装源码为准；`rspack-watcher.md` 是 markopack/Rspack 迁移评估依据）。
 
-仓库是 pnpm workspace：`packages/content`（@markopress/content，内容层契约 + store，整体抄 Astro Content Layer 契约）、`packages/markdown`（@markopress/markdown，`.md` EntryType + unified 渲染器）、`packages/theme-docs`（默认文档主题）、`packages/plugin-rss` / `plugin-sitemap` / `plugin-search`（插件，search = MiniSearch 本地搜索 + 首个 UI 槽位插件）——**在工作目录对应的包前先读其 AGENTS.md**。root 暂时兼任 spike app（收包为 `packages/site` 的定案见 `docs/plan-site-package.md`，等 markopack 发版后执行，勿提前讨论）。
+仓库是 pnpm workspace：`packages/content`（@markopress/content，内容层契约 + store，整体抄 Astro Content Layer 契约）、`packages/markdown`（@markopress/markdown，`.md` EntryType + unified 渲染器）、`packages/theme-docs`（默认文档主题）、`packages/plugin-rss` / `plugin-sitemap` / `plugin-search`（插件，search = MiniSearch 本地搜索 + 首个 UI 槽位插件）、**`packages/site`（狗粮站 = 未来脚手架模板形态：自带 package.json + content.config.ts + content/ + src/components/，收包定案已执行，见 `docs/plan-site-package.md`）**——**在工作目录对应的包前先读其 AGENTS.md**。root 只做 workspace 编排（scripts 全部 `--filter` 代理进 site，命令名不变）。
 
 ## 常用命令
 
@@ -31,7 +31,7 @@ pnpm --filter @markopress/plugin-search test  # search 包 vitest（节切分 + 
 
 **双路并行纪律（同树双命令，不用 git 分支）**：内容层/store/`gen-routes.ts`/`content-modules.ts` 为两路共享，新功能落共享层；打包器特定代码只允许出现在 `virtual:mp/content/` 解析与 watcher 层（Vite = markopress-plugin.ts，Rspack = rspack-*.ts）。对比数据见 `docs/perf-rspack-vs-vite.md`。
 
-Node ≥ 22.18（原生 type stripping，workspace 包以 TS 源码分发，无构建步骤），pnpm 12（esbuild 构建审批在 `pnpm-workspace.yaml` 的 `allowBuilds`——package.json 的 `pnpm` 字段已不读）。app 级无 linter —— 验收靠浏览器手测（Playwright MCP）与 `pnpm build`；两个包有 vitest。markopack 已接 npm `^0.4.0`（0.4.0 发版于 2026-10-25，含本仓库需要的全部修复：热路由/crawler 并发/public/ 约定/水合盲区等；本地工作区 `../markopack` 仅作上游开发参考——要试未发版改动时临时切回 `link:`）。**pnpm 12 坑**：lockfile 变更后 `pnpm run`（dev/build）可能卡死在「Verifying lockfile against supply-chain policies」——直跑 `node scripts/rspack-dev.ts` / `node scripts/rspack-build.ts` 绕过。`@marko/runtime-tags` 保持直接依赖（pnpm 严格布局下水合入口从根解析）。
+Node ≥ 22.18（原生 type stripping，workspace 包以 TS 源码分发，无构建步骤），pnpm 12（esbuild 构建审批在 `pnpm-workspace.yaml` 的 `allowBuilds`——package.json 的 `pnpm` 字段已不读）。app 级无 linter —— 验收靠浏览器手测（Playwright MCP）与 `pnpm build`；三个包有 vitest。**含 `.marko` tag 的包（theme-docs / plugin-search）必须声明 `@marko/runtime-tags` devDep**（编译产物 import 它；收包前靠 root 上溯解析，收包后 pnpm 严格布局下上溯链断——2026-10-25 踩过）。markopack 已接 npm `^0.4.0`（0.4.0 发版于 2026-10-25，含本仓库需要的全部修复：热路由/crawler 并发/public/ 约定/水合盲区等；本地工作区 `../markopack` 仅作上游开发参考——要试未发版改动时临时切回 `link:`）。**pnpm 12 坑**：lockfile 变更后 `pnpm run`（dev/build）可能卡死在「Verifying lockfile against supply-chain policies」——直跑 `node scripts/rspack-dev.ts` / `node scripts/rspack-build.ts`（在 packages/site 下）绕过。
 
 ## 架构（数据流）
 
@@ -109,4 +109,4 @@ vite.config.ts：markopressPlugin() 包裹 markoRun({ routesDir, adapter: static
 
 ## 生成目录与 git
 
-`.markopress/`（我们的生成物）、`.marko-run/`（marko-run 的类型）、`dist/` 均已 gitignore。`scripts/gen-routes.ts` 是路由生成器（vite.config 与 CLI 共用）、`scripts/markopress-plugin.ts` 是 Vite 插件本体、`scripts/content.ts` 是内容层装配单例；写文件前比对内容（write-if-changed），避免无效 watcher 抖动。`content-perf/` 是性能测试夹具（`node scripts/perf-test.mjs [N]` 生成）。
+`.markopress/`（我们的生成物）、`.marko-run/`（marko-run 的类型）、`dist/` 均已 gitignore。`packages/site/scripts/gen-routes.ts` 是路由生成器（vite.config 与 CLI 共用）、`packages/site/scripts/markopress-plugin.ts` 是 Vite 插件本体、`packages/site/scripts/content.ts` 是内容层装配单例；写文件前比对内容（write-if-changed），避免无效 watcher 抖动。`content-perf/` 是性能测试夹具（`node scripts/perf-test.mjs [N]` 生成）。

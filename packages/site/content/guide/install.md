@@ -11,3 +11,4 @@ as a group in the sidebar.
 ## Verify
 
 The sidebar should show a "Guide" group containing this page.
+

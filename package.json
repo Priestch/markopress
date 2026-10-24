@@ -4,34 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/rspack-dev.ts",
-    "build": "node scripts/rspack-build.ts",
-    "dev:vite": "marko-run dev",
-    "build:vite": "marko-run build",
-    "preview": "node scripts/rspack-preview.ts",
-    "preview:vite": "marko-run preview",
-    "dev:perf": "MP_CONTENT_CONFIG=content.perf.config.ts node scripts/rspack-dev.ts",
-    "build:perf": "MP_CONTENT_CONFIG=content.perf.config.ts node scripts/rspack-build.ts",
-    "gen": "node scripts/gen-routes.ts"
-  },
-  "dependencies": {
-    "@marko/run": "^0.11.13",
-    "@marko/run-adapter-static": "^2.0.10",
-    "@markopack/adapter-static": "^0.4.0",
-    "@markopack/rspack": "^0.4.0",
-    "@markopress/content": "workspace:*",
-    "@markopress/markdown": "workspace:*",
-    "@markopress/plugin-rss": "workspace:*",
-    "@markopress/plugin-search": "workspace:*",
-    "@markopress/plugin-sitemap": "workspace:*",
-    "@markopress/theme-docs": "workspace:*",
-    "marko": "^6.4.5",
-    "sharp": "^0.35.5",
-    "zod": "^4.0.0"
-  },
-  "devDependencies": {
-    "@marko/runtime-tags": "6.4.5",
-    "@rspack/core": "2.2.9",
-    "vite": "^8.3.4"
+    "dev": "pnpm --filter @markopress/site dev",
+    "build": "pnpm --filter @markopress/site build",
+    "dev:vite": "pnpm --filter @markopress/site dev:vite",
+    "build:vite": "pnpm --filter @markopress/site build:vite",
+    "preview": "pnpm --filter @markopress/site preview",
+    "preview:vite": "pnpm --filter @markopress/site preview:vite",
+    "dev:perf": "pnpm --filter @markopress/site dev:perf",
+    "build:perf": "pnpm --filter @markopress/site build:perf",
+    "gen": "pnpm --filter @markopress/site gen",
+    "test": "pnpm -r --filter './packages/*' test"
   }
 }
