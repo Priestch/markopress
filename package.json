@@ -17,8 +17,8 @@
   "dependencies": {
     "@marko/run": "^0.11.13",
     "@marko/run-adapter-static": "^2.0.10",
-    "@markopack/adapter-static": "link:../markopack/packages/adapter-static",
-    "@markopack/rspack": "link:../markopack/packages/rspack",
+    "@markopack/adapter-static": "^0.4.0",
+    "@markopack/rspack": "^0.4.0",
     "@markopress/content": "workspace:*",
     "@markopress/markdown": "workspace:*",
     "@markopress/plugin-rss": "workspace:*",

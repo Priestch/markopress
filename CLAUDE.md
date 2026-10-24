@@ -31,7 +31,7 @@ pnpm --filter @markopress/plugin-search test  # search 包 vitest（节切分 + 
 
 **双路并行纪律（同树双命令，不用 git 分支）**：内容层/store/`gen-routes.ts`/`content-modules.ts` 为两路共享，新功能落共享层；打包器特定代码只允许出现在 `virtual:mp/content/` 解析与 watcher 层（Vite = markopress-plugin.ts，Rspack = rspack-*.ts）。对比数据见 `docs/perf-rspack-vs-vite.md`。
 
-Node ≥ 22.18（原生 type stripping，workspace 包以 TS 源码分发，无构建步骤），pnpm 12（esbuild 构建审批在 `pnpm-workspace.yaml` 的 `allowBuilds`——package.json 的 `pnpm` 字段已不读）。app 级无 linter —— 验收靠浏览器手测（Playwright MCP）与 `pnpm build`；两个包有 vitest。markopack 以 `link:../markopack` 直连本地工作区（未发版的编排层/crawler 修复必须本地直连；`@marko/runtime-tags` 需为直接依赖，pnpm 严格布局下水合入口从根解析）。
+Node ≥ 22.18（原生 type stripping，workspace 包以 TS 源码分发，无构建步骤），pnpm 12（esbuild 构建审批在 `pnpm-workspace.yaml` 的 `allowBuilds`——package.json 的 `pnpm` 字段已不读）。app 级无 linter —— 验收靠浏览器手测（Playwright MCP）与 `pnpm build`；两个包有 vitest。markopack 已接 npm `^0.4.0`（0.4.0 发版于 2026-10-25，含本仓库需要的全部修复：热路由/crawler 并发/public/ 约定/水合盲区等；本地工作区 `../markopack` 仅作上游开发参考——要试未发版改动时临时切回 `link:`）。**pnpm 12 坑**：lockfile 变更后 `pnpm run`（dev/build）可能卡死在「Verifying lockfile against supply-chain policies」——直跑 `node scripts/rspack-dev.ts` / `node scripts/rspack-build.ts` 绕过。`@marko/runtime-tags` 保持直接依赖（pnpm 严格布局下水合入口从根解析）。
 
 ## 架构（数据流）
 
@@ -61,9 +61,18 @@ content*/ ──glob loader(markdownEntryType)──▶ .markopress/store/<colle
      │
      ▼  scripts/markopress-plugin.ts（markopress() Vite 插件）
 虚拟模块 virtual:mp/content/<collection>/<id> → { data, segments, headings }
-  （惰性渲染 + digest 内存缓存；segments 数组为 md 内 Marko 组件段留门，本期只有 html 段；
-   transformBody/pageData 钩子在渲染路径上，按有效 digest 缓存——scripts/content-modules.ts。
+  （惰性渲染 + digest 内存缓存；transformBody/pageData 钩子在渲染路径上，按有效 digest 缓存
+   ——scripts/content-modules.ts。渲染 digest 带 ::extracted 命名空间：pluginCtx.render
+   （搜索等插件）以原始 body 用裸 digest 缓存，不隔离会把未提取的 html 污染进模块渲染。
    prev/next 不进虚拟模块：跨文件数据，per-entry digest 缓存会在重排后过期——走 sidebar.json）
+md 内 Marko 组件段（scripts/segments.ts）：src/components/ 的 tag library（root marko.json
+  tags-dir 发现）在 md 块级直接 <tag/>。提取→占位符注释→渲染后切段（html|component）→
+  组件段落盘 .markopress/vseg/<c>/<id>/<n>.marko→模块 import virtual:mp/segment/…（rspack
+  NormalModuleReplacementPlugin / vite resolveId 双侧解析到真实文件，编译归 bundler）→
+  mp-page <${seg.component}/> 动态渲染 + Marko 水合。**markopack 配套**：translator 的
+  hydrate 发射只看 .marko→.marko 闭包，.js 中转的组件需 MarkoRspackPlugin 补浏览器入口
+  import（clientHydrateImports，必须在 ?browser-entry 之前执行否则注册晚于 init）。
+  已知边缘：dev 会话中途新增组件文件要重启（taglib 进程缓存）；fenced code 内安全。
 资产管线（scripts/images.ts，app 共享层，两后端共用）：md 块级 <image …/>（blog 兼容语法，
   行尾内联形态归一；fenced code 安全）→ 预提取占位符 → sharp webp srcset 梯 + blur 占位 +
   原图拷贝 → public/_markopress/image/<源内容 sha1 前8>/ 内容寻址落盘（vite 原生服务

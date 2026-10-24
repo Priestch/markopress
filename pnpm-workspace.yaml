@@ -6,3 +6,8 @@ onlyBuiltDependencies:
   - esbuild
 allowBuilds:
   esbuild: true
+minimumReleaseAgeExclude:
+  - '@markopack/adapter-static@0.4.0'
+  - '@markopack/compiler@0.4.0'
+  - '@markopack/core@0.4.0'
+  - '@markopack/rspack@0.4.0'
