@@ -23,6 +23,7 @@ import {
 } from "./content.ts";
 import { assetOwners, isImageFile } from "./images.ts";
 import { generateRoutes } from "./gen-routes.ts";
+import { SEGMENT_PREFIX, VSEG_DIR } from "./segments.ts";
 import {
   enqueueContentSynced,
   PLUGIN_DATA_DIR,
@@ -92,6 +93,11 @@ export function markopressPlugin(): Plugin {
       if (id.startsWith(VIRTUAL_PREFIX)) {
         return RESOLVED_PREFIX + id.slice(VIRTUAL_PREFIX.length);
       }
+      // 组件段：解析到真实 .marko 文件（vseg；写盘发生在 load() 的 renderContentModule，
+      // 先于本 import 的解析——顺序保证成立）
+      if (id.startsWith(SEGMENT_PREFIX)) {
+        return resolve(VSEG_DIR, `${id.slice(SEGMENT_PREFIX.length)}.marko`);
+      }
       // 插件数据模块：直接解析到落盘真实文件（进模块图 ⇒ Vite 自动 watch/失效，
       // 与 nav.json 同款路径，无需自管 load/失效）
       if (id.startsWith(PLUGIN_VIRTUAL_PREFIX)) {
@@ -117,7 +123,7 @@ export function markopressPlugin(): Plugin {
         throw new Error(`[markopress] no content entry "${collection}/${entryId}" (stale generated route? rerun sync)`);
       }
       // 模块源码唯一来源在 content-modules.ts（Rspack 路径落盘共用）
-      return renderContentModule(collection, entry, renderer);
+      return (await renderContentModule(collection, entry, renderer)).source;
     },
 
     configureServer(server) {

@@ -11,6 +11,7 @@ import { rspack } from "@rspack/core";
 import type { Configuration } from "@rspack/core";
 import { VIRTUAL_PREFIX } from "./content.ts";
 import { writeContentModules, VCONTENT_DIR } from "./content-modules.ts";
+import { SEGMENT_PREFIX, VSEG_DIR } from "./segments.ts";
 import { ensureSynced } from "./content.ts";
 import { generateRoutes } from "./gen-routes.ts";
 import { PLUGIN_DATA_DIR, PLUGIN_VIRTUAL_PREFIX } from "./plugins.ts";
@@ -20,13 +21,17 @@ export function mpRspack() {
     config.plugins.push(
       new rspack.NormalModuleReplacementPlugin(
         // virtual:mp/content/<c>/<id> → vcontent/<c>/<id>.js；
-        // virtual:mp/plugin/<name> → plugin-data/<name>.js（真实文件在编译图内 ⇒ 原生 watcher 失效）
-        new RegExp(`^(?:${VIRTUAL_PREFIX}|${PLUGIN_VIRTUAL_PREFIX})`),
+        // virtual:mp/segment/<c>/<id>/<n> → vseg/<c>/<id>/<n>.marko（真实 .marko 进编译图）；
+        // virtual:mp/plugin/<name> → plugin-data/<name>.js（真实文件 ⇒ 原生 watcher 失效）
+        new RegExp(`^(?:${VIRTUAL_PREFIX}|${PLUGIN_VIRTUAL_PREFIX}|${SEGMENT_PREFIX})`),
         (resource: { request: string }) => {
           // request 形如前缀+rest（无扩展名）→ 直接拼完整绝对路径，绕开 resolve extensions 歧义
           if (resource.request.startsWith(VIRTUAL_PREFIX)) {
             const rest = resource.request.slice(VIRTUAL_PREFIX.length);
             resource.request = path.join(VCONTENT_DIR, `${rest}.js`);
+          } else if (resource.request.startsWith(SEGMENT_PREFIX)) {
+            const rest = resource.request.slice(SEGMENT_PREFIX.length);
+            resource.request = path.join(VSEG_DIR, `${rest}.marko`);
           } else {
             const name = resource.request.slice(PLUGIN_VIRTUAL_PREFIX.length);
             resource.request = path.join(PLUGIN_DATA_DIR, `${name}.js`);

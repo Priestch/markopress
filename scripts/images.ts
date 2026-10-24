@@ -367,6 +367,8 @@ export async function resolveImageSegments(
 			}
 			const replacement = html ?? tag.raw;
 			for (const segment of segments) {
+				// 组件段（segments.ts 切出）无 html 字段——MPIMG 占位符只活在 html 段
+				if (segment.type !== "html") continue;
 				if (segment.html.includes(tag.token)) segment.html = segment.html.replaceAll(tag.token, replacement);
 			}
 		}),

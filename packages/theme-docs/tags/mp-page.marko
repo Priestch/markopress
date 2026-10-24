@@ -1,7 +1,9 @@
 // 页面级槽位：正文 article（.mp-doc scope）+ 右栏 TOC + prev/next。
 //
 // input 契约（生成器的 +page.marko 包装提供）：
-//   page { data, segments, headings } —— 虚拟模块导出（per-page，digest 缓存）
+//   page { data, segments, headings } —— 虚拟模块导出（per-page，digest 缓存）；
+//       segments 含 html 段（$!{html} 注入）与 component 段（md 内 <tag/>，
+//       scripts/segments.ts 产出，动态 tag 渲染 + Marko 水合）
 //   nav  { prev, next }               —— page-nav.js 从 sidebar flat 序算的邻居
 //                                         （{ title, href } | null；跨文件数据走 sidebar.json
 //                                          模块图失效，不进虚拟模块的 per-entry 缓存）
@@ -133,6 +135,9 @@
       <if=seg.type === "html">
         $!{seg.html}
       </if>
+      <else>
+        <${seg.component}/>
+      </else>
     </for>
     <nav class="mp-pagination">
       <if=input.nav?.prev>

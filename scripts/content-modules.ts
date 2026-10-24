@@ -13,6 +13,14 @@ import { getGenerateDigest, type DataEntry } from "@markopress/content";
 import type { MarkdownRenderer } from "@markopress/markdown";
 import { ensureSynced, ROOT } from "./content.ts";
 import { entryAssetDigest, extractImageTags, resolveEntryDir, resolveImageSegments } from "./images.ts";
+import {
+  SEGMENT_PREFIX,
+  VSEG_DIR,
+  extractComponentTags,
+  removeSegmentFiles,
+  splitSegments,
+  writeSegmentFiles,
+} from "./segments.ts";
 
 export const VCONTENT_DIR = join(ROOT, ".markopress", "vcontent");
 
@@ -28,12 +36,18 @@ const transformCache = new Map<string, string>();
 /** pageData 缓存：有效 digest → 各插件合并结果（链变了 digest 随之失配，天然失效） */
 const pageDataCache = new Map<string, Record<string, unknown>>();
 
-/** 渲染虚拟模块源码：data / segments / headings 三导出。JSON 序列化：Date 等富类型退化为字符串（够用）。 */
+/** 渲染产物：source = 模块源码；segFiles = 本 entry 的组件段文件（已落盘，供差集清理） */
+export interface RenderedModule {
+  source: string;
+  segFiles: Array<string>;
+}
+
+/** 渲染虚拟模块源码：data / segments / headings 三导出。无组件段时 segments 是纯 JSON（逐字节与历史形态一致）。 */
 export async function renderContentModule(
   collection: string,
   entry: DataEntry,
   renderer: MarkdownRenderer,
-): Promise<string> {
+): Promise<RenderedModule> {
   if (entry.contentType !== "text/markdown" || entry.body === undefined) {
     throw new Error(
       `[markopress] no renderer for contentType ${String(entry.contentType)} ("${entry.id}")`,
@@ -64,17 +78,27 @@ export async function renderContentModule(
     }
   }
 
-  // <image> 块级预提取 → 渲染 → 解析回填（scripts/images.ts；占位符是 HTML 注释，
-  // remark 原样透传，解析失败的标签回填原文=透传，与未接管线行为一致）
-  const { tags, body: withPlaceholders } = extractImageTags(body);
-  const { segments, headings } = await renderer.render({
-    digest: effectiveDigest,
+  // 段提取两级：组件 tag（白名单，占位符是段边界）→ <image>（占位符在 html 段内原位回填）。
+  // 两个提取器互不冲突：组件白名单不含 image，image 正则只认 <image 前缀。
+  const { tags: componentTags, body: withoutComponents } = extractComponentTags(body);
+  const { tags, body: withPlaceholders } = extractImageTags(withoutComponents);
+  // 渲染 digest 加命名空间：pluginCtx.render（搜索等插件，原始 body）与本处（提取后
+  // body）不能共用缓存键——否则先跑的插件渲染会以同 digest 污染缓存，模块渲染命中
+  // 未提取的 html（token 消失、<tag/> 原样透传）。blog spike 期没暴露：posts 不在搜索集合。
+  const rendered = await renderer.render({
+    digest: `${effectiveDigest}::extracted`,
     body: withPlaceholders,
   });
+  const joinedHtml = rendered.segments.map((s) => s.html).join("");
+  const segments = splitSegments(
+    joinedHtml,
+    componentTags,
+  );
   if (tags.length) {
     const entryDir = await resolveEntryDir(collection, entry);
     if (entryDir) await resolveImageSegments(segments, tags, entryDir);
   }
+  const segFiles = writeSegmentFiles(collection, entry.id, componentTags);
 
   // pageData 合并（浅合并进 data 导出；同名键后者覆盖——插件自己起好名字）
   let data = entry.data as Record<string, unknown>;
@@ -91,12 +115,33 @@ export async function renderContentModule(
     data = { ...entry.data, ...bucket };
   }
 
-  return [
-    `export const data = ${JSON.stringify(data)}`,
-    `export const segments = ${JSON.stringify(segments)}`,
-    `export const headings = ${JSON.stringify(headings)}`,
-    ``,
-  ].join("\n");
+  // 无组件段：纯 JSON 导出（与历史形态逐字节一致——存量内容零扰动）；
+  // 有组件段：import 真实 .marko 文件 + 组件引用注入。
+  // import 指定符 = SEGMENT_PREFIX + collection + "/" + id + "/" + n（路径即结构，两侧解析不拆参）
+  const source =
+    componentTags.length === 0
+      ? [
+          `export const data = ${JSON.stringify(data)}`,
+          `export const segments = ${JSON.stringify(segments)}`,
+          `export const headings = ${JSON.stringify(rendered.headings)}`,
+          ``,
+        ].join("\n")
+      : [
+          componentTags
+            .map((_, i) => `import seg${i} from "${SEGMENT_PREFIX}${collection}/${entry.id}/${i}";`)
+            .join("\n"),
+          `export const data = ${JSON.stringify(data)}`,
+          `export const segments = [\n${segments
+            .map((s) =>
+              s.type === "html"
+                ? JSON.stringify({ type: "html", html: s.html })
+                : `{ "type": "component", "component": seg${s.index} }`,
+            )
+            .join(",\n")}\n]`,
+          `export const headings = ${JSON.stringify(rendered.headings)}`,
+          ``,
+        ].join("\n");
+  return { source, segFiles };
 }
 
 export interface ContentModulesResult {
@@ -140,7 +185,8 @@ export async function writeContentModules(scope?: {
     for (const { collection, id } of scope.changed ?? []) {
       const entry = store.get(collection, id);
       if (!entry) continue; // 已被同批 removed 或撞车清理
-      writeIfChanged(contentModuleFile(collection, id), await renderContentModule(collection, entry, renderer), result);
+      const { source } = await renderContentModule(collection, entry, renderer);
+      writeIfChanged(contentModuleFile(collection, id), source, result);
     }
     for (const { collection, id } of scope.removed ?? []) {
       const file = contentModuleFile(collection, id);
@@ -148,6 +194,7 @@ export async function writeContentModules(scope?: {
         rmSync(file);
         result.removed.push(file);
       }
+      removeSegmentFiles(collection, id);
     }
     return result;
   }
@@ -156,10 +203,13 @@ export async function writeContentModules(scope?: {
   for (const name of Object.keys(config.collections)) {
     for (const entry of store.values(name)) {
       const file = contentModuleFile(name, entry.id);
+      const { source, segFiles } = await renderContentModule(name, entry as DataEntry, renderer);
       expected.add(file);
-      writeIfChanged(file, await renderContentModule(name, entry as DataEntry, renderer), result);
+      for (const seg of segFiles) expected.add(seg);
+      writeIfChanged(file, source, result);
     }
   }
   cleanStale(VCONTENT_DIR, expected, result);
+  cleanStale(VSEG_DIR, expected, result);
   return result;
 }
