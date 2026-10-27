@@ -74,15 +74,18 @@ md 内 Marko 组件段（scripts/segments.ts）：.markopress/components/ 的 ta
   hydrate 发射只看 .marko→.marko 闭包，.js 中转的组件需 MarkoRspackPlugin 补浏览器入口
   import（clientHydrateImports，必须在 ?browser-entry 之前执行否则注册晚于 init）。
   已知边缘：dev 会话中途新增组件文件要重启（taglib 进程缓存）；fenced code 内安全。
-资产管线（scripts/images.ts，app 共享层，两后端共用）：md 块级 <image …/>（blog 兼容语法，
-  行尾内联形态归一；fenced code 安全）→ 预提取占位符 → sharp webp srcset 梯 + blur 占位 +
+资产管线（scripts/images.ts，app 共享层，两后端共用）：md 块级 <mp-image …/>（mp-* 保留命名空间；
+  行尾内联形态归一；属性三形态（双/单/无引号）；fenced code 安全）→ 预提取占位符 → sharp webp srcset 梯 + blur 占位 +
   原图拷贝 → public/_markopress/image/<源内容 sha1 前8>/ 内容寻址落盘（vite 原生服务
   publicDir；rspack 靠 markopack dev sirv 链 + adapter-static buildEnd 拷贝——两处 public/
   约定是本次在 markopack 配套落地的）。资产不进 store、不进核心包（content AGENTS.md
   红线）；资产 digest 折进 entry 有效 digest（渲染/变换/pageData 缓存全级联），watcher 资产
-  事件 → assetOwners（同目录/同名子目录）→ 重渲染归属 entry。v1 边界：AVIF/<picture>/
-  远程图/`image()` helper 不做；解析缓存键必须含源内容 digest——同路径换字节不折叠键的话
-  vcontent 逐字节不变、失效断链（踩过）。
+  事件 → assetOwners（同目录/同名子目录）→ 重渲染归属 entry。v1 属性面：src/alt/layout/width|height/quality/sizes/placeholder/fetchpriority（per-tag quality 进变体文件名防覆盖）。
+  v2 门（未做）：AVIF/<picture>/DPR densities/远程图优化/`image()` helper/组件内用图。
+  解析缓存键必须含源内容 digest——同路径换字节不折叠键的话 vcontent 逐字节不变、失效断链（踩过）。
+  **多主题共存撞名**：生成器显式 import 主题组件（mp-layout/mp-page 经解析后的主题包路径），
+  不走 taglib 全局发现——site 同时装 theme-docs+theme-blog 时同名 tag 后者顶包（踩过）；
+  插件功能槽位（mp-search）仍走发现（app 根就近、名字唯一）。
 packages/theme-docs / theme-blog：主题包（同槽位契约互斥；theme-blog 按 frontmatter layout
   分流 post/home/list/page，flat 由生成器传参——主题不得自 import sidebar.json，跨包解析
   app 文件是 taglib 同款坑）。机械内容样式（mp-image/容器/shiki 切换）共享于 theme-base

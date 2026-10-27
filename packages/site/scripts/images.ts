@@ -29,7 +29,7 @@ const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".avif", ".g
 const RASTER_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".avif"]);
 const OUTPUT_URL_PREFIX = "/_markopress/image";
 const OUTPUT_DIR = join(ROOT, "public", OUTPUT_URL_PREFIX);
-const VARIANT_QUALITY = 80;
+const DEFAULT_QUALITY = 80;
 /** 响应式梯（旧版 0.0.24 同款） */
 const WIDTH_LADDER = [320, 480, 640, 768, 960, 1280, 1536, 1920];
 
@@ -157,10 +157,17 @@ export interface ImageTag {
 	attrs: Record<string, string>;
 }
 
-const IMAGE_TAG_RE = /^ {0,3}<image\s[^>]*?\/>$/;
+const IMAGE_TAG_RE = /^ {0,3}<mp-image\s[^>]*?\/>$/;
 /** 行尾内联形态：prose + 空格 + 标签（blog 实测有此写法）——拆到独立行后按块级处理 */
-const IMAGE_TAG_TRAILING_RE = /^(.*\S)\s+(<image\s[^>]*?\/>)$/;
-const ATTRIBUTE_RE = /([a-zA-Z][\w:.-]*)\s*=\s*"([^"]*)"/g;
+const IMAGE_TAG_TRAILING_RE = /^(.*\S)\s+(<mp-image\s[^>]*?\/>)$/;
+// 属性值三形态：双引号 / 单引号 / 无引号 token（HTML 合法；数字/单词自然写法）
+const ATTRIBUTE_RE = /([a-zA-Z][\w:.-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|(?!["'\/])([^\s>]+))/g;
+
+function attrValue(match: RegExpMatchArray): string {
+	// 裸值分支会吞到自闭合斜杠（none/> → "none/"）——行尾 trim 掉
+	const bare = match[4]?.replace(/\/+$/, "");
+	return match[2] ?? match[3] ?? bare ?? "";
+}
 const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
 
 /**
@@ -193,7 +200,7 @@ export function extractImageTags(body: string): { body: string; tags: Array<Imag
 		}
 		if (!tagText) continue;
 		const attrs: Record<string, string> = {};
-		for (const [, name, value] of tagText.matchAll(ATTRIBUTE_RE)) attrs[name] = value;
+		for (const match of tagText.matchAll(ATTRIBUTE_RE)) attrs[match[1]] = attrValue(match);
 		if (!attrs.src?.trim()) continue;
 		const tag: ImageTag = { token: `<!--MPIMG${tags.length}-->`, raw: tagText, attrs };
 		tags.push(tag);
@@ -233,12 +240,12 @@ function targetWidths(layout: string, displayWidth: number, sourceWidth: number)
 	return [...widths].filter((w) => Number.isFinite(w) && w > 0).sort((a, b) => a - b);
 }
 
-async function ensureVariant(buffer: Buffer, width: number, file: string): Promise<void> {
+async function ensureVariant(buffer: Buffer, width: number, file: string, quality: number): Promise<void> {
 	if (existsSync(file)) return;
 	mkdirSync(dirname(file), { recursive: true });
 	// tmp + rename：并发渲染同一图片不至于写坏（后写者覆盖同内容）
 	const tmp = `${file}.${process.pid}.tmp`;
-	await sharp(buffer).rotate().resize({ width, withoutEnlargement: true }).webp({ quality: VARIANT_QUALITY }).toFile(tmp);
+	await sharp(buffer).rotate().resize({ width, withoutEnlargement: true }).webp({ quality }).toFile(tmp);
 	renameSync(tmp, file);
 }
 
@@ -300,37 +307,50 @@ async function resolveTag(tag: ImageTag, entryDir: string): Promise<ResolvedOutp
 		return undefined;
 	}
 	const layout = ["responsive", "fixed", "fluid"].includes(attrs.layout ?? "") ? attrs.layout! : "responsive";
-	const displayWidth = Number(attrs.width) > 0 ? Number(attrs.width) : meta.width;
-	const displayHeight = Math.round((meta.height * displayWidth) / meta.width);
+	// 显示尺寸约束：width 或 height 任给其一（等比推导）；都不给 = 原尺寸
+	const attrW = Number(attrs.width);
+	const attrH = Number(attrs.height);
+	const displayWidth = attrW > 0 ? attrW : attrH > 0 ? Math.round((meta.width * attrH) / meta.height) : meta.width;
+	const quality = Math.min(100, Math.max(1, Number(attrs.quality) > 0 ? Number(attrs.quality) : DEFAULT_QUALITY));
 
 	const widths = targetWidths(layout, displayWidth, meta.width);
-	await Promise.all(widths.map((width) => ensureVariant(buffer, width, join(outDir, `${outName.replace(/\.[^.]+$/, "")}-${width}w.webp`))));
+	// 变体名含 quality 段（非默认时）：同源同宽不同质量不会互相覆盖
+	const variantName = (width: number) =>
+		`${outName.replace(/\.[^.]+$/, "")}-${width}w${quality !== DEFAULT_QUALITY ? `-q${quality}` : ""}.webp`;
+	await Promise.all(
+		widths.map((width) => ensureVariant(buffer, width, join(outDir, variantName(width)), quality)),
+	);
 	mkdirSync(outDir, { recursive: true });
 	const originalName = join(outDir, outName);
 	if (!existsSync(originalName)) copyFileSync(sourcePath, originalName);
 
-	const srcset = widths.map((width) => `${urlFor(`${outName.replace(/\.[^.]+$/, "")}-${width}w.webp`)} ${width}w`).join(", ");
+	const srcset = widths.map((width) => `${urlFor(variantName(width))} ${width}w`).join(", ");
 	// src 兜底用原图拷贝（srcset 不被支持/变体缺失时的回退；现代浏览器走 srcset 拿 webp）
 	const fallbackSrc = urlFor(outName);
+	// sizes 可直传覆盖（响应式布局提示）；缺省按 layout 推导
 	const sizes =
-		layout === "fixed"
+		attrs.sizes ??
+		(layout === "fixed"
 			? `${displayWidth}px`
 			: layout === "fluid"
 				? "100vw"
-				: `(max-width: ${displayWidth}px) 100vw, ${displayWidth}px`;
+				: `(max-width: ${displayWidth}px) 100vw, ${displayWidth}px`);
 	const priority = attrs.fetchpriority === "high" ? ` fetchpriority="high"` : "";
 	const img =
 		`<img src="${fallbackSrc}" srcset="${srcset}" sizes="${sizes}"` +
 		` width="${meta.width}" height="${meta.height}" alt="${escapeHtml(alt)}"` +
 		` loading="lazy" decoding="async"${priority}/>`;
-	// blur 垫在容器背景：图片字节到达前占位区可见，字节到达后被 <img> 盖住——零 JS
-	const blur = await blurDataUri(buffer, Boolean(meta.hasAlpha));
+	// blur 垫在容器背景：图片字节到达前占位区可见，字节到达后被 <img> 盖住——零 JS。
+	// placeholder="none" 关闭（首屏大图省一段 data URI）
+	const blur =
+		attrs.placeholder === "none" ? "" : await blurDataUri(buffer, Boolean(meta.hasAlpha));
+	const blurStyle = blur ? `background-image:url(${blur});background-size:cover;background-position:center;` : "";
 	const style =
 		layout === "fixed"
 			? `width:${Math.min(displayWidth, meta.width)}px`
 			: `aspect-ratio:${meta.width}/${meta.height}` + (layout === "responsive" ? `;max-width:${displayWidth}px` : "");
 	const html =
-		`<div class="mp-image mp-image--${layout}" style="${style};background-image:url(${blur});background-size:cover;background-position:center">${img}</div>`;
+		`<div class="mp-image mp-image--${layout}" style="${style};${blurStyle}">${img}</div>`;
 	return { html };
 }
 

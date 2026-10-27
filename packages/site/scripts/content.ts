@@ -60,6 +60,10 @@ export const VIRTUAL_PREFIX = "virtual:mp/content/";
 export interface ResolvedTheme {
   name: string;
   options: ThemeOptions;
+  /** 主题包目录 + tags 目录（生成器显式 import 用——多主题共存时 taglib 全局发现
+   *  会撞名，显式 import 是唯一确定性绑定） */
+  dir: string;
+  tagsDir: string;
 }
 
 export interface SyncedContent {
@@ -153,7 +157,7 @@ function resolveTheme(pressConfig: MarkoPressConfig): ResolvedTheme {
       );
     }
   }
-  return { name, options: pressConfig.themeOptions ?? {} };
+  return { name, dir, tagsDir, options: pressConfig.themeOptions ?? {} };
 }
 
 async function setup(): Promise<SyncedContent> {

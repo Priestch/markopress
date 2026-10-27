@@ -14,7 +14,7 @@
 // prev/next 走 sidebar.json 的 flat 序（跨文件数据不能进 per-entry digest 缓存的虚拟模块，
 // 否则重排后邻居过期；真实文件 + 模块图失效是零新机制的正确解）。
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import type { DataEntry } from "@markopress/content";
 import { ensureSynced } from "./content.ts";
 import { ROOT } from "./paths.ts";
@@ -31,13 +31,17 @@ function pageFileFor(id: string): string {
   return id === "index" ? "+page.marko" : `${id.replaceAll("/", ".")}+page.marko`;
 }
 
-function pageTemplate(collection: string, id: string, route: string): string {
+function pageTemplate(theme: { dir: string; tagsDir: string }, collection: string, id: string, route: string): string {
+  // 主题组件显式 import（确定性绑定）：多主题共存安装时 taglib 全局发现会撞名
+  // （site 同时装 theme-docs/theme-blog 即触发），import 是唯一消歧手段
+  const pageTag = relative(join(ROOT, ".markopress", "routes"), join(theme.dir, theme.tagsDir, "mp-page.marko")).replaceAll("\\", "/");
   return [
     `import { data, segments, headings } from "virtual:mp/content/${collection}/${id}"`,
     `import { neighbors } from "../page-nav.js"`,
     `import sidebar from "../sidebar.json"`,
+    `import Page from "${pageTag}"`,
     ``,
-    `<mp-page page={ data, segments, headings } nav=neighbors("${route}") flat=sidebar.flat/>`,
+    `<Page page={ data, segments, headings } nav=neighbors("${route}") flat=sidebar.flat/>`,
     ``,
   ].join("\n");
 }
@@ -52,17 +56,21 @@ function pageTemplate(collection: string, id: string, route: string): string {
 // 必须由生成器 gating——Marko 对未知 tag 是硬错误（无「空元素透传」），且 taglib 依赖探测
 // 从模板就近 package.json 出发（lasso-package-root），主题包内看不到 app 依赖里的插件 taglib；
 // 生成物在 .markopress/ 下，就近 root = app 根 ⇒ 探测命中（与 <mp-layout> 的发现同机制）。
-function layoutTemplate(slots: Array<string>): string {
+function layoutTemplate(theme: { dir: string; tagsDir: string }, slots: Array<string>): string {
+  // 同 pageTemplate：显式 import 主题布局（多主题共存消歧）。插件功能槽位（mp-search
+  // 等）仍走 taglib 发现——插件名唯一、且从生成物（app 根就近）解析，无撞名面
+  const base = relative(join(ROOT, ".markopress", "routes"), join(theme.dir, theme.tagsDir)).replaceAll("\\", "/");
   const bodies = slots
     .filter((slot) => slot !== "mp-layout" && slot !== "mp-page")
     .map((slot) => [`  <@${slot.replace(/^mp-/, "")}>`, `    <${slot}/>`, `  </@${slot.replace(/^mp-/, "")}>`])
     .flat();
   return [
     `import sidebar from "../sidebar.json"`,
+    `import Layout from "${base}/mp-layout.marko"`,
     ``,
-    `<mp-layout site=sidebar.site nav=sidebar.nav tree=sidebar.tree style=sidebar.style content=input.content>`,
+    `<Layout site=sidebar.site nav=sidebar.nav tree=sidebar.tree style=sidebar.style content=input.content>`,
     ...bodies,
-    `</mp-layout>`,
+    `</Layout>`,
     ``,
   ].join("\n");
 }
@@ -143,13 +151,13 @@ export async function generateRoutes(): Promise<GenerateResult> {
 
   const written: Array<string> = [];
   for (const p of pages) {
-    if (writeIfChanged(join(ROUTES_DIR, p.file), pageTemplate(p.collection, p.id, p.route))) {
+    if (writeIfChanged(join(ROUTES_DIR, p.file), pageTemplate(theme, p.collection, p.id, p.route))) {
       written.push(p.file);
     }
   }
   if (writeIfChanged(
     join(ROUTES_DIR, "+layout.marko"),
-    layoutTemplate([...new Set(plugins.flatMap((p) => p.slots ?? []))]),
+    layoutTemplate(theme, [...new Set(plugins.flatMap((p) => p.slots ?? []))]),
   )) written.push("+layout.marko");
   if (writeIfChanged(SIDEBAR_FILE, `${JSON.stringify(sidebarJson, null, 2)}\n`)) written.push("../sidebar.json");
   if (writeIfChanged(PAGE_NAV_FILE, PAGE_NAV_SOURCE)) written.push("../page-nav.js");
