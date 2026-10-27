@@ -7,8 +7,8 @@
 // 装配点唯一：content.ts setup()（加载 markopress.config.ts → 实例化 → 注册面合并 →
 // 全量 contentSynced）。本文件不 import content.ts（避免环），store/config/render 由
 // setup() 经参数注入。
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join, relative } from "node:path";
 import type {
   ContentConfig,
   DataEntry,
@@ -202,6 +202,54 @@ export async function writePluginData(name: string, value: unknown): Promise<boo
  * 同装会得到无声的错误那个）；槽位名必须在保留命名空间 `mp-*` 内。
  * 装配期调用（content.ts setup），fail fast。
  */
+/**
+ * mp-* 命名空间治理（装配期 fail fast，content.ts setup 调用）：
+ *  - 插件槽位名必须 mp-* 且全站唯一（原有）
+ *  - 插件槽位不得与 ACTIVE 主题的 tag 同名——生成器 gating 写出的 <mp-xxx/> 走
+ *    taglib 发现，主题包同名 tag 会顶包（多主题撞名的同款机制）
+ *  - 用户组件目录（.markopress/components）禁止 mp-* 前缀——与插件 tag 在
+ *    taglib 发现层撞名，且段提取顺序在前会遮蔽管线的 <mp-image>
+ */
+export function validateNamespace(
+  plugins: Array<MarkoPressPlugin>,
+  theme?: { name: string; dir: string; tagsDir: string },
+  componentsDir?: string,
+): void {
+  validatePluginSlots(plugins);
+  const slots = plugins.flatMap((p) => p.slots ?? []);
+
+  if (theme) {
+    const themeTags = listMarkoTags(theme);
+    for (const slot of slots) {
+      if (themeTags.has(slot)) {
+        throw new Error(
+          `[markopress] plugin slot <${slot}> collides with a tag shipped by theme "${theme.name}" — a plugin slot and a theme tag may not share a name`,
+        );
+      }
+    }
+  }
+
+  if (componentsDir && existsSync(componentsDir)) {
+    const offenders = readdirSync(componentsDir)
+      .filter((f) => f.endsWith(".marko") && f.startsWith("mp-"))
+      .map((f) => f.replace(/\.marko$/, ""));
+    if (offenders.length) {
+      throw new Error(
+        `[markopress] user components may not use the reserved "mp-*" prefix: ${offenders.join(", ")} (in ${relative(ROOT, componentsDir)}) — rename them; mp-* is reserved for framework/plugin/theme tags`,
+      );
+    }
+  }
+}
+
+function listMarkoTags(theme: { dir: string; tagsDir: string }): Set<string> {
+  const tags: Array<string> = [];
+  const dir = join(theme.dir, theme.tagsDir);
+  if (existsSync(dir)) {
+    for (const f of readdirSync(dir)) if (f.endsWith(".marko")) tags.push(f.replace(/\.marko$/, ""));
+  }
+  return new Set(tags);
+}
+
 export function validatePluginSlots(plugins: Array<MarkoPressPlugin>): void {
   const owners = new Map<string, string>();
   for (const plugin of plugins) {

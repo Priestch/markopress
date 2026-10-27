@@ -83,9 +83,11 @@ md 内 Marko 组件段（scripts/segments.ts）：.markopress/components/ 的 ta
   事件 → assetOwners（同目录/同名子目录）→ 重渲染归属 entry。v1 属性面：src/alt/layout/width|height/quality/sizes/placeholder/fetchpriority（per-tag quality 进变体文件名防覆盖）。
   v2 门（未做）：AVIF/<picture>/DPR densities/远程图优化/`image()` helper/组件内用图。
   解析缓存键必须含源内容 digest——同路径换字节不折叠键的话 vcontent 逐字节不变、失效断链（踩过）。
-  **多主题共存撞名**：生成器显式 import 主题组件（mp-layout/mp-page 经解析后的主题包路径），
-  不走 taglib 全局发现——site 同时装 theme-docs+theme-blog 时同名 tag 后者顶包（踩过）；
-  插件功能槽位（mp-search）仍走发现（app 根就近、名字唯一）。
+  **mp-* 命名空间治理（装配期 validateNamespace，fail fast）**：① 主题组件显式 import
+  （生成器经 resolveTheme 包路径写 import——多主题共存时 taglib 全局发现撞名，theme-blog
+  曾顶包 theme-docs，踩过）；② 插件槽位必须 mp-* 且唯一（原有）；③ 插件槽位不得与
+  ACTIVE 主题 tag 同名；④ 用户组件目录禁 mp-* 前缀（撞插件 tag + 遮蔽管线 <mp-image>）。
+  插件功能槽位（mp-search）仍走 taglib 发现（app 根就近、经此治理名字唯一）。
 packages/theme-docs / theme-blog：主题包（同槽位契约互斥；theme-blog 按 frontmatter layout
   分流 post/home/list/page，flat 由生成器传参——主题不得自 import sidebar.json，跨包解析
   app 文件是 taglib 同款坑）。机械内容样式（mp-image/容器/shiki 切换）共享于 theme-base

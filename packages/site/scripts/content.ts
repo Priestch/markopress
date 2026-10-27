@@ -34,7 +34,7 @@ import {
   type PluginCtx,
   type ThemeOptions,
   routeFor,
-  validatePluginSlots,
+  validateNamespace,
   writePluginData,
 } from "./plugins.ts";
 
@@ -191,7 +191,7 @@ async function setup(): Promise<SyncedContent> {
 
   const renderer = createMarkdownRenderer(pressConfig.markdown);
   const theme = resolveTheme(pressConfig);
-  validatePluginSlots(pressConfig.plugins);
+  validateNamespace(pressConfig.plugins, theme, COMPONENTS_DIR);
   const pluginCtx: PluginCtx = {
     store,
     config,
