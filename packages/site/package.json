@@ -13,8 +13,8 @@
     "build:vite": "marko-run build",
     "preview": "node scripts/rspack-preview.ts",
     "preview:vite": "marko-run preview",
-    "dev:perf": "MP_CONTENT_CONFIG=content.perf.config.ts node scripts/rspack-dev.ts",
-    "build:perf": "MP_CONTENT_CONFIG=content.perf.config.ts node scripts/rspack-build.ts",
+    "dev:perf": "MP_CONTENT_CONFIG=.markopress/perf.config.ts node scripts/rspack-dev.ts",
+    "build:perf": "MP_CONTENT_CONFIG=.markopress/perf.config.ts node scripts/rspack-build.ts",
     "gen": "node scripts/gen-routes.ts"
   },
   "dependencies": {

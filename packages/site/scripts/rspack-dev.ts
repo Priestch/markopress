@@ -8,11 +8,11 @@
 //   - 没有 Vite ws full-reload：浏览器需手动刷新（已知缺口，记入 perf 文档）。
 //   - content.config.ts 在项目根、不在集合 watchDirs 内：ROOT 单独加一个非递归 watcher。
 import { existsSync, readdirSync, statSync, watch, type FSWatcher } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { dev } from "@markopack/rspack";
 import staticAdapter from "@markopack/adapter-static";
 import type { ContentConfig } from "@markopress/content";
-import { CONFIG_FILE, PRESS_CONFIG_FILE, ROOT, ensureSynced, resetSynced } from "./content.ts";
+import { CONFIG_FILE, ROOT, ensureSynced, resetSynced } from "./content.ts";
 import { generateRoutes } from "./gen-routes.ts";
 import { writeContentModules } from "./content-modules.ts";
 import { assetOwners } from "./images.ts";
@@ -40,7 +40,7 @@ for (const collection of Object.values(initialConfig.collections)) {
 await dev({
   root: ROOT,
   routesDir: ".markopress/routes",
-  entry: "./src/index.ts",
+  entry: "./.markopress/entry.ts",
   adapter: staticAdapter(),
   rspack: mpRspack(),
 });
@@ -50,12 +50,14 @@ console.log(`[markopress] content watcher active: ${[...watchDirs].join(", ")}`)
 
 function startWatchers(): void {
   for (const dir of watchDirs) watchTree(dir);
-  // 项目根（非递归）：content.config.ts / markopress.config.ts 都触发全量重建
+  // .markopress 目录（非递归，只看直接子项）：config.ts 变更触发全量重建。
+  // 生成物写盘（sidebar.json/content.d.ts/entry.ts）也在这里产生事件——
+  // 按文件名精确匹配过滤，成本忽略不计。不能盯单个文件：编辑器原子保存会
+  // 替换 inode（fs.watch 文件级 wd 失明陷阱，见本文件头注）。
   watchers.add(
-    watch(ROOT, { recursive: false }, (_event, filename) => {
+    watch(join(ROOT, ".markopress"), { recursive: false }, (_event, filename) => {
       if (typeof filename !== "string") return;
-      const file = resolve(ROOT, filename);
-      if (file === CONFIG_FILE || file === PRESS_CONFIG_FILE) {
+      if (resolve(ROOT, ".markopress", filename) === CONFIG_FILE) {
         resetSynced();
         enqueue({ kind: "full" });
       }

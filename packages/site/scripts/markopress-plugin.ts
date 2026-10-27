@@ -14,7 +14,6 @@ import type { Plugin, ViteDevServer } from "vite";
 import { renderContentModule } from "./content-modules.ts";
 import {
   CONFIG_FILE,
-  PRESS_CONFIG_FILE,
   ensureSynced,
   resetSynced,
   ROOT,
@@ -130,7 +129,7 @@ export function markopressPlugin(): Plugin {
       for (const dir of watchDirs) server.watcher.add(dir);
       server.watcher.on("all", (event, file) => {
         if (typeof file !== "string") return;
-        if (file === CONFIG_FILE || file === PRESS_CONFIG_FILE) {
+        if (file === CONFIG_FILE) {
           // 配置文件变了：重装配（新 digest ⇒ store 全量重建），随后走全量路径
           resetSynced();
           enqueue(server, { kind: "full" });

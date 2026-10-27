@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 markopress：基于 Marko 6 + `@marko/run` 的内容框架（VitePress/Astro 形态，`.md` 文件即页面）。当前处于 **Phase 1（content 层）进行中：markdown 已接入 content layer，单文件增量同步已落地**。技术决策（D1–D6）已定稿于 `docs/background.md`，不要重新讨论；五份调研报告在 `docs/research/`（与实际不符时以 `node_modules/@marko/run` 安装源码为准；`rspack-watcher.md` 是 markopack/Rspack 迁移评估依据）。
 
-仓库是 pnpm workspace：`packages/content`（@markopress/content，内容层契约 + store，整体抄 Astro Content Layer 契约）、`packages/markdown`（@markopress/markdown，`.md` EntryType + unified 渲染器）、`packages/theme-docs`（默认文档主题）、`packages/plugin-rss` / `plugin-sitemap` / `plugin-search`（插件，search = MiniSearch 本地搜索 + 首个 UI 槽位插件）、**`packages/site`（狗粮站 = 未来脚手架模板形态：自带 package.json + content.config.ts + content/ + src/components/，收包定案已执行，见 `docs/plan-site-package.md`）**——**在工作目录对应的包前先读其 AGENTS.md**。root 只做 workspace 编排（scripts 全部 `--filter` 代理进 site，命令名不变）。
+仓库是 pnpm workspace：`packages/content`（@markopress/content，内容层契约 + store，整体抄 Astro Content Layer 契约）、`packages/markdown`（@markopress/markdown，`.md` EntryType + unified 渲染器）、`packages/theme-docs`（默认文档主题）、`packages/plugin-rss` / `plugin-sitemap` / `plugin-search`（插件，search = MiniSearch 本地搜索 + 首个 UI 槽位插件）、**`packages/site`（狗粮站 = 未来脚手架模板形态：package.json + content/ + .markopress/{config.ts,components/}，收包已执行见 `docs/plan-site-package.md`）**——**在工作目录对应的包前先读其 AGENTS.md**。root 只做 workspace 编排（scripts 全部 `--filter` 代理进 site，命令名不变）。
 
 ## 常用命令
 
@@ -14,7 +14,7 @@ markopress：基于 Marko 6 + `@marko/run` 的内容框架（VitePress/Astro 形
 pnpm dev       # 主链路 = markopack（Rspack）dev，**默认是文档站（content/，dogfood 验证功能）**
                 #   PORT 指定端口；含 dev full-reload（SSE + /__markopack_reload.js 注入）
 pnpm build     # 文档站 SSG：dist/server/public/ 自包含静态根（build 自动清 dist）
-pnpm dev:perf  # 性能测试形态（content.perf.config.ts = 文档 + content-perf/ 5000 页夹具）
+pnpm dev:perf  # 性能测试形态（.markopress/perf.config.ts = 文档 + content-perf/ 5000 页夹具）
 pnpm build:perf# 性能测试 SSG；夹具生成：node scripts/perf-test.mjs 5000
 pnpm dev:vite  # Vite 对照路径（@marko/run + vite.config.ts + markopress-plugin.ts）
 pnpm build:vite# Vite SSG：dist/public/*.html（与 rspack 产物同用 dist/，对比前先清）
@@ -22,7 +22,7 @@ pnpm preview   # 预览 Rspack 产物（sirv dist/server/public，/404 兜底）
 pnpm gen       # 手动跑路由生成器（dev/build 会自动跑，一般不需要）
 ```
 
-**perf 与默认链路解耦**：默认 `content.config.ts` 只有 docs 集合；perf 走 `MP_CONTENT_CONFIG=content.perf.config.ts`（dev:perf/build:perf 已带）。两配置 digest 不同 ⇒ 切换触发 store 全量重建 + 生成目录收缩/扩张（write-if-changed + 差集清理，自愈，切换是低频操作）。
+**perf 与默认链路解耦**：默认 `.markopress/config.ts` 只有 docs 集合；perf 走 `MP_CONTENT_CONFIG=.markopress/perf.config.ts`（dev:perf/build:perf 已带）。两配置 digest 不同 ⇒ 切换触发 store 全量重建 + 生成目录收缩/扩张（write-if-changed + 差集清理，自愈，切换是低频操作）。
 
 pnpm --filter @markopress/content test    # 内容层包 vitest（含单文件增量）
 pnpm --filter @markopress/markdown test   # markdown 包 vitest
@@ -36,18 +36,19 @@ Node ≥ 22.18（原生 type stripping，workspace 包以 TS 源码分发，无�
 ## 架构（数据流）
 
 ```
-content.config.ts：集合定义（loader: glob + zod schema），docs→content/（默认仅此一个；
-     perf→content-perf/ 在 content.perf.config.ts，经 MP_CONTENT_CONFIG 启用）
-markopress.config.ts：管线与插件 + 主题（defineMarkoPressConfig({ theme, themeOptions, plugins })；
-     契约 = docs/plugin-design.md，主题契约 = docs/research/themes.md §9；装配点 = content.ts
-     setup()（theme 解析 + 槽位校验 fail fast），两路 watcher 都监听它的变更 → resetSynced 全量重建）
+.markopress/config.ts：唯一用户配置（VitePress .vitepress/config.ts 形态）——collections
+     （内容层：loader + zod schema）+ theme/themeOptions/markdown/plugins（管线）合一；
+     装配层按键分发（collections 子树单独算 store digest）。perf 形态 = perf.config.ts
+     （MP_CONTENT_CONFIG 指向）。变更 → 两路 watcher resetSynced 全量重建。
+     marko.json / .markopress/entry.ts 由 writeConventions 生成（用户不手写；
+     marko.json 的 tags-dir → .markopress/components，目录不存在则不生成）
      │
      ▼  scripts/content.ts（ensureSynced 单例：装载 store/meta → sync → typegen → 插件注册/通知）
 content*/ ──glob loader(markdownEntryType)──▶ .markopress/store/<collection>.json（devalue）
      │
      ▼  scripts/gen-routes.ts（数据源 = store.values()；含插件 routes 钩子产出的 +handler.mjs；
         sidebar.ts 纯函数派生侧边栏树 + flat 序）
-.markopress/（gitignore，全部生成物）
+.markopress/ 生成物区（gitignore；用户区 = 同目录的 config.ts/components/）
   ├─ routes/+layout.marko      静态外壳：<mp-layout> 槽位（import sidebar.json，永不变化；
   │                              插件 UI 槽位接线 <@search><mp-search/></@search> 在此生成，
   │                              由插件 slots 声明 gating——Marko 对未知 tag 是硬错误，且
@@ -65,7 +66,7 @@ content*/ ──glob loader(markdownEntryType)──▶ .markopress/store/<colle
    ——scripts/content-modules.ts。渲染 digest 带 ::extracted 命名空间：pluginCtx.render
    （搜索等插件）以原始 body 用裸 digest 缓存，不隔离会把未提取的 html 污染进模块渲染。
    prev/next 不进虚拟模块：跨文件数据，per-entry digest 缓存会在重排后过期——走 sidebar.json）
-md 内 Marko 组件段（scripts/segments.ts）：src/components/ 的 tag library（root marko.json
+md 内 Marko 组件段（scripts/segments.ts）：.markopress/components/ 的 tag library（生成的 marko.json
   tags-dir 发现）在 md 块级直接 <tag/>。提取→占位符注释→渲染后切段（html|component）→
   组件段落盘 .markopress/vseg/<c>/<id>/<n>.marko→模块 import virtual:mp/segment/…（rspack
   NormalModuleReplacementPlugin / vite resolveId 双侧解析到真实文件，编译归 bundler）→
@@ -89,7 +90,7 @@ vite.config.ts：markopressPlugin() 包裹 markoRun({ routesDir, adapter: static
   （不传 urls——adapter 自动爬无参数路由，显式清单会每页爬两次；见硬约束 3）
 ```
 
-- **失效路径（死锁纪律的落地点）**：md 编辑 → `syncer.syncFile`（O(1)：只读事件文件，load 建立的 fileToId 映射定位）→ 只失效该 entry 的虚拟模块（Vite 模块图）→ full-reload；routes 目录零写入。slug 增/删才产生单 `+page.marko` 文件事件，marko-run dev watcher 对此 re-walk——「再生成 × re-walk」是核心机制（`docs/spike-notes.md`）。config 文件变更（content/markopress 两者）→ resetSynced 全量重建。插件 `contentSynced(changed)` 在批次末后台入队（进程级单飞链），plugin-data 落盘走模块图/原生 watcher 失效，同样不碰 routes 目录。
+- **失效路径（死锁纪律的落地点）**：md 编辑 → `syncer.syncFile`（O(1)：只读事件文件，load 建立的 fileToId 映射定位）→ 只失效该 entry 的虚拟模块（Vite 模块图）→ full-reload；routes 目录零写入。slug 增/删才产生单 `+page.marko` 文件事件，marko-run dev watcher 对此 re-walk——「再生成 × re-walk」是核心机制（`docs/spike-notes.md`）。config 文件变更（.markopress/config.ts，rspack 侧盯 .markopress 目录非递归）→ resetSynced 全量重建。插件 `contentSynced(changed)` 在批次末后台入队（进程级单飞链），plugin-data 落盘走模块图/原生 watcher 失效，同样不碰 routes 目录。
 - watcher 监听所有集合 loader 声明的 `watchDirs`（多集合多 base 目录都覆盖）。
 - **Rspack 双胞胎路径**（`scripts/rspack-*.ts`）：同样的 sync/gen 前置，虚拟模块改为落盘 `.markopress/vcontent/`（`NormalModuleReplacementPlugin` 重写 `virtual:mp/content/`），失效走 Rspack 原生 watcher；slug 增/删由 markopack 内置 watchRoutes re-walk（进程内增量，无 marko-run 的全量 re-walk 风暴）。模块源码唯一来源在 `scripts/content-modules.ts`（两后端共用）。
 - 已知边界：store flush 整集合 JSON 重写（写放大，deltas #3 的分块持久化是升级路径）；dev 启动若新增数千路由文件，marko-run watcher re-walk 风暴会卡首个请求 ~1min（路由规模问题，与内容增量无关）。
@@ -109,4 +110,4 @@ vite.config.ts：markopressPlugin() 包裹 markoRun({ routesDir, adapter: static
 
 ## 生成目录与 git
 
-`.markopress/`（我们的生成物）、`.marko-run/`（marko-run 的类型）、`dist/` 均已 gitignore。`packages/site/scripts/gen-routes.ts` 是路由生成器（vite.config 与 CLI 共用）、`packages/site/scripts/markopress-plugin.ts` 是 Vite 插件本体、`packages/site/scripts/content.ts` 是内容层装配单例；写文件前比对内容（write-if-changed），避免无效 watcher 抖动。`content-perf/` 是性能测试夹具（`node scripts/perf-test.mjs [N]` 生成）。
+`.markopress/` 已翻转语义：**用户目录**（config.ts/perf.config.ts/components/，git 跟踪）+ 生成物子目录（store/routes/vcontent/vseg/plugin-data/sidebar.json/page-nav.js/urls.json/content.d.ts/entry.ts，选择性 gitignore——`*` 排除 + 显式反排除）。**清缓存 = 删生成子目录，绝不能 `rm -rf .markopress`**（会删用户配置）。`.marko-run/`、`dist/`、`packages/site/marko.json`（生成）仍 gitignore。`packages/site/scripts/gen-routes.ts` 是路由生成器（vite.config 与 CLI 共用）、`packages/site/scripts/markopress-plugin.ts` 是 Vite 插件本体、`packages/site/scripts/content.ts` 是内容层装配单例；写文件前比对内容（write-if-changed），避免无效 watcher 抖动。`content-perf/` 是性能测试夹具（`node scripts/perf-test.mjs [N]` 生成）。

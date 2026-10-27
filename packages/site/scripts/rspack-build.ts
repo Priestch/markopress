@@ -17,7 +17,7 @@ await prepare();
 await build({
   root: ROOT,
   routesDir: ".markopress/routes",
-  entry: "./src/index.ts",
+  entry: "./.markopress/entry.ts",
   outputDir: "dist",
   mode: "production",
   adapter: staticAdapter(),

@@ -79,6 +79,12 @@ export interface MarkoPressPlugin {
 }
 
 export interface MarkoPressConfig {
+  /**
+   * 内容集合（@markopress/content 契约：loader + schema）。与管线共居
+   * .markopress/config.ts 一个文件（用户面合一）；装配层（content.ts）按键
+   * 分发——collections 子树单独算 store digest，与内容层包的契约零耦合。
+   */
+  collections?: Record<string, unknown>;
   plugins: Array<MarkoPressPlugin>;
   /**
    * markdown 管线配置（R1）：unified 直通 + shiki。核心配置而非插件——

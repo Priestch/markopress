@@ -4,7 +4,7 @@ title: 在 Markdown 中使用组件
 
 ## 用法
 
-组件放在 `src/components/`（一个组件一个 `.marko` 文件，文件名即 tag 名），
+组件放在 `.markopress/components/`（一个组件一个 `.marko` 文件，文件名即 tag 名，markopress 自动发现无需注册），
 markdown 正文块级直接使用；属性随标签透传（未引号值按表达式，字符串要引号）：
 
 ````md
@@ -22,7 +22,7 @@ markdown 正文块级直接使用；属性随标签透传（未引号值按表�
 
 ## 演示
 
-来自 `src/components/` 的组件（初始值 5 由属性传入）——点它：
+来自 `.markopress/components/` 的组件（初始值 5 由属性传入）——点它：
 
 <counter start=5/>
 

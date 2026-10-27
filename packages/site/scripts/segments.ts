@@ -14,10 +14,9 @@
 // 只认白名单 tag 名 + 显式 ```marko 围栏——解析面收窄到与 <image> 同级。
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { COMPONENTS_DIR } from "./content.ts";
 import { ROOT } from "./paths.ts";
 
-/** 组件 tag library 目录（app root marko.json 的 tags-dir 同款约定） */
-export const COMPONENTS_DIR = join(ROOT, "src", "components");
 /** 组件段落盘目录（真实 .marko 文件，进编译图） */
 export const VSEG_DIR = join(ROOT, ".markopress", "vseg");
 /** 虚拟段前缀：virtual:mp/segment/<collection>/<id>/<n> */
