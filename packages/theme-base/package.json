@@ -1,0 +1,10 @@
+{
+  "name": "@markopress/theme-base",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "markopress 内容样式契约的机械部分（跨主题共享：.mp-image 几何 / .mp-container 家族 / shiki 双主题切换）",
+  "dependencies": {},
+  "devDependencies": {
+    "@marko/runtime-tags": "6.4.5"
+  }
+}

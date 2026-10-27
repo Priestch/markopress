@@ -1,0 +1,61 @@
+// 内容样式契约——机械部分（跨主题必须同步、与排版审美无关的样式）。
+//
+// 主题契约（2026-10-28 定案）：框架管线生成的内容 HTML（.mp-doc 正文、资产管线
+// .mp-image、::: 容器 .mp-container、shiki 代码块）里，「跟随内容语义而非主题审美」
+// 的 CSS 归本包共享；排版基调（字体/间距/标题层级/链接）归各主题的 .mp-doc 块。
+// 主题在自己正文外渲染一次 <mp-content-styles/>（位置无关——style 编译期提取）。
+//
+// 纪律：除 .mp-container 语义色板（GitHub 系固定语义色，注释钉死）外零自带色值，
+// 只吃 --mp-* 令牌（由各主题的 mp-layout 声明）——暗色/预设自动适配。
+// 暗色覆盖与亮色同在本文件内，顺序已保证后者覆盖；跨主题的选择器特异性
+// （html[data-theme] 属性选择器）也保证对主题自带亮色规则胜出。
+<style>
+  /* ── 资产管线产物（scripts/images.ts 生成的静态 HTML）──
+     容器 aspect-ratio 预留空间（零 CLS），blur 占位是容器背景图——
+     字节到达前可见、到达后被 img 盖住（零 JS） */
+  .mp-doc .mp-image {
+    position: relative;
+    margin: 24px auto;
+    overflow: hidden;
+    border-radius: var(--mp-radius);
+  }
+  .mp-doc .mp-image img { display: block; width: 100%; height: auto; }
+  .mp-doc .mp-image--fixed img { width: 100%; }
+  .mp-doc .mp-image-plain { display: block; margin: 24px auto; border-radius: var(--mp-radius); }
+
+  /* ── ::: 容器（remark-directive → mp-container）──语义色板为 GitHub 系固定色
+     （tip/info/warn/danger 的行业惯用色），非主题审美，故归机械部分 */
+  .mp-container {
+    border-left: 3px solid #6e7781;
+    background: var(--mp-bg-soft);
+    padding: 10px 16px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .mp-container > :first-child { margin-top: 0; }
+  .mp-container > :last-child { margin-bottom: 0; }
+  .mp-tip { border-color: #0969da; background: #ddf4ff; }
+  .mp-info { border-color: #1a7f37; background: #dafbe1; }
+  .mp-warn { border-color: #9a6700; background: #fff8c5; }
+  .mp-danger { border-color: #cf222e; background: #ffebe9; }
+
+  /* ── shiki 双主题切换：dark 走 --shiki-dark* CSS 变量（light 内联为默认色）──
+     选择器挂 html[data-theme]（属性选择器使手动切换生效；特异性高于主题的亮色规则，
+     与文件顺序无关） */
+  html[data-theme="dark"] .mp-doc pre.shiki { background: #0d1117; }
+  html[data-theme="dark"] .mp-doc .shiki,
+  html[data-theme="dark"] .mp-doc .shiki span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
+
+  /* ── 容器暗色（语义色板的暗色对应）── */
+  html[data-theme="dark"] .mp-container { background: #161b22; }
+  html[data-theme="dark"] .mp-tip { background: #121d2f; }
+  html[data-theme="dark"] .mp-info { background: #12261e; }
+  html[data-theme="dark"] .mp-warn { background: #241d10; }
+  html[data-theme="dark"] .mp-danger { background: #2d1517; }
+</style>

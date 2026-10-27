@@ -1,0 +1,167 @@
+// 博客主题站点骨架：顶栏（站名 + nav 链接 + 可选 search 槽位 + 暗色切换）+ 正文 + 页脚。
+// 与 theme-docs 的差异：无侧边栏（nav 走顶栏链接，themeOptions.nav → sidebar.json.nav）；
+// tree/style 输入存在但忽略（文档主题专属概念）。
+//
+// input 契约（生成器 + sidebar.json 提供）：
+//   site    站名          nav     顶栏链接（{href,label}[]，themeOptions.nav）
+//   content 页面 render body     search? 功能槽位 render body（插件 slots 声明 gating）
+//   tree/style 忽略（docs 主题概念，透传兼容）
+//
+// 暗色与令牌：与 theme-docs 同机制（data-theme 属性 + <html-script> pre-paint；
+// --mp-* 令牌在此声明，theme-base 的机械内容样式吃同一套令牌）。主题状态不进
+// Marko state（resume 零负担）。
+<style>
+  :root {
+    --mp-bg: #ffffff;
+    --mp-bg-soft: #f6f8fa;
+    --mp-fg: #1f2328;
+    --mp-fg-muted: #57606a;
+    --mp-border: #d0d7de;
+    --mp-accent: #0969da;
+    --mp-radius: 6px;
+    --mp-content-w: 720px;
+    --mp-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  html[data-theme="dark"] {
+    --mp-bg: #0d1117;
+    --mp-bg-soft: #161b22;
+    --mp-fg: #e6edf3;
+    --mp-fg-muted: #8b949e;
+    --mp-border: #30363d;
+    --mp-accent: #4493f8;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    line-height: 1.7;
+    color: var(--mp-fg);
+    background: var(--mp-bg);
+  }
+
+  .mp-topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 56px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--mp-border);
+    position: sticky;
+    top: 0;
+    background: var(--mp-bg);
+    z-index: 30;
+  }
+  .mp-site { font-weight: 700; color: var(--mp-fg); text-decoration: none; font-size: 17px; }
+  .mp-nav { display: flex; gap: 4px; }
+  .mp-nav a {
+    color: var(--mp-fg-muted);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 6px 10px;
+    border-radius: var(--mp-radius);
+  }
+  .mp-nav a:hover { color: var(--mp-fg); background: var(--mp-bg-soft); }
+  .mp-topbar-spacer { flex: 1; }
+  .mp-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid transparent;
+    border-radius: var(--mp-radius);
+    background: none;
+    color: var(--mp-fg-muted);
+    cursor: pointer;
+    padding: 0;
+  }
+  .mp-icon-button:hover { color: var(--mp-fg); border-color: var(--mp-border); }
+
+  .mp-theme-toggle svg { display: none; }
+  html[data-theme-choice="light"] .mp-theme-toggle svg[data-icon="light"],
+  html[data-theme-choice="dark"] .mp-theme-toggle svg[data-icon="dark"],
+  html[data-theme-choice="system"] .mp-theme-toggle svg[data-icon="system"] { display: block; }
+
+  .mp-main { max-width: var(--mp-content-w); margin: 0 auto; padding: 40px 20px 64px; }
+  .mp-footer {
+    border-top: 1px solid var(--mp-border);
+    padding: 20px;
+    font-size: 13px;
+    color: var(--mp-fg-muted);
+    text-align: center;
+  }
+
+  @media (max-width: 720px) {
+    .mp-nav { display: none; } /* v1 简化：窄屏藏 nav（链接少，footer 兜底）；抽屉 v1.1 */
+  }
+</style>
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${input.site}</title>
+  <html-script>
+    (function () {
+      var KEY = "markopress-theme"
+      var choice = "system"
+      try { choice = localStorage.getItem(KEY) || "system" } catch (e) {}
+      var dark = choice === "dark" ||
+        (choice !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+      var root = document.documentElement
+      root.setAttribute("data-theme", dark ? "dark" : "light")
+      root.setAttribute("data-theme-choice", choice)
+    })()
+  </html-script>
+</head>
+<body>
+  <header class="mp-topbar">
+    <a class="mp-site" href="/">${input.site}</a>
+    <nav class="mp-nav">
+      <for|item| of=(input.nav ?? [])>
+        <a href=item.href>${item.label}</a>
+      </for>
+    </nav>
+    <span class="mp-topbar-spacer"/>
+    <if=input.search>
+      <${input.search}/>
+    </if>
+    <button class="mp-icon-button mp-theme-toggle" data-mp-theme-toggle aria-label="Toggle theme" title="Theme (light / dark / system)">
+      <svg data-icon="light" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      <svg data-icon="dark" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      <svg data-icon="system" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+    </button>
+  </header>
+  <main class="mp-main">
+    <${input.content}/>
+  </main>
+  <footer class="mp-footer">${input.site} · built with markopress</footer>
+  <html-script>
+    (function () {
+      var root = document.documentElement
+      var THEME_KEY = "markopress-theme"
+      var THEME_ORDER = ["light", "dark", "system"]
+      function applyTheme(choice) {
+        var dark = choice === "dark" ||
+          (choice !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches)
+        root.setAttribute("data-theme", dark ? "dark" : "light")
+        root.setAttribute("data-theme-choice", choice)
+      }
+      var themeToggle = document.querySelector("[data-mp-theme-toggle]")
+      if (themeToggle) {
+        themeToggle.addEventListener("click", function () {
+          var current = root.getAttribute("data-theme-choice") || "system"
+          var next = THEME_ORDER[(THEME_ORDER.indexOf(current) + 1) % THEME_ORDER.length]
+          try { localStorage.setItem(THEME_KEY, next) } catch (e) {}
+          applyTheme(next)
+        })
+      }
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+        if ((root.getAttribute("data-theme-choice") || "system") === "system") applyTheme("system")
+      })
+    })()
+  </html-script>
+</body>
+</html>

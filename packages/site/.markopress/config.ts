@@ -32,6 +32,8 @@ export default defineMarkoPressConfig({
   theme: "@markopress/theme-docs",
   themeOptions: {
     site: "markopress",
+    // 页 <title> 模板（postbuild 补写；dev 期显示站名）
+    titleTemplate: "%s · markopress",
     // 风格预设（纯样式）：default | vitepress | starlight | nextra | docusaurus
     style: "docusaurus",
     sidebar: { collections: ["docs"] },

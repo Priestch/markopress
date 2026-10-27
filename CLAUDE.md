@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 markopress：基于 Marko 6 + `@marko/run` 的内容框架（VitePress/Astro 形态，`.md` 文件即页面）。当前处于 **Phase 1（content 层）进行中：markdown 已接入 content layer，单文件增量同步已落地**。技术决策（D1–D6）已定稿于 `docs/background.md`，不要重新讨论；五份调研报告在 `docs/research/`（与实际不符时以 `node_modules/@marko/run` 安装源码为准；`rspack-watcher.md` 是 markopack/Rspack 迁移评估依据）。
 
-仓库是 pnpm workspace：`packages/content`（@markopress/content，内容层契约 + store，整体抄 Astro Content Layer 契约）、`packages/markdown`（@markopress/markdown，`.md` EntryType + unified 渲染器）、`packages/theme-docs`（默认文档主题）、`packages/plugin-rss` / `plugin-sitemap` / `plugin-search`（插件，search = MiniSearch 本地搜索 + 首个 UI 槽位插件）、**`packages/site`（狗粮站 = 未来脚手架模板形态：package.json + content/ + .markopress/{config.ts,components/}，收包已执行见 `docs/plan-site-package.md`）**——**在工作目录对应的包前先读其 AGENTS.md**。root 只做 workspace 编排（scripts 全部 `--filter` 代理进 site，命令名不变）。
+仓库是 pnpm workspace：`packages/content`（@markopress/content，内容层契约 + store，整体抄 Astro Content Layer 契约）、`packages/markdown`（@markopress/markdown，`.md` EntryType + unified 渲染器）、`packages/theme-docs`（默认文档主题）、`packages/plugin-rss` / `plugin-sitemap` / `plugin-search`（插件，search = MiniSearch 本地搜索 + 首个 UI 槽位插件）、`packages/theme-base`（内容样式契约的机械部分，双主题共享）、`packages/theme-blog`（博客主题：layout post/home/list/page 分流）、**`packages/site`（狗粮站 = 未来脚手架模板形态：package.json + content/ + .markopress/{config.ts,components/}，收包已执行见 `docs/plan-site-package.md`）**——**在工作目录对应的包前先读其 AGENTS.md**。root 只做 workspace 编排（scripts 全部 `--filter` 代理进 site，命令名不变）。
 
 ## 常用命令
 
@@ -83,9 +83,14 @@ md 内 Marko 组件段（scripts/segments.ts）：.markopress/components/ 的 ta
   事件 → assetOwners（同目录/同名子目录）→ 重渲染归属 entry。v1 边界：AVIF/<picture>/
   远程图/`image()` helper 不做；解析缓存键必须含源内容 digest——同路径换字节不折叠键的话
   vcontent 逐字节不变、失效断链（踩过）。
-packages/theme-docs：@markopress/theme-docs 主题包（mp-layout/mp-sidebar/mp-page 槽位实现；
-  marko.json tags-dir 经 root 包依赖探测全局发现；暗色 = data-theme 属性 + <html-script>
-  内联 pre-paint 脚本；契约细节见其 AGENTS.md）
+packages/theme-docs / theme-blog：主题包（同槽位契约互斥；theme-blog 按 frontmatter layout
+  分流 post/home/list/page，flat 由生成器传参——主题不得自 import sidebar.json，跨包解析
+  app 文件是 taglib 同款坑）。机械内容样式（mp-image/容器/shiki 切换）共享于 theme-base
+  （<mp-content-styles/>，各主题渲染一次）；themeOptions.nav/titleTemplate/sidebar.sortBy
+  经 sidebar.json/生成器透传。per-page <title> = postbuild HTML 补写（scripts/patch-titles.ts，
+  marko-run 无 head 通道；rspack 在 rspack-build.ts 收尾，vite 在 build:vite 串联脚本——
+  adapter 爬取晚于一切 Vite 钩子；dev 期显示站名 = 已知边界）。暗色 = data-theme 属性 +
+  <html-script> 内联 pre-paint 脚本；契约细节见各包 AGENTS.md
 vite.config.ts：markopressPlugin() 包裹 markoRun({ routesDir, adapter: staticAdapter() })
   （不传 urls——adapter 自动爬无参数路由，显式清单会每页爬两次；见硬约束 3）
 ```

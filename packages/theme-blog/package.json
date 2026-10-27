@@ -1,0 +1,12 @@
+{
+  "name": "@markopress/theme-blog",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "markopress 博客主题：无侧边栏顶栏 + 时间序文章流（layout: post/home/list/page 分流）",
+  "dependencies": {
+    "@markopress/theme-base": "workspace:*"
+  },
+  "devDependencies": {
+    "@marko/runtime-tags": "6.4.5"
+  }
+}

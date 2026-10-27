@@ -142,6 +142,9 @@ importers:
       '@markopress/plugin-sitemap':
         specifier: workspace:*
         version: link:../plugin-sitemap
+      '@markopress/theme-blog':
+        specifier: workspace:*
+        version: link:../theme-blog
       '@markopress/theme-docs':
         specifier: workspace:*
         version: link:../theme-docs
@@ -165,7 +168,27 @@ importers:
         specifier: ^8.3.4
         version: 8.3.4(@types/node@24.19.2)(esbuild@0.28.2)
 
+  packages/theme-base:
+    devDependencies:
+      '@marko/runtime-tags':
+        specifier: 6.4.5
+        version: 6.4.5
+
+  packages/theme-blog:
+    dependencies:
+      '@markopress/theme-base':
+        specifier: workspace:*
+        version: link:../theme-base
+    devDependencies:
+      '@marko/runtime-tags':
+        specifier: 6.4.5
+        version: 6.4.5
+
   packages/theme-docs:
+    dependencies:
+      '@markopress/theme-base':
+        specifier: workspace:*
+        version: link:../theme-base
     devDependencies:
       '@marko/runtime-tags':
         specifier: 6.4.5

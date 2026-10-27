@@ -11,6 +11,8 @@ export interface SidebarPageNode {
   type: "page";
   title: string;
   href: string;
+  date?: string;
+  description?: string;
 }
 export interface SidebarGroupNode {
   type: "group";
@@ -21,18 +23,22 @@ export interface SidebarGroupNode {
 }
 export type SidebarNode = SidebarPageNode | SidebarGroupNode;
 
-/** 输入 = gen-routes 已有的投影（title 来自 frontmatter，order 可选） */
+/** 输入 = gen-routes 已有的投影（title/date/description 来自 frontmatter，order 可选） */
 export interface SidebarEntryInput {
   collection: string;
   id: string;
   title?: string;
   order?: number;
+  /** ISO 字符串（z.coerce.date 的序列化形态）；sortBy: "date" 的排序键 + flat 元数据 */
+  date?: string;
+  description?: string;
 }
 
 export interface Sidebar {
   tree: Array<SidebarNode>;
-  /** DFS 平铺序（prev/next 数据源）；吸收进分组的 index 页也在序列里 */
-  flat: Array<{ title: string; href: string }>;
+  /** DFS 平铺序（prev/next 数据源）；吸收进分组的 index 页也在序列里。
+      date/description 为可选元数据（归档页/首页列表用；主题不需要可忽略） */
+  flat: Array<{ title: string; href: string; date?: string; description?: string }>;
 }
 
 // Intl.Collator（numeric: "page-2" 排在 "page-10" 前）——Starlight 同款
@@ -63,10 +69,20 @@ interface MutableGroup {
   order?: number;
 }
 type MutableNode =
-  | (SidebarPageNode & { order?: number })
+  | (SidebarPageNode & { order?: number; date?: string; description?: string })
   | MutableGroup;
 
-export function buildSidebar(entries: Array<SidebarEntryInput>): Sidebar {
+export function buildSidebar(
+  entries: Array<SidebarEntryInput>,
+  opts?: { sortBy?: "alpha" | "date" },
+): Sidebar {
+  // date 模式：页节点按日期倒序（无日期沉底，组内保持 alpha 兜底）——
+  // flat 序随之变为时间序 ⇒ page-nav 的 prev/next 自动成为「上一篇/下一篇」。
+  // 分组（目录）顺序不受影响：目录不是时间实体。
+  const dates = new Map<string, number>();
+  if (opts?.sortBy === "date") {
+    for (const e of entries) if (e.date) dates.set(routeFor(e.id), Date.parse(e.date));
+  }
   const root: MutableGroup = { type: "group", title: "", children: [] };
   const groups = new Map<string, MutableGroup>([["", root]]);
 
@@ -113,10 +129,12 @@ export function buildSidebar(entries: Array<SidebarEntryInput>): Sidebar {
       title: entry.title ?? humanize(base),
       href: routeFor(entry.id),
       order: entry.order ?? prefixOrder,
+      date: entry.date,
+      description: entry.description,
     });
   }
 
-  sortLevel(root.children);
+  sortLevel(root.children, dates);
 
   // 序列化投影：剥离内部 order（主题不需要，sidebar.json 更瘦）
   const flat: Array<{ title: string; href: string }> = [];
@@ -129,24 +147,40 @@ export function buildSidebar(entries: Array<SidebarEntryInput>): Sidebar {
 }
 
 /** 无 order 者排在所有有序项之后（Docusaurus 语义），同层兜底 localeCompare */
-function sortLevel(nodes: Array<MutableNode>): void {
+function sortLevel(nodes: Array<MutableNode>, dates: Map<string, number>): void {
   nodes.sort((a, b) => {
+    // date 模式：页节点按日期倒序（无日期沉底）；分组仍走 order/alpha
+    if (dates.size > 0) {
+      const isPageA = a.type === "page";
+      const isPageB = b.type === "page";
+      if (isPageA && isPageB) {
+        const ad = dates.get((a as SidebarPageNode).href) ?? Number.NEGATIVE_INFINITY;
+        const bd = dates.get((b as SidebarPageNode).href) ?? Number.NEGATIVE_INFINITY;
+        if (ad !== bd) return bd - ad;
+      } else if (isPageA !== isPageB) {
+        // 页 vs 组：组在前（目录是导航结构，时间流只在组内）——单层 blog 无感，多目录可预期
+        return isPageA ? 1 : -1;
+      }
+    }
     const ao = a.order ?? Number.POSITIVE_INFINITY;
     const bo = b.order ?? Number.POSITIVE_INFINITY;
     if (ao !== bo) return ao - bo;
     return collator.compare(a.title, b.title);
   });
   for (const node of nodes) {
-    if (node.type === "group") sortLevel(node.children);
+    if (node.type === "group") sortLevel(node.children, dates);
   }
 }
 
-function toTree(group: MutableGroup, flat: Array<{ title: string; href: string }>): Array<SidebarNode> {
+function toTree(
+  group: MutableGroup,
+  flat: Array<{ title: string; href: string; date?: string; description?: string }>,
+): Array<SidebarNode> {
   if (group.href) flat.push({ title: group.title, href: group.href });
   return group.children.map((node) => {
     if (node.type === "page") {
-      flat.push({ title: node.title, href: node.href });
-      return { type: "page" as const, title: node.title, href: node.href };
+      flat.push({ title: node.title, href: node.href, date: node.date, description: node.description });
+      return { type: "page" as const, title: node.title, href: node.href, date: node.date, description: node.description };
     }
     const children = toTree(node, flat);
     return node.href === undefined

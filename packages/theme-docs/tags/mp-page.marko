@@ -13,7 +13,8 @@
 // scrollspy 脚本在 mp-layout 页尾（每页一份，避免 per-page 重复内联）。
 <const/toc=(input.page.headings ?? []).filter((h) => h.depth >= 2 && h.depth <= 3)>
 
-// 正文样式一律 .mp-doc scope：$!{seg.html} 注入的内容没有组件边界，
+// 正文排版归本主题（.mp-doc scope）；内容契约的机械部分（mp-image/容器/shiki 切换）
+// 经 <mp-content-styles/> 来自 @markopress/theme-base。$!{seg.html} 注入的内容没有组件边界，
 // 裸元素选择器会泄漏到全站（VitePress .vp-doc 的教训，themes.md §7）。
 <style>
   .mp-page {
@@ -31,17 +32,7 @@
   .mp-doc a { color: var(--mp-accent); }
   .mp-doc img { max-width: 100%; }
 
-  /* 资产管线产物（scripts/images.ts 生成的静态 HTML，非组件）：容器 aspect-ratio
-     预留空间（零 CLS），blur 占位是容器背景图——字节到达前可见、到达后被 img 盖住（零 JS） */
-  .mp-doc .mp-image {
-    position: relative;
-    margin: 24px auto;
-    overflow: hidden;
-    border-radius: var(--mp-radius);
-  }
-  .mp-doc .mp-image img { display: block; width: 100%; height: auto; }
-  .mp-doc .mp-image--fixed img { width: 100%; }
-  .mp-doc .mp-image-plain { display: block; margin: 24px auto; border-radius: var(--mp-radius); }
+  /* .mp-image 家族 / .mp-container 家族 / shiki 双主题切换 → @markopress/theme-base */
 
   .mp-doc pre.shiki {
     padding: 12px 16px;
@@ -51,38 +42,6 @@
     background: #ffffff;
   }
   .mp-doc code { font-family: var(--mp-font-mono); font-size: 14px; }
-
-  /* ::: 容器（remark-directive → mp-container） */
-  .mp-container {
-    border-left: 3px solid #6e7781;
-    background: var(--mp-bg-soft);
-    padding: 10px 16px;
-    margin: 12px 0;
-    border-radius: 0 6px 6px 0;
-  }
-  .mp-container > :first-child { margin-top: 0; }
-  .mp-container > :last-child { margin-bottom: 0; }
-  .mp-tip { border-color: #0969da; background: #ddf4ff; }
-  .mp-info { border-color: #1a7f37; background: #dafbe1; }
-  .mp-warn { border-color: #9a6700; background: #fff8c5; }
-  .mp-danger { border-color: #cf222e; background: #ffebe9; }
-
-  /* shiki 双主题 + 容器暗色：dark 覆盖必须在后（同特异性后者胜，R1 踩坑）；
-     选择器挂在 html[data-theme]（mp-layout 令牌同款）——手动切换生效的前提 */
-  html[data-theme="dark"] .mp-doc pre.shiki { background: #0d1117; }
-  html[data-theme="dark"] .mp-doc .shiki,
-  html[data-theme="dark"] .mp-doc .shiki span {
-    color: var(--shiki-dark) !important;
-    background-color: var(--shiki-dark-bg) !important;
-    font-style: var(--shiki-dark-font-style) !important;
-    font-weight: var(--shiki-dark-font-weight) !important;
-    text-decoration: var(--shiki-dark-text-decoration) !important;
-  }
-  html[data-theme="dark"] .mp-container { background: #161b22; }
-  html[data-theme="dark"] .mp-tip { background: #121d2f; }
-  html[data-theme="dark"] .mp-info { background: #12261e; }
-  html[data-theme="dark"] .mp-warn { background: #241d10; }
-  html[data-theme="dark"] .mp-danger { background: #2d1517; }
 
   /* 右栏 TOC（sticky；scrollspy 高亮 .active） */
   .mp-toc {
@@ -130,6 +89,7 @@
 
 <div class="mp-page">
   <article class="mp-doc">
+    <mp-content-styles/>
     <h1 class="mp-doc-title">${input.page.data.title}</h1>
     <for|seg| of=input.page.segments>
       <if=seg.type === "html">

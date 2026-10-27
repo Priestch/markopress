@@ -10,8 +10,9 @@ dist/
 content-perf/
 .playwright-mcp/
 
-# 资产管线产物（scripts/images.ts 写入；用户自己的 public 资产照常跟踪）
-public/_markopress/
+# 资产管线产物（scripts/images.ts 写入；用户自己的 public 资产照常跟踪）。
+# 必须全路径锚定——带中间斜杠的模式是根锚定的（public/_markopress/ 对子包无效，踩过两次）
+/packages/site/public/_markopress/
 
 # 站点级 marko.json 由 writeConventions 生成（tags-dir → .markopress/components）
 /packages/site/marko.json

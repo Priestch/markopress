@@ -103,13 +103,21 @@ export interface MarkoPressConfig {
 }
 
 export interface ThemeOptions {
-  /** 站名（顶栏 / <title> / sidebar.json 的 site 字段） */
+  /** 站名（顶栏 / <title> 兜底 / sidebar.json 的 site 字段） */
   site?: string;
+  /** 顶栏导航链接（theme-blog 等无侧边栏主题用；theme-docs 忽略——侧边栏即导航） */
+  nav?: Array<{ href: string; label: string }>;
+  /**
+   * 页 <title> 模板（%s = 页标题；postbuild HTML 补写，docs/plugin-design §7 预留位
+   * 的首个用户；dev 期显示站名——已知边界）。默认 "%s"（纯页标题）。
+   */
+  titleTemplate?: string;
   /**
    * 侧边栏来源集合。默认全部集合——注意 perf 夹具这类万页集合必须显式排除，
-   * 否则整树内嵌每页 HTML（写放大，themes.md §8）。
+   * 否则整树内嵌每页 HTML（写放大，themes.md §8）。sortBy: "date" = 时间倒序
+   * （flat 随之变时间序 ⇒ prev/next = 上一篇/下一篇），默认 "alpha"。
    */
-  sidebar?: { collections?: Array<string> };
+  sidebar?: { collections?: Array<string>; sortBy?: "alpha" | "date" };
   /**
    * 风格预设（纯样式层，四家文档站的视觉近似）：default（GitHub 中性）/
    * vitepress / starlight / nextra / docusaurus。色值取自各家源码（见

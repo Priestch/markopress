@@ -1,0 +1,126 @@
+// 博客主题页面骨架：按 frontmatter `layout` 分流（schema 归用户内容配置，
+// theme-blog 文档给推荐 schema；缺省 "post"）。
+//
+// input 契约（生成器 + sidebar.json 提供）：
+//   page { data, segments, headings } —— 虚拟模块导出（data 含 layout/date/description）
+//   nav  { prev, next }               —— page-nav 邻居（sortBy:date 时 = 上一篇/下一篇）
+//   flat [{title,href,date?,description?}] —— sidebar.json 平铺全序（home/list 数据源；
+//                                        主题不得自 import sidebar.json——跨包解析 app
+//                                        文件是 taglib 同款坑，生成器传参是唯一干净通道）
+//
+// segments 契约：html 段 $!{html} 注入；component 段（md 内 <tag/> / ```marko 围栏）
+// 动态渲染 + Marko 水合——与 theme-docs 的 mp-page 同款 else 分支，主题实现义务。
+// 机械内容样式（mp-image/容器/shiki 切换）经 <mp-content-styles/> 共享。
+const/layout=input.page.data.layout ?? "post"
+const/flat=(input.flat ?? []).filter((p) => p.date).slice(0, layout === "home" ? 8 : Infinity)
+
+<style>
+  /* ── post/page 共用正文排版（.mp-doc 基调归主题——这是博客的排版立场）── */
+  .mp-doc { font-size: 16px; }
+  .mp-doc h2 { margin-top: 40px; border-bottom: 1px solid var(--mp-border); padding-bottom: 8px; }
+  .mp-doc h3 { margin-top: 28px; }
+  .mp-doc a { color: var(--mp-accent); }
+  .mp-doc img { max-width: 100%; }
+  .mp-doc pre.shiki { padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.6; background: #ffffff; }
+  .mp-doc code { font-family: var(--mp-font-mono); font-size: 14px; }
+
+  /* 文章头：标题 + 时间 + 摘要 */
+  .mp-post-head { margin-bottom: 32px; }
+  .mp-post-title { font-size: 34px; line-height: 1.25; margin: 0 0 12px; }
+  .mp-post-meta { color: var(--mp-fg-muted); font-size: 14px; display: flex; gap: 12px; }
+  .mp-post-desc { color: var(--mp-fg-muted); margin: 12px 0 0; font-size: 16px; }
+
+  /* prev/next（时间序）与归档/首页列表 */
+  .mp-pagination {
+    display: flex; justify-content: space-between; gap: 16px;
+    margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--mp-border);
+  }
+  .mp-pagination a { color: var(--mp-accent); text-decoration: none; font-size: 14px; max-width: 45%; }
+  .mp-pagination a:hover { text-decoration: underline; }
+  .mp-post-list { list-style: none; margin: 0; padding: 0; }
+  .mp-post-item { padding: 18px 0; border-bottom: 1px solid var(--mp-border); }
+  .mp-post-item a { color: var(--mp-fg); text-decoration: none; font-size: 18px; font-weight: 600; }
+  .mp-post-item a:hover { color: var(--mp-accent); }
+  .mp-post-item time { color: var(--mp-fg-muted); font-size: 13px; margin-right: 12px; }
+  .mp-post-item p { color: var(--mp-fg-muted); margin: 6px 0 0; font-size: 14px; }
+
+  /* home hero */
+  .mp-hero { padding: 24px 0 40px; border-bottom: 1px solid var(--mp-border); margin-bottom: 8px; }
+  .mp-hero h1 { font-size: 40px; margin: 0 0 12px; }
+  .mp-hero p { color: var(--mp-fg-muted); font-size: 18px; margin: 0; }
+  .mp-section-title { font-size: 14px; font-weight: 600; color: var(--mp-fg-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 32px 0 0; }
+</style>
+
+<if=layout === "home">
+  <section class="mp-hero">
+    <h1>${input.page.data.title ?? input.page.data.site}</h1>
+    <if=input.page.data.description>
+      <p>${input.page.data.description}</p>
+    </if>
+  </section>
+  <div class="mp-section-title">最近文章</div>
+  <ul class="mp-post-list">
+    <for|post| of=flat>
+      <li class="mp-post-item">
+        <a href=post.href>${post.title}</a>
+        <p>
+          <time>${(post.date ?? "").slice(0, 10)}</time>
+          <if=post.description>${post.description}</if>
+        </p>
+      </li>
+    </for>
+  </ul>
+</if>
+<else-if=layout === "list">
+  <h1>${input.page.data.title}</h1>
+  <ul class="mp-post-list">
+    <for|post| of=flat>
+      <li class="mp-post-item">
+        <a href=post.href>${post.title}</a>
+        <p><time>${(post.date ?? "").slice(0, 10)}</time></p>
+      </li>
+    </for>
+  </ul>
+</else-if>
+<else>
+  <article class="mp-doc">
+    <mp-content-styles/>
+    <if=layout === "post">
+      <header class="mp-post-head">
+        <h1 class="mp-post-title">${input.page.data.title}</h1>
+        <div class="mp-post-meta">
+          <if=input.page.data.date>
+            <time>${new Date(input.page.data.date).toISOString().slice(0, 10)}</time>
+          </if>
+        </div>
+        <if=input.page.data.description>
+          <p class="mp-post-desc">${input.page.data.description}</p>
+        </if>
+      </header>
+    </if>
+    <else>
+      <h1 class="mp-post-title">${input.page.data.title}</h1>
+    </else>
+    <for|seg| of=input.page.segments>
+      <if=seg.type === "html">
+        $!{seg.html}
+      </if>
+      <else>
+        <${seg.component}/>
+      </else>
+    </for>
+    <if=layout === "post">
+      <nav class="mp-pagination">
+        <if=input.nav?.prev>
+          <a href=input.nav.prev.href>← 较早 · ${input.nav.prev.title}</a>
+        </if>
+        <else>
+          <span/>
+        </else>
+        <if=input.nav?.next>
+          <a href=input.nav.next.href>${input.nav.next.title} · 较新 →</a>
+        </if>
+      </nav>
+    </if>
+  </article>
+</else>

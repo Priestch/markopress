@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { build } from "@markopack/rspack";
 import staticAdapter from "@markopack/adapter-static";
 import { ROOT } from "./content.ts";
+import { patchTitles } from "./patch-titles.ts";
 import { mpRspack, prepare } from "./rspack-shared.ts";
 
 // 先清 dist：Rspack 不会自清（vite 会），不清的话切配置后旧 HTML 残留混入产物
@@ -29,3 +30,7 @@ const staticDest = join(ROOT, "dist", "server", "public", "static");
 await rm(staticDest, { recursive: true, force: true });
 await cp(staticSrc, staticDest, { recursive: true });
 console.log("[markopress] client assets merged into dist/server/public (self-contained static root)");
+
+// per-page <title>/description 补写（marko-run 无 head 通道；scripts/patch-titles.ts）
+const titled = await patchTitles(join(ROOT, "dist", "server", "public"));
+console.log(`[markopress] patched <title> on ${titled} page(s)`);

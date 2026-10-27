@@ -35,8 +35,9 @@ function pageTemplate(collection: string, id: string, route: string): string {
   return [
     `import { data, segments, headings } from "virtual:mp/content/${collection}/${id}"`,
     `import { neighbors } from "../page-nav.js"`,
+    `import sidebar from "../sidebar.json"`,
     ``,
-    `<mp-page page={ data, segments, headings } nav=neighbors("${route}")/>`,
+    `<mp-page page={ data, segments, headings } nav=neighbors("${route}") flat=sidebar.flat/>`,
     ``,
   ].join("\n");
 }
@@ -59,7 +60,7 @@ function layoutTemplate(slots: Array<string>): string {
   return [
     `import sidebar from "../sidebar.json"`,
     ``,
-    `<mp-layout site=sidebar.site tree=sidebar.tree style=sidebar.style content=input.content>`,
+    `<mp-layout site=sidebar.site nav=sidebar.nav tree=sidebar.tree style=sidebar.style content=input.content>`,
     ...bodies,
     `</mp-layout>`,
     ``,
@@ -102,6 +103,8 @@ export async function generateRoutes(): Promise<GenerateResult> {
     route: string;
     title: string;
     order?: number;
+    date?: string;
+    description?: string;
     collection: string;
     id: string;
   }> = [];
@@ -114,6 +117,8 @@ export async function generateRoutes(): Promise<GenerateResult> {
         route: routeFor(entry.id),
         title: entry.data.title,
         order: entry.data.order,
+        date: entry.data.date instanceof Date ? entry.data.date.toISOString() : entry.data.date,
+        description: entry.data.description,
       });
     }
   }
@@ -123,10 +128,13 @@ export async function generateRoutes(): Promise<GenerateResult> {
   const sidebarCollections = new Set(
     theme.options.sidebar?.collections ?? Object.keys(config.collections),
   );
-  const sidebar = buildSidebar(pages.filter((p) => sidebarCollections.has(p.collection)));
+  const sidebar = buildSidebar(pages.filter((p) => sidebarCollections.has(p.collection)), {
+    sortBy: theme.options.sidebar?.sortBy,
+  });
   const sidebarJson = {
     site: theme.options.site ?? "markopress",
     style: theme.options.style ?? "default",
+    nav: theme.options.nav ?? [],
     tree: sidebar.tree,
     flat: sidebar.flat,
   };

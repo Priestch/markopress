@@ -37,12 +37,18 @@
 mp-layout 加亮/暗两个 token 块（**暗块必须紧跟亮块**——`html[data-style]` 与
 `html[data-theme=dark]` 特异性相同，全靠顺序，见预设块头注释）→ 需要组件级差异加在预设区尾部。
 
+## 内容样式契约（2026-10-28 拆分）
+
+正文排版（.mp-doc 基调）归本主题；**机械部分**（.mp-image 几何 / .mp-container 家族 /
+shiki 双主题切换）在 `@markopress/theme-base`（`<mp-content-styles/>` 渲染一次）。
+改动机械行为去 theme-base 并双主题回归——归属划分见其 AGENTS.md。
+
 ## 硬纪律
 
 1. **不得给 package.json 加 `exports` 字段**——装配层（`scripts/content.ts` resolveTheme）
    要从 app 上下文解析 `<name>/package.json` 子路径做槽位校验。
 2. **无框架依赖、无 runtime 依赖**：纯 Marko 组件 + CSS（比 Nextra 的 peer 强耦合干净，
-   themes.md §9 #8）。
+   themes.md §9 #8）。唯一依赖 = @markopress/theme-base（纯 CSS 契约包，同理）。
 3. CSS 纪律：`--mp-*` 令牌只声明在 mp-layout（文档属主）；暗色 = `html[data-theme="dark"]`
    同 token 重声明且必须排在亮色之后（同特异性后者胜，R1 踩坑）；正文元素选择器一律
    `.mp-doc` scope（`$!{html}` 注入内容无组件边界，裸选择器会泄漏全站）。
