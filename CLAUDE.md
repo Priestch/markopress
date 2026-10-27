@@ -20,6 +20,8 @@ pnpm dev:vite  # Vite 对照路径（@marko/run + vite.config.ts + markopress-pl
 pnpm build:vite# Vite SSG：dist/public/*.html（与 rspack 产物同用 dist/，对比前先清）
 pnpm preview   # 预览 Rspack 产物（sirv dist/server/public，/404 兜底）；preview:vite 预览 Vite 产物
 pnpm gen       # 手动跑路由生成器（dev/build 会自动跑，一般不需要）
+                #   site 的 public/ = 源站静态资产（robots.txt 等；rspack dev sirv 链 +
+                #   adapter build 拷贝，markopack 0.4.0 约定）
 ```
 
 **perf 与默认链路解耦**：默认 `.markopress/config.ts` 只有 docs 集合；perf 走 `MP_CONTENT_CONFIG=.markopress/perf.config.ts`（dev:perf/build:perf 已带）。两配置 digest 不同 ⇒ 切换触发 store 全量重建 + 生成目录收缩/扩张（write-if-changed + 差集清理，自愈，切换是低频操作）。
@@ -54,7 +56,13 @@ content*/ ──glob loader(markdownEntryType)──▶ .markopress/store/<colle
   │                              由插件 slots 声明 gating——Marko 对未知 tag 是硬错误，且
   │                              taglib 探测从模板就近 package.json 出发，只有生成物能解析
   │                              插件包 taglib；位置归主题（<if=input.search>），实现归插件）
-  ├─ routes/<name>+page.marko  极小包装：<mp-page> 槽位（虚拟模块 + page-nav）
+  ├─ routes/<name>+page.marko  极小包装：<mp-page> 槽位（虚拟模块 + page-nav；显式 import
+  │                              主题组件——多主题共存时 taglib 发现撞名，见 mp-* 治理段）
+  ├─ routes/+404.marko         内容驱动 404（entry id "404" 的特殊文件名：marko-run 约定
+  │                              根目录无路径前缀 +404 后缀 = NotFound 页；前缀会被解析成
+  │                              路径段从而失去 special 身份——404+404.marko 踩过）。
+  │                              dev 未知路由 text/html → 渲染它回 404；build 经 adapter
+  │                              notFoundPath 落 404.html；404 不进侧边栏/prev-next
   ├─ routes/<seg%2E…>+handler.mjs  插件路由包装（路径段含 `.` 必须 %2E，动词逐个 export const）
   ├─ plugin-data/<name>.js     插件数据模块（setData 产物；经 virtual:mp/plugin/<name> 消费）
   ├─ sidebar.json              侧边栏树+flat 序（模块 import；重写走模块图失效——prev/next 同源）

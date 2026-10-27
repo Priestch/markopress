@@ -28,6 +28,9 @@ const URLS_FILE = join(ROOT, ".markopress", "urls.json");
 
 /** entry id → 扁平路由文件名：index → +page.marko；a/b → a.b+page.marko */
 function pageFileFor(id: string): string {
+  // id "404" → 特殊路由文件（marko-run 约定：根目录 +404 后缀 = NotFound 页，
+  // 未知路由由 router 渲染它并回 404 状态；adapter 爬取经 notFoundPath 落 404.html）
+  if (id === "404") return "+404.marko";
   return id === "index" ? "+page.marko" : `${id.replaceAll("/", ".")}+page.marko`;
 }
 
@@ -136,7 +139,8 @@ export async function generateRoutes(): Promise<GenerateResult> {
   const sidebarCollections = new Set(
     theme.options.sidebar?.collections ?? Object.keys(config.collections),
   );
-  const sidebar = buildSidebar(pages.filter((p) => sidebarCollections.has(p.collection)), {
+  // 404 是站点 chrome 页：不进侧边栏/归档/prev-next 邻居
+  const sidebar = buildSidebar(pages.filter((p) => sidebarCollections.has(p.collection) && p.id !== "404"), {
     sortBy: theme.options.sidebar?.sortBy,
   });
   const sidebarJson = {

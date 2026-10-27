@@ -6,6 +6,7 @@
 import { defineCollection } from "@markopress/content";
 import { glob } from "@markopress/content/loaders/glob";
 import { z } from "zod";
+import { rss } from "@markopress/plugin-rss";
 import { search } from "@markopress/plugin-search";
 import { defineMarkoPressConfig } from "../scripts/plugins.ts";
 
@@ -35,5 +36,13 @@ export default defineMarkoPressConfig({
   markdown: {
     shiki: { themes: { light: "github-light", dark: "github-dark" } },
   },
-  plugins: [search({ collections: ["posts"] })],
+  plugins: [
+    rss({
+      // TODO(迁移): 换成 blog 的真实域名（老 netlify.toml 零配置，默认子域未查到）
+      site: "https://blog.example.com",
+      title: "Priestch's Blog",
+      description: "Notes on web development, tooling, and software engineering.",
+    }),
+    search({ collections: ["posts"] }),
+  ],
 });
