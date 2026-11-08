@@ -148,9 +148,32 @@ export function defineMarkoPressConfig(config: MarkoPressConfig): MarkoPressConf
 
 // ── 路由派生（gen-routes 与 ctx.urlOf 的唯一来源）──────────────────────────
 
-/** entry id → 路由：index 特殊化为根；a/b → /a/b */
+/** entry id → 路由：index 特殊化为根；a/b → /a/b；尾段 index 折叠（guide/index →
+ *  /guide——带前缀集合的 index 即集合着陆页；与 pageFileFor 同规则） */
 export function routeFor(id: string): string {
-  return id === "index" ? "/" : `/${id}`;
+  const routeId = id === "index" ? "" : id.replace(/\/index$/, "");
+  return routeId === "" ? "/" : `/${routeId}`;
+}
+
+/** 集合路由前缀 → route id（gen-routes 与 ctx.urlOf 共用；prefix 拼在 entry id 前，
+ *  下游 routeFor/pageFileFor 消费）。校验 fail fast：段为空 / 含点（扁平路由分隔符）/
+ *  违禁字符（[]+$% 等动态段与保留语义）。id "404" 禁带前缀——根目录无前缀 +404
+ *  文件名是其 special 身位的全部（404+404.marko 踩过）。 */
+export function routeIdFor(prefix: string | undefined, id: string): string {
+  if (prefix === undefined) return id; // 空串是配置错误，落进下方段校验 fail fast
+  if (id === "404") {
+    throw new Error(
+      `[markopress] 集合路由前缀内的 404：entry "404" 靠根目录无前缀文件名生效，不能落 /${prefix}/404——把 404 entry 放进无前缀的集合`,
+    );
+  }
+  for (const segment of prefix.split("/")) {
+    if (!/^[A-Za-z0-9_-]+$/.test(segment)) {
+      throw new Error(
+        `[markopress] 集合路由前缀非法："${prefix}"（段 "${segment}"——只允许字母数字/连字符/下划线，段间单斜杠分隔）`,
+      );
+    }
+  }
+  return `${prefix}/${id}`;
 }
 
 /**

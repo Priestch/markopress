@@ -37,7 +37,11 @@ Node ≥ 22.18（原生 type stripping，workspace 包以 TS 源码分发，无�
 
 ```
 .markopress/config.ts：唯一用户配置（VitePress .vitepress/config.ts 形态）——collections
-     （内容层：loader + zod schema）+ theme/themeOptions/markdown/plugins（管线）合一；
+     （内容层：loader + zod schema；**可选 route: { prefix } 集合路由前缀**——物理目录与
+     URL 解耦（content/operations/* → /guide/*），prefix 拼 entry id 进 routeFor/pageFileFor
+     即全链路生效（文件名/URL/侧边栏/prev-next/urls.json/ctx.urlOf 三件内置）；集合 index
+     → /<prefix> 着陆页（尾段 index 折叠）；entry "404" 禁入带前缀集合，gen 期 fail fast）
+     + theme/themeOptions/markdown/plugins（管线）合一；
      装配层按键分发（collections 子树单独算 store digest）。perf 形态 = perf.config.ts
      （MP_CONTENT_CONFIG 指向）。变更 → 两路 watcher resetSynced 全量重建。
      marko.json / .markopress/entry.ts 由 writeConventions 生成（用户不手写；

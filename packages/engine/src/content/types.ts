@@ -135,6 +135,10 @@ export interface CollectionConfig<S extends z.ZodType = z.ZodType> {
 	/** zod v4 schema；缺省则 data 透传不校验 */
 	schema?: S
 	loader: Loader
+	/** 路由前缀（gen 层消费的路由关切，sync/store 不读）：prefix "guide" ⇒ 该集合
+	 *  entry 落 /guide/<id>——物理目录与 URL 解耦（如 content/operations/* → /guide/*）。
+	 *  语义：集合 index → /<prefix>（着陆页）；entry "404" 禁入带前缀集合（根特例文件名） */
+	route?: { prefix: string }
 }
 
 /**

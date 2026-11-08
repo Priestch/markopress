@@ -34,6 +34,7 @@ import {
   type PluginCtx,
   type ThemeOptions,
   routeFor,
+  routeIdFor,
   validateNamespace,
   type HeadEntry,
   writePluginData,
@@ -206,7 +207,10 @@ async function setup(): Promise<SyncedContent> {
       }
       return renderer.render({ digest: entry.digest ?? entry.id, body: entry.body });
     },
-    urlOf: (_collection, id) => routeFor(id),
+    // urlOf = 三件内置（rss/sitemap/search）URL 的单一出口：route.prefix 在此拼前
+    // （远端 loader 同样受益——prefix 是 config 层路由关切，与 loader 是谁无关）
+    urlOf: (collection, id) =>
+      routeFor(routeIdFor(config.collections[collection]?.route?.prefix, id)),
     setData: (name, value) => writePluginData(name, value).then(() => {}),
   };
   // 全量 contentSynced：后台链（同插件串行，失败逐插件日志降级——不阻塞 setup）。

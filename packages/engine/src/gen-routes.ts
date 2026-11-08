@@ -21,7 +21,7 @@ import { join, relative } from "node:path";
 import type { DataEntry } from "./content/index.ts";
 import { ensureSynced } from "./content.ts";
 import { PAGES_DIR, ROOT } from "./paths.ts";
-import { handlerRouteFileFor, handlerWrapperSource, routeFor } from "./plugins.ts";
+import { handlerRouteFileFor, handlerWrapperSource, routeFor, routeIdFor } from "./plugins.ts";
 import { buildSidebar } from "./sidebar.ts";
 import { mergeUserPages, type TakenRoutes } from "./user-pages.ts";
 
@@ -32,12 +32,15 @@ export const SIDEBAR_FILE = SITE_FILE;
 const PAGE_NAV_FILE = join(ROOT, ".markopress", "page-nav.js");
 const URLS_FILE = join(ROOT, ".markopress", "urls.json");
 
-/** entry id → 扁平路由文件名：index → +page.marko；a/b → a.b+page.marko */
-function pageFileFor(id: string): string {
+/** entry id（可含 route.prefix 前缀）→ 扁平路由文件名：index → +page.marko；
+ *  a/b → a.b+page.marko；尾段 index 折叠（guide/index → guide+page.marko = /guide，
+ *  带前缀集合的着陆页；与 routeFor 同规则）。导出供测试。 */
+export function pageFileFor(id: string): string {
   // id "404" → 特殊路由文件（marko-run 约定：根目录 +404 后缀 = NotFound 页，
   // 未知路由由 router 渲染它并回 404 状态；adapter 爬取经 notFoundPath 落 404.html）
   if (id === "404") return "+404.marko";
-  return id === "index" ? "+page.marko" : `${id.replaceAll("/", ".")}+page.marko`;
+  const routeId = id === "index" ? "" : id.replace(/\/index$/, "");
+  return routeId === "" ? "+page.marko" : `${routeId.replaceAll("/", ".")}+page.marko`;
 }
 
 /** dir = 包装所在目录（"_content" = 派生内容组，"" = routes 根）：相对 import 深度随之处变 */
@@ -181,13 +184,17 @@ export async function generateRoutes(): Promise<GenerateResult> {
     collection: string;
     id: string;
   }> = [];
-  for (const [name] of Object.entries(config.collections)) {
+  for (const [name, collectionConfig] of Object.entries(config.collections)) {
     for (const entry of store.values(name) as Array<DataEntry<{ title: string; order?: number }>>) {
+      // route.prefix（集合级路由前缀）：拼在 entry id 前成为 route id——文件名/URL/
+      // 侧边栏/prev-next/urls.json 全部经 routeFor/pageFileFor 自动跟随；虚拟模块
+      // import 仍用 store id（p.id）。404+前缀在 routeIdFor fail fast（根特例文件名）。
+      const routeId = routeIdFor(collectionConfig.route?.prefix, entry.id);
       pages.push({
         collection: name,
         id: entry.id,
-        file: pageFileFor(entry.id),
-        route: routeFor(entry.id),
+        file: pageFileFor(routeId),
+        route: routeFor(routeId),
         title: entry.data.title,
         order: entry.data.order,
         date: entry.data.date instanceof Date ? entry.data.date.toISOString() : entry.data.date,
@@ -217,8 +224,18 @@ export async function generateRoutes(): Promise<GenerateResult> {
 
   const expectedRoot = new Set<string>(["_content"]); // _pages 存在与否随 merge 结果
   const expectedContent = new Set<string>(["+layout.marko"]);
-  // 撞车占用表（§4.6）：先集合投影 + 插件路由，用户页后到——先查后进，撞了 fail fast
-  const taken: TakenRoutes = new Map(pages.map((p) => [p.route, `集合 entry "${p.id}"`]));
+  // 占用表：派生路由先互相查重（route.prefix 让跨集合撞 URL 更易发生——原来两集合
+  // 同 id 只是静默双写同文件，现按 §4.6 哲学 fail fast 报双方）；插件路由与用户页后到
+  const taken: TakenRoutes = new Map();
+  for (const p of pages) {
+    const owner = taken.get(p.route);
+    if (owner) {
+      throw new Error(
+        `[markopress] 路由撞车：集合 entry "${p.id}"（${p.collection}）出的 "${p.route}" 已被 ${owner} 占用——route.prefix 或 id 重复，调整其一`,
+      );
+    }
+    taken.set(p.route, `集合 entry "${p.id}"（${p.collection}）`);
+  }
 
   const written: Array<string> = [];
   for (const p of pages) {
