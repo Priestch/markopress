@@ -8,6 +8,7 @@
 //    逐批 drain）→ 优先单文件增量（syncer.syncFile：只读事件文件，O(1)；无人认领
 //    则忽略）。config 文件变更走全量重建。失效一律走 Vite 模块图，不碰 routes 目录
 //    文件事件（死锁纪律，docs/spike-notes.md）。
+import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ContentConfig } from "./content/index.ts";
 import type { Plugin, ViteDevServer } from "vite";
@@ -22,6 +23,7 @@ import {
 } from "./content.ts";
 import { assetOwners, isImageFile } from "./images.ts";
 import { generateRoutes } from "./gen-routes.ts";
+import { PAGES_DIR } from "./paths.ts";
 import { SEGMENT_PREFIX, VSEG_DIR } from "./segments.ts";
 import {
   enqueueContentSynced,
@@ -79,6 +81,10 @@ export function markopressPlugin(): Plugin {
       for (const collection of Object.values(synced.config.collections)) {
         for (const dir of collection.loader.watchDirs ?? []) watchDirs.add(resolve(dir));
       }
+      // 用户自定义页目录（custom-pages §4.1）：mkdir 保证 chokidar 有目录可盯；
+      // 事件在 drain 分流（不走内容 sync，批末 generateRoutes 处理包装增删）
+      mkdirSync(PAGES_DIR, { recursive: true });
+      watchDirs.add(PAGES_DIR);
       await generateRoutes();
       knownDigests = await snapshot();
       // build 必须等插件产物（handler 模块 import 的 plugin-data 要在编译前落盘）；
@@ -154,6 +160,11 @@ export function markopressPlugin(): Plugin {
     return false;
   }
 
+  /** 用户自定义页文件判定（custom-pages §4.1）：pages/ 下的事件走包装 merge，不走内容 sync */
+  function isUserPageFile(file: string): boolean {
+    return file === PAGES_DIR || file.startsWith(`${PAGES_DIR}/`) || file.startsWith(`${PAGES_DIR}\\`);
+  }
+
   function enqueue(server: ViteDevServer, job: Job): void {
     queue.push(job);
     if (!draining) void drain(server);
@@ -172,20 +183,30 @@ export function markopressPlugin(): Plugin {
             const changed: Array<{ collection: string; id: string }> = [];
             const removed: Array<{ collection: string; id: string }> = [];
             let touched = false;
+            // 用户页事件分流（custom-pages §4.1）：不走内容 sync；批末 generateRoutes
+            // 处理包装增删。改页面内容则由 Vite 模块图失效（包装 import 用户真身）。
+            let pagesTouched = false;
             for (const job of jobs) {
               if (job.kind !== "file") continue;
+              if (isUserPageFile(job.file)) {
+                pagesTouched = true;
+                continue;
+              }
               const outcome = await syncOne(server, job.type, job.file);
               touched = touched || outcome.touched;
               changed.push(...outcome.changed);
               removed.push(...outcome.removed);
             }
-            if (touched) {
-              // 批末一次：slug 增删才有 routes 文件事件（模板不变则 write-if-changed 全跳过）
+            if (touched || pagesTouched) {
+              // 批末一次：slug 增删才有 routes 文件事件（模板不变则 write-if-changed
+              // 全跳过）；用户页增/删/改名 = 包装文件事件 → marko-run 路由 re-walk
               await generateRoutes();
-              // 插件增量（contentSynced：O(变更)，后台链；plugin-data 落盘自动失效）
-              const { plugins, pluginCtx } = await ensureSynced();
-              if (plugins.some((p) => p.contentSynced)) {
-                void enqueueContentSynced(plugins, pluginCtx, { changed, removed });
+              // 插件增量（contentSynced：O(变更)，后台链；纯用户页变更跳过）
+              if (changed.length + removed.length > 0) {
+                const { plugins, pluginCtx } = await ensureSynced();
+                if (plugins.some((p) => p.contentSynced)) {
+                  void enqueueContentSynced(plugins, pluginCtx, { changed, removed });
+                }
               }
               server.ws.send({ type: "full-reload" });
             }

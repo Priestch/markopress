@@ -7,7 +7,7 @@
 //     markopack 内置 watchRoutes（监听 routesDir）re-walk——零新代码。
 //   - 没有 Vite ws full-reload：浏览器需手动刷新（已知缺口，记入 perf 文档）。
 //   - content.config.ts 在项目根、不在集合 watchDirs 内：ROOT 单独加一个非递归 watcher。
-import { existsSync, readdirSync, statSync, watch, type FSWatcher } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, statSync, watch, type FSWatcher } from "node:fs";
 import { join, resolve } from "node:path";
 import { dev } from "@markopack/rspack";
 import staticAdapter from "@markopack/adapter-static";
@@ -16,6 +16,7 @@ import { CONFIG_FILE, ROOT, ensureSynced, resetSynced } from "./content.ts";
 import { generateRoutes } from "./gen-routes.ts";
 import { writeContentModules } from "./content-modules.ts";
 import { assetOwners } from "./images.ts";
+import { PAGES_DIR } from "./paths.ts";
 import { enqueueContentSynced } from "./plugins.ts";
 import { mpRspack, prepare } from "./rspack-shared.ts";
 
@@ -36,6 +37,10 @@ const { config: initialConfig } = await ensureSynced();
 for (const collection of Object.values(initialConfig.collections)) {
   for (const dir of collection.loader.watchDirs ?? []) watchDirs.add(resolve(dir));
 }
+// 用户自定义页目录（custom-pages §4.1）：mkdir 保证 watcher 有目录可盯（会话中途
+// 新建 pages/ 无需重启）；事件在 drain 分流——pages/ 不是集合内容，不走 syncFile。
+mkdirSync(PAGES_DIR, { recursive: true });
+watchDirs.add(PAGES_DIR);
 
 await dev({
   root: ROOT,
@@ -122,6 +127,11 @@ function onContentEvent(dir: string, event: string, filename: string): void {
   enqueue({ kind: "file", type, file });
 }
 
+/** 用户自定义页文件判定（custom-pages §4.1）：pages/ 下的事件走包装 merge，不走内容 sync */
+function isUserPageFile(file: string): boolean {
+  return file === PAGES_DIR || file.startsWith(`${PAGES_DIR}/`) || file.startsWith(`${PAGES_DIR}\\`);
+}
+
 /** config 里新出现的 watchDirs 补进 watcher（config 编辑可能新增集合/base） */
 function adoptWatchDirs(config: ContentConfig): void {
   for (const collection of Object.values(config.collections)) {
@@ -152,8 +162,17 @@ async function drain(): Promise<void> {
         } else {
           const changed: Array<{ collection: string; id: string }> = [];
           const removed: Array<{ collection: string; id: string }> = [];
+          // 用户页事件分流（custom-pages §4.1）：pages/ 不是集合内容——不走 syncFile /
+          // assetOwners；批末统一 generateRoutes 处理包装增删。改页面**内容**也是 no-op
+          // 写入（包装只含 import 路径）——重编译归 Rspack 原生 watcher（包装 import
+          // 用户真身，文件在编译图内）。
+          let pagesTouched = false;
           for (const job of jobs) {
             if (job.kind !== "file") continue;
+            if (isUserPageFile(job.file)) {
+              pagesTouched = true;
+              continue;
+            }
             const outcome = await syncOne(job);
             changed.push(...outcome.changed);
             removed.push(...outcome.removed);
@@ -171,15 +190,19 @@ async function drain(): Promise<void> {
               }
             }
           }
-          if (moduleChanged.length + removed.length > 0) {
+          if (moduleChanged.length + removed.length > 0 || pagesTouched) {
             // 先落内容模块再生成路由：新路由编译时 import 的文件必须已存在
             const modules = await writeContentModules({ changed: moduleChanged, removed });
-            // slug 增/删才有 routes 文件事件（模板不变则 write-if-changed 全跳过）
+            // slug 增/删才有 routes 文件事件；用户页增/删/改名 = 包装文件事件（模板不变
+            // 则 write-if-changed 全跳过）
             await generateRoutes();
-            // 插件增量（contentSynced：O(变更)，后台链；plugin-data 落盘走原生 watcher 失效）
-            const { plugins, pluginCtx } = await ensureSynced();
-            if (plugins.some((p) => p.contentSynced)) {
-              void enqueueContentSynced(plugins, pluginCtx, { changed, removed });
+            // 插件增量（contentSynced：O(变更)，后台链；plugin-data 落盘走原生 watcher
+            // 失效）。纯用户页变更不涉内容索引——changed/removed 为空即跳过。
+            if (changed.length + removed.length > 0) {
+              const { plugins, pluginCtx } = await ensureSynced();
+              if (plugins.some((p) => p.contentSynced)) {
+                void enqueueContentSynced(plugins, pluginCtx, { changed, removed });
+              }
             }
             console.log(
               `[markopress] ${modules.written.length} content module(s) updated, ` +

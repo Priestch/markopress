@@ -1,0 +1,35 @@
+// 用户自定义页 dogfood（docs/custom-pages-design.md）——组件页走非派生通道：
+// app 根 pages/ 下真身，gen 期薄包装并入 .markopress/routes/_pages/（显式 import
+// 本文件），不进 store、默认不进主题外壳（要外壳 = 显式 import 主题 Layout，opt-in）。
+// 计数器刻意留在这里：验证 Marko 水合穿过薄包装生效（.marko→.marko 闭包）。
+<let/count=0>
+<main class="mp-showcase">
+  <h1>自定义页面</h1>
+  <p>
+    这一页来自 app 根 <code>pages/showcase.marko</code>——是组件不是内容：
+    不经集合 loader、不进 store，路由由 gen 期薄包装并入。
+  </p>
+  <p><button onClick() { count++ }>点了 ${count} 次</button>（水合穿过薄包装的实证）</p>
+  <p><a href="/">← 回首页（集合派生页，主题外壳）</a></p>
+</main>
+
+<style>
+  .mp-showcase {
+    max-width: 720px;
+    margin: 48px auto;
+    padding: 0 16px;
+    font-family: system-ui, sans-serif;
+    line-height: 1.7;
+  }
+  .mp-showcase code {
+    background: #f4f4f5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  .mp-showcase button {
+    font: inherit;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+</style>
