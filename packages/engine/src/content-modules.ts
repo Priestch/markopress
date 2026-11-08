@@ -23,10 +23,47 @@ import {
 } from "./segments.ts";
 
 export const VCONTENT_DIR = join(ROOT, ".markopress", "vcontent");
+/** 集合级数据模块（virtual:mp/collection/<name>）的落盘目录——独立于 vcontent/：
+ *  entry id "index" 会占用 vcontent/<c>/index.js，撞名 */
+export const VCOLLECTION_DIR = join(ROOT, ".markopress", "vcollection");
+export const COLLECTION_PREFIX = "virtual:mp/collection/";
 
 /** entry → 内容模块绝对路径：id 含 `/` 时嵌套目录（a/b → vcontent/<c>/a/b.js） */
 export function contentModuleFile(collection: string, id: string): string {
   return join(VCONTENT_DIR, collection, `${id}.js`);
+}
+
+/** 集合 → 集合级数据模块绝对路径（vcollection/<name>.js） */
+export function collectionModuleFile(collection: string): string {
+  return join(VCOLLECTION_DIR, `${collection}.js`);
+}
+
+/**
+ * 渲染集合级数据模块源码（双后端唯一来源）：静态 import 全部 per-entry 模块 +
+ * 导出 entries 数组（{ id, slug, data, segments, headings } 每条；排序/投影由
+ * 消费方做）。渲染缓存各自按 entry digest 生效，集合模块零渲染成本。
+ * 增删条目 ⇒ 本模块源码变 ⇒ vite 侧失效 / rspack 侧落盘重写走原生 watcher；
+ * 纯内容编辑 ⇒ per-entry 模块变化沿模块图/编译图传播，本模块源不变（字节不变）。
+ */
+export function renderCollectionModule(collection: string, entries: Array<DataEntry>): string {
+  if (entries.length === 0) {
+    return [
+      `// 集合级数据模块（生成物）：virtual:mp/collection/${collection}`,
+      `export const entries = []`,
+      ``,
+    ].join("\n");
+  }
+  return [
+    `// 集合级数据模块（生成物）：virtual:mp/collection/${collection}`,
+    ...entries.map((entry, i) => `import * as entry${i} from "virtual:mp/content/${collection}/${entry.id}";`),
+    `export const entries = [`,
+    ...entries.map(
+      (entry, i) =>
+        `  { id: ${JSON.stringify(entry.id)}, slug: ${JSON.stringify(entry.slug)}, data: entry${i}.data, segments: entry${i}.segments, headings: entry${i}.headings },`,
+    ),
+    `]`,
+    ``,
+  ].join("\n");
 }
 
 // ── 页面级插件钩子的缓存（docs/plugin-design.md §2：按 entry digest × 插件链）──
@@ -196,6 +233,19 @@ export async function writeContentModules(scope?: {
       }
       removeSegmentFiles(collection, id);
     }
+    // 集合级数据模块：本批触及的集合各重写一次（条目集/内容都可能变了——源码只含
+    // id/slug 引用，纯内容编辑下字节不变，write-if-changed 吸收）
+    const touched = new Set<string>();
+    for (const { collection } of [...(scope.changed ?? []), ...(scope.removed ?? [])]) {
+      touched.add(collection);
+    }
+    for (const collection of touched) {
+      writeIfChanged(
+        collectionModuleFile(collection),
+        renderCollectionModule(collection, store.values(collection)),
+        result,
+      );
+    }
     return result;
   }
 
@@ -208,8 +258,13 @@ export async function writeContentModules(scope?: {
       for (const seg of segFiles) expected.add(seg);
       writeIfChanged(file, source, result);
     }
+    // 集合级数据模块：每个配置集合一个（空集合也是 entries = []——消费方拿到稳定形状）
+    const collectionFile = collectionModuleFile(name);
+    expected.add(collectionFile);
+    writeIfChanged(collectionFile, renderCollectionModule(name, store.values(name)), result);
   }
   cleanStale(VCONTENT_DIR, expected, result);
   cleanStale(VSEG_DIR, expected, result);
+  cleanStale(VCOLLECTION_DIR, expected, result);
   return result;
 }

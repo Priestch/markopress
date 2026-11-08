@@ -74,6 +74,7 @@ packages/content/
 │   ├── parse-data.ts        # zod 入口
 │   ├── typegen.ts           # .markopress/content.d.ts 生成
 │   ├── loaders/glob.ts      # 通用文件扫描；扩展名→entryType 由注入的钩子决定（不含 md 知识）
+│   ├── loaders/strapi.ts    # Strapi REST loader（v4/v5 包装归一；无文件系统源——docs/strapi-loader-design.md）
 │   └── index.ts             # defineCollection / getCollection / getEntry
 └── tests/                   # vitest
 ```

@@ -7,6 +7,8 @@ export { defineMarkoPressConfig } from "./plugins.ts";
 export { defineCollection, defineContentConfig, getCollection, getEntry } from "./content/index.ts";
 export type { DataEntry, ContentConfig, CollectionConfig } from "./content/index.ts";
 export { glob } from "./content/loaders/glob.ts";
+export { strapi } from "./content/loaders/strapi.ts";
+export type { StrapiOptions } from "./content/loaders/strapi.ts";
 export type { MarkoPressConfig, ThemeOptions } from "./plugins.ts";
 export { patchTitles } from "./patch-titles.ts";
 // 内置三件（原独立插件包，2026-10-29 并入——功能开关而非换件单元，不值得单独成包；

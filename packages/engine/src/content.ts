@@ -28,6 +28,7 @@ import {
 } from "./markdown/index.ts";
 import { ROOT } from "./paths.ts";
 import {
+  assertNoLiteralSecrets,
   enqueueContentSynced,
   type MarkoPressConfig,
   type MarkoPressPlugin,
@@ -171,6 +172,8 @@ async function setup(): Promise<SyncedContent> {
   const config: ContentConfig = { collections: (merged.collections ?? {}) as ContentConfig["collections"] };
   // plugins 归一化：覆盖配置（perf/blog spike）可以不带插件键
   const pressConfig: MarkoPressConfig = { ...merged, collections: undefined, plugins: merged.plugins ?? [] };
+  // 字面量密钥 fail fast（strapi-loader-design §7）——在一切网络/装载之前
+  assertNoLiteralSecrets(CONFIG_FILE);
   writeConventions();
 
   const store = await MutableStore.fromDir(STORE_DIR);
@@ -208,9 +211,13 @@ async function setup(): Promise<SyncedContent> {
       return renderer.render({ digest: entry.digest ?? entry.id, body: entry.body });
     },
     // urlOf = 三件内置（rss/sitemap/search）URL 的单一出口：route.prefix 在此拼前
-    // （远端 loader 同样受益——prefix 是 config 层路由关切，与 loader 是谁无关）
-    urlOf: (collection, id) =>
-      routeFor(routeIdFor(config.collections[collection]?.route?.prefix, id)),
+    // （远端 loader 同样受益——prefix 是 config 层路由关切，与 loader 是谁无关）；
+    // route: false 的集合返回 null——调用方跳过（无 URL 的聚合条目没有意义）
+    urlOf: (collection, id) => {
+      const route = config.collections[collection]?.route;
+      if (route === false) return null;
+      return routeFor(routeIdFor(route?.prefix, id));
+    },
     setData: (name, value) => writePluginData(name, value).then(() => {}),
   };
   // 全量 contentSynced：后台链（同插件串行，失败逐插件日志降级——不阻塞 setup）。

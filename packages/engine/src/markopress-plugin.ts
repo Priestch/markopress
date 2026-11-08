@@ -12,7 +12,8 @@ import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ContentConfig } from "./content/index.ts";
 import type { Plugin, ViteDevServer } from "vite";
-import { renderContentModule } from "./content-modules.ts";
+import { renderCollectionModule, renderContentModule } from "./content-modules.ts";
+import { COLLECTION_PREFIX } from "./content-modules.ts";
 import {
   CONFIG_FILE,
   ensureSynced,
@@ -32,6 +33,7 @@ import {
 } from "./plugins.ts";
 
 const RESOLVED_PREFIX = "\0" + VIRTUAL_PREFIX;
+const RESOLVED_COLLECTION_PREFIX = "\0" + COLLECTION_PREFIX;
 
 /** 队列任务：file = 单文件事件；full = config 变更的全量重建（覆盖同批文件事件） */
 type Job =
@@ -56,6 +58,13 @@ export function markopressPlugin(): Plugin {
 
   function invalidate(server: ViteDevServer, key: string): void {
     const mod = server.moduleGraph.getModuleById(RESOLVED_PREFIX + key);
+    if (mod) server.moduleGraph.invalidateModule(mod);
+  }
+
+  /** 集合级数据模块失效（virtual:mp/collection/<name>）：条目集变化（增/删）时源码变。
+   *  纯内容编辑不需要——per-entry 模块失效沿模块图向 importer 传播自动到达这里。 */
+  function invalidateCollection(server: ViteDevServer, collection: string): void {
+    const mod = server.moduleGraph.getModuleById(RESOLVED_COLLECTION_PREFIX + collection);
     if (mod) server.moduleGraph.invalidateModule(mod);
   }
 
@@ -98,6 +107,10 @@ export function markopressPlugin(): Plugin {
       if (id.startsWith(VIRTUAL_PREFIX)) {
         return RESOLVED_PREFIX + id.slice(VIRTUAL_PREFIX.length);
       }
+      // 集合级数据模块（strapi-loader-design §6）：内存虚拟模块（与 per-entry 同款）
+      if (id.startsWith(COLLECTION_PREFIX)) {
+        return RESOLVED_COLLECTION_PREFIX + id.slice(COLLECTION_PREFIX.length);
+      }
       // 组件段：解析到真实 .marko 文件（vseg；写盘发生在 load() 的 renderContentModule，
       // 先于本 import 的解析——顺序保证成立）
       if (id.startsWith(SEGMENT_PREFIX)) {
@@ -117,12 +130,20 @@ export function markopressPlugin(): Plugin {
     },
 
     async load(id) {
-      if (!id.startsWith(RESOLVED_PREFIX)) return;
+      if (!id.startsWith(RESOLVED_PREFIX) && !id.startsWith(RESOLVED_COLLECTION_PREFIX)) return;
+      const { store, renderer } = await ensureSynced();
+      // 集合级数据模块：per-entry 模块的静态聚合（渲染缓存各自生效）
+      if (id.startsWith(RESOLVED_COLLECTION_PREFIX)) {
+        const collection = id.slice(RESOLVED_COLLECTION_PREFIX.length);
+        if (!store.collections.has(collection)) {
+          throw new Error(`[markopress] no collection "${collection}" (stale import? check .markopress/config.ts)`);
+        }
+        return renderCollectionModule(collection, store.values(collection));
+      }
       const rest = id.slice(RESOLVED_PREFIX.length);
       const slash = rest.indexOf("/");
       const collection = rest.slice(0, slash);
       const entryId = rest.slice(slash + 1);
-      const { store, renderer } = await ensureSynced();
       const entry = store.get(collection, entryId);
       if (!entry) {
         throw new Error(`[markopress] no content entry "${collection}/${entryId}" (stale generated route? rerun sync)`);
@@ -246,10 +267,12 @@ export function markopressPlugin(): Plugin {
     for (const { collection, id } of outcome.changed) {
       invalidate(server, `${collection}/${id}`);
       knownDigests.set(`${collection}/${id}`, store.get(collection, id)?.digest ?? "");
+      invalidateCollection(server, collection); // 条目集可能变了（add）
     }
     for (const { collection, id } of outcome.removed) {
       invalidate(server, `${collection}/${id}`);
       knownDigests.delete(`${collection}/${id}`);
+      invalidateCollection(server, collection); // 条目集可能变了（unlink）
     }
     return {
       touched: outcome.changed.length + outcome.removed.length > 0,
@@ -273,6 +296,8 @@ export function markopressPlugin(): Plugin {
     }
     knownDigests = current;
     for (const key of changed) invalidate(server, key);
+    // 集合级数据模块：条目集可能整体变了（集合增删/全量重建），全部失效
+    for (const name of Object.keys(config.collections)) invalidateCollection(server, name);
     await generateRoutes();
     server.ws.send({ type: "full-reload" });
   }

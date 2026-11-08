@@ -26,7 +26,7 @@ pnpm gen       # 手动跑路由生成器（dev/build 会自动跑，一般不�
 
 **perf 与默认链路解耦**：默认 `.markopress/config.ts` 只有 docs 集合；perf 走 `MP_CONTENT_CONFIG=.markopress/perf.config.ts`（dev:perf/build:perf 已带）。两配置 digest 不同 ⇒ 切换触发 store 全量重建 + 生成目录收缩/扩张（write-if-changed + 差集清理，自愈，切换是低频操作）。
 
-pnpm --filter markopress test  # 引擎全家 vitest：content 53 + markdown 21 + search 12
+pnpm --filter markopress test  # 引擎全家 vitest：content 63 + markdown 21 + search 12 + 根级 24（route-prefix/user-pages/collection-module）
 ```
 
 **双路并行纪律（同树双命令，不用 git 分支）**：内容层/store/`gen-routes.ts`/`content-modules.ts` 为两路共享，新功能落共享层；打包器特定代码只允许出现在 `virtual:mp/content/` 解析与 watcher 层（Vite = markopress-plugin.ts，Rspack = rspack-*.ts）。对比数据见 `docs/perf-rspack-vs-vite.md`。

@@ -20,7 +20,8 @@ interface PluginHooks {
 interface SitemapCtx {
   config: { collections: Record<string, unknown> };
   store: { values(name: string): Array<{ id: string }> };
-  urlOf(collection: string, id: string): string;
+  /** route:false 的集合返回 null——跳过（无 per-entry URL 的条目不进 sitemap） */
+  urlOf(collection: string, id: string): string | null;
   setData(name: string, value: unknown): Promise<void>;
 }
 
@@ -34,7 +35,10 @@ export function sitemap(options: SitemapOptions): PluginHooks {
 
     async contentSynced(ctx) {
       const urls = Object.keys(ctx.config.collections).flatMap((collection) =>
-        ctx.store.values(collection).map((entry) => ctx.urlOf(collection, entry.id)),
+        ctx.store
+          .values(collection)
+          .map((entry) => ctx.urlOf(collection, entry.id))
+          .filter((url): url is string => url !== null),
       );
       urls.sort();
       await ctx.setData("sitemap", { site: options.site, urls });

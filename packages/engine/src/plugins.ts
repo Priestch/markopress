@@ -46,8 +46,10 @@ export interface PluginCtx {
   config: ContentConfig;
   /** 共享渲染实例（与页面渲染共用 digest 缓存——不得各建管线） */
   render(entry: DataEntry): Promise<RenderedMarkdown>;
-  /** entry id → URL，与 gen-routes 的路由派生同源（不得各自实现，会漂移） */
-  urlOf(collection: string, id: string): string;
+  /** entry id → URL，与 gen-routes 的路由派生同源（不得各自实现，会漂移）。
+   *  route: false 的集合返回 null——调用方（内置三件等）跳过 null（无 URL 的
+   *  订阅项/搜索结果/sitemap 条目没有意义） */
+  urlOf(collection: string, id: string): string | null;
   /** 产出数据模块 → .markopress/plugin-data/<name>.js + virtual:mp/plugin/<name> */
   setData(name: string, value: unknown): Promise<void>;
 }
@@ -285,6 +287,25 @@ function listMarkoTags(theme: { dir: string; tagsDir: string }): Set<string> {
     for (const f of readdirSync(dir)) if (f.endsWith(".marko")) tags.push(f.replace(/\.marko$/, ""));
   }
   return new Set(tags);
+}
+
+/**
+ * 装配期字面量密钥扫描（strapi-loader-design §7）：config 源文本里
+ * `token:`/`secret:`/`password:`/`apiKey:` 后跟字符串字面量 ⇒ fail fast。
+ * 运行时无法区分字面量与 process.env 求值结果（config 模块求值后都是 string），
+ * 源码扫描是启发式——只扫主 config 文本，从其他模块导入的值扫不到（纵深防御，
+ * 非安全边界）。前车之鉴：pdflux 源仓库把 prod token 明文提交在 gatsby-config.js。
+ */
+export function assertNoLiteralSecrets(configPath: string): void {
+  if (!existsSync(configPath)) return;
+  const source = readFileSync(configPath, "utf-8");
+  const pattern = /\b(token|secret|password|apiKey)\s*:\s*(["'`])(?:(?!\2).)+\2/;
+  const match = source.match(pattern);
+  if (match) {
+    throw new Error(
+      `[markopress] ${relative(ROOT, configPath)} 检测到字面量密钥（${match[1]}: "…"）——密钥只从环境变量读（如 ${match[1]}: process.env.MY_TOKEN）；字面量提交进 git 是真实事故来源（pdflux 前车之鉴）`,
+    );
+  }
 }
 
 export function validatePluginSlots(plugins: Array<MarkoPressPlugin>): void {

@@ -50,7 +50,7 @@ interface RssCtx {
       data: Record<string, unknown>;
     }>;
   };
-  urlOf(collection: string, id: string): string;
+  urlOf(collection: string, id: string): string | null;
   setData(name: string, value: unknown): Promise<void>;
 }
 
@@ -78,10 +78,13 @@ export function rss(options: RssOptions): PluginHooks {
       const items: Array<RssItem & { sortKey: number }> = [];
       for (const collection of collectionNames) {
         for (const entry of ctx.store.values(collection)) {
+          const path = ctx.urlOf(collection, entry.id);
+          // route:false 的集合无 per-entry URL——订阅项点了没地方去，跳过
+          if (path === null) continue;
           const date = toIso(entry.data[dateField]);
           items.push({
             title: typeof entry.data.title === "string" ? entry.data.title : entry.slug || entry.id,
-            path: ctx.urlOf(collection, entry.id),
+            path,
             ...(date ? { date } : {}),
             ...(typeof entry.data.description === "string"
               ? { description: entry.data.description }

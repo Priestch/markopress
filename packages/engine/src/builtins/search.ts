@@ -35,7 +35,8 @@ interface SearchCtx {
     values(name: string): Array<SearchEntry>;
     get(name: string, id: string): SearchEntry | undefined;
   };
-  urlOf(collection: string, id: string): string;
+  /** route:false 的集合返回 null——跳过（搜索结果点了没地方去） */
+  urlOf(collection: string, id: string): string | null;
   render(entry: SearchEntry): Promise<{ segments: Array<{ type: string; html: string }> }>;
   setData(name: string, value: unknown): Promise<void>;
 }
@@ -113,6 +114,9 @@ export function search(options: SearchOptions = {}) {
       const names = new Set(options.collections ?? Object.keys(ctx.config.collections));
 
       const docsOf = async (collection: string, entry: SearchEntry): Promise<SearchDoc[]> => {
+        const url = ctx.urlOf(collection, entry.id);
+        // route:false 的集合无 per-entry URL——结果点了没地方去，跳过（渲染也省了）
+        if (url === null) return [];
         const { segments } = await ctx.render(entry);
         const title =
           typeof entry.data[titleField] === "string"
@@ -122,7 +126,7 @@ export function search(options: SearchOptions = {}) {
           collection,
           id: entry.id,
           title,
-          url: ctx.urlOf(collection, entry.id),
+          url,
         });
       };
 

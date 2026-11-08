@@ -185,6 +185,9 @@ export async function generateRoutes(): Promise<GenerateResult> {
     id: string;
   }> = [];
   for (const [name, collectionConfig] of Object.entries(config.collections)) {
+    // route: false（strapi 等远端列表集合）：不产 per-entry 路由——消费走集合级
+    // 数据模块 virtual:mp/collection/<name>；sidebar/urls/prev-next 由 pages 派生 ⇒ 自动排除
+    if (collectionConfig.route === false) continue;
     for (const entry of store.values(name) as Array<DataEntry<{ title: string; order?: number }>>) {
       // route.prefix（集合级路由前缀）：拼在 entry id 前成为 route id——文件名/URL/
       // 侧边栏/prev-next/urls.json 全部经 routeFor/pageFileFor 自动跟随；虚拟模块

@@ -12,7 +12,12 @@ import { fileURLToPath } from "node:url";
 import { rspack } from "@rspack/core";
 import type { Configuration } from "@rspack/core";
 import { VIRTUAL_PREFIX } from "./content.ts";
-import { writeContentModules, VCONTENT_DIR } from "./content-modules.ts";
+import {
+  COLLECTION_PREFIX,
+  VCOLLECTION_DIR,
+  writeContentModules,
+  VCONTENT_DIR,
+} from "./content-modules.ts";
 import { SEGMENT_PREFIX, VSEG_DIR } from "./segments.ts";
 import { ensureSynced } from "./content.ts";
 import { generateRoutes } from "./gen-routes.ts";
@@ -58,14 +63,19 @@ export function mpRspack() {
     config.plugins.push(
       new rspack.NormalModuleReplacementPlugin(
         // virtual:mp/content/<c>/<id> → vcontent/<c>/<id>.js；
+        // virtual:mp/collection/<name> → vcollection/<name>.js（集合级数据模块，独立
+        //   目录——entry id "index" 会占 vcontent/<c>/index.js 撞名）；
         // virtual:mp/segment/<c>/<id>/<n> → vseg/<c>/<id>/<n>.marko（真实 .marko 进编译图）；
         // virtual:mp/plugin/<name> → plugin-data/<name>.js（真实文件 ⇒ 原生 watcher 失效）
-        new RegExp(`^(?:${VIRTUAL_PREFIX}|${PLUGIN_VIRTUAL_PREFIX}|${SEGMENT_PREFIX})`),
+        new RegExp(`^(?:${VIRTUAL_PREFIX}|${COLLECTION_PREFIX}|${PLUGIN_VIRTUAL_PREFIX}|${SEGMENT_PREFIX})`),
         (resource: { request: string }) => {
           // request 形如前缀+rest（无扩展名）→ 直接拼完整绝对路径，绕开 resolve extensions 歧义
           if (resource.request.startsWith(VIRTUAL_PREFIX)) {
             const rest = resource.request.slice(VIRTUAL_PREFIX.length);
             resource.request = path.join(VCONTENT_DIR, `${rest}.js`);
+          } else if (resource.request.startsWith(COLLECTION_PREFIX)) {
+            const name = resource.request.slice(COLLECTION_PREFIX.length);
+            resource.request = path.join(VCOLLECTION_DIR, `${name}.js`);
           } else if (resource.request.startsWith(SEGMENT_PREFIX)) {
             const rest = resource.request.slice(SEGMENT_PREFIX.length);
             resource.request = path.join(VSEG_DIR, `${rest}.marko`);
