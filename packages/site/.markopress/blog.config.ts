@@ -3,12 +3,9 @@
 // 经 pnpm --filter 运行时 cwd = packages/site，与配置文件所在目录无关）。
 // 旧站 layout 值（blog/blog-listing/root/projects）不映射——缺省 "post" 兜底，
 // 真迁移时 sed 成新规范值（post/home/list/page）一次。
-import { defineCollection } from "@markopress/content";
-import { glob } from "@markopress/content/loaders/glob";
+import { defineCollection, glob } from "markopress";
 import { z } from "zod";
-import { rss } from "@markopress/plugin-rss";
-import { search } from "@markopress/plugin-search";
-import { defineMarkoPressConfig } from "../scripts/plugins.ts";
+import { defineMarkoPressConfig, rss, search, sitemap } from "markopress";
 
 export default defineMarkoPressConfig({
   collections: {
@@ -22,7 +19,7 @@ export default defineMarkoPressConfig({
       }),
     }),
   },
-  theme: "@markopress/theme-blog",
+  theme: "markopress-theme-blog",
   themeOptions: {
     site: "Priestch's Blog",
     titleTemplate: "%s · Priestch's Blog",

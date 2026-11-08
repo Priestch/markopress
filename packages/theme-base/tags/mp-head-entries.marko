@@ -1,0 +1,25 @@
+// 站点级 head 注入（config.head → sidebar.json.head → 生成器 → 主题 mp-layout 渲染一次）。
+// 主题契约义务（与 <mp-content-styles/> 同级）：mp-layout 在 <head> 内渲染本组件。
+//
+// 裸 HTML 构造而非模板 <script>/<link>：Marko 模板里的内联 <script> 会被编译进
+// 浏览器 bundle 延迟执行——GA/Clarity 这类必须字面进 HTML 首帧，只能 $!{} 原样输出。
+// 条目来自 config（信任面——本就可执行代码），只做属性转义；content 不消毒。
+static const VOID_TAGS = new Set(["meta", "link", "base", "br", "hr", "img", "input", "source", "col", "area", "embed", "track", "wbr"])
+
+static function escapeAttr(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;")
+}
+
+static function renderEntry(entry: { tag: string; attrs?: Record<string, unknown>; content?: string }): string {
+  const attrs = Object.entries(entry.attrs ?? {})
+    .map(([name, value]) =>
+      value === true ? ` ${name}` : typeof value === "string" ? ` ${name}="${escapeAttr(value)}"` : "",
+    )
+    .join("")
+  if (VOID_TAGS.has(entry.tag)) return `<${entry.tag}${attrs}>`
+  return `<${entry.tag}${attrs}>${entry.content ?? ""}</${entry.tag}>`
+}
+
+<for|entry| of=(input.entries ?? [])>
+  $!{renderEntry(entry)}
+</for>

@@ -1,15 +1,11 @@
 // markopress 站点配置（唯一用户配置文件，VitePress .vitepress/config.ts 形态）：
-//   collections —— 内容层（@markopress/content 契约：loader + zod schema）
+//   collections —— 内容层（markopress-content 契约：loader + zod schema）
 //   theme/themeOptions/markdown/plugins —— 管线（docs/plugin-design.md）
 // 内部分发不变：collections 子树照旧算 store digest；改本文件 → 两路 dev watcher
 // 全量重建（resetSynced）。perf 形态 = perf.config.ts（pnpm dev:perf / build:perf）。
-import { defineCollection } from "@markopress/content";
-import { glob } from "@markopress/content/loaders/glob";
+import { defineCollection, glob } from "markopress";
 import { z } from "zod";
-import { sitemap } from "@markopress/plugin-sitemap";
-import { rss } from "@markopress/plugin-rss";
-import { search } from "@markopress/plugin-search";
-import { defineMarkoPressConfig } from "../scripts/plugins.ts";
+import { defineMarkoPressConfig, rss, search, sitemap } from "markopress";
 
 export default defineMarkoPressConfig({
   collections: {
@@ -28,8 +24,8 @@ export default defineMarkoPressConfig({
   },
 
   // 主题（D5：主题 = npm 包；槽位契约 <mp-layout>/<mp-page>，themes.md §9）。
-  // 换主题 = 改这一行 + 装对应包；省略则默认 @markopress/theme-docs。
-  theme: "@markopress/theme-docs",
+  // 换主题 = 改这一行 + 装对应包；省略则默认 markopress-theme-docs。
+  theme: "markopress-theme-docs",
   themeOptions: {
     site: "markopress",
     // 页 <title> 模板（postbuild 补写；dev 期显示站名）

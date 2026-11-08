@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 markopress：基于 Marko 6 + `@marko/run` 的内容框架（VitePress/Astro 形态，`.md` 文件即页面）。当前处于 **Phase 1（content 层）进行中：markdown 已接入 content layer，单文件增量同步已落地**。技术决策（D1–D6）已定稿于 `docs/background.md`，不要重新讨论；五份调研报告在 `docs/research/`（与实际不符时以 `node_modules/@marko/run` 安装源码为准；`rspack-watcher.md` 是 markopack/Rspack 迁移评估依据）。
 
-仓库是 pnpm workspace：`packages/content`（@markopress/content，内容层契约 + store，整体抄 Astro Content Layer 契约）、`packages/markdown`（@markopress/markdown，`.md` EntryType + unified 渲染器）、`packages/theme-docs`（默认文档主题）、`packages/plugin-rss` / `plugin-sitemap` / `plugin-search`（插件，search = MiniSearch 本地搜索 + 首个 UI 槽位插件）、`packages/theme-base`（内容样式契约的机械部分，双主题共享）、`packages/theme-blog`（博客主题：layout post/home/list/page 分流）、**`packages/site`（狗粮站 = 未来脚手架模板形态：package.json + content/ + .markopress/{config.ts,components/}，收包已执行见 `docs/plan-site-package.md`）**——**在工作目录对应的包前先读其 AGENTS.md**。root 只做 workspace 编排（scripts 全部 `--filter` 代理进 site，命令名不变）。
+仓库是 pnpm workspace：**`packages/engine`（= npm 包 `markopress`：引擎 CLI + 内容层 `src/content/`（契约整体抄 Astro Content Layer，红线 = 目录级审计测试锁 import 面）+ markdown 渲染器 `src/markdown/` + 内置 rss/sitemap/search `src/builtins/`）**、`packages/theme-base`（内容样式机械部分，双主题共享）、`packages/theme-docs` / `theme-blog`（互斥主题）、**`packages/site`（狗粮站 = 脚手架模板形态；scripts 全部走 `markopress` bin——狗粮面即用户面）**。2026-10-29 包收敛：9 包 → 6 包（引擎 1 + 主题 3 + site + ……npm 发布面 = markopress + theme-base + theme-docs + theme-blog 四个；用户 package.json 只见 markopress + 一个主题）。分层不变（D4：content 子树红线由 engine/tests/content/audit.test.ts 守住）；插件契约不变（内置件与第三方 markopress-plugin-* 同形）。**在 engine 的 content/markdown 子树工作前先读其 AGENTS-content/AGENTS-markdown**。root 只做编排。
 
 ## 常用命令
 
@@ -26,14 +26,12 @@ pnpm gen       # 手动跑路由生成器（dev/build 会自动跑，一般不�
 
 **perf 与默认链路解耦**：默认 `.markopress/config.ts` 只有 docs 集合；perf 走 `MP_CONTENT_CONFIG=.markopress/perf.config.ts`（dev:perf/build:perf 已带）。两配置 digest 不同 ⇒ 切换触发 store 全量重建 + 生成目录收缩/扩张（write-if-changed + 差集清理，自愈，切换是低频操作）。
 
-pnpm --filter @markopress/content test    # 内容层包 vitest（含单文件增量）
-pnpm --filter @markopress/markdown test   # markdown 包 vitest
-pnpm --filter @markopress/plugin-search test  # search 包 vitest（节切分 + 索引往返）
+pnpm --filter markopress test  # 引擎全家 vitest：content 53 + markdown 21 + search 12
 ```
 
 **双路并行纪律（同树双命令，不用 git 分支）**：内容层/store/`gen-routes.ts`/`content-modules.ts` 为两路共享，新功能落共享层；打包器特定代码只允许出现在 `virtual:mp/content/` 解析与 watcher 层（Vite = markopress-plugin.ts，Rspack = rspack-*.ts）。对比数据见 `docs/perf-rspack-vs-vite.md`。
 
-Node ≥ 22.18（原生 type stripping，workspace 包以 TS 源码分发，无构建步骤），pnpm 12（esbuild 构建审批在 `pnpm-workspace.yaml` 的 `allowBuilds`——package.json 的 `pnpm` 字段已不读）。app 级无 linter —— 验收靠浏览器手测（Playwright MCP）与 `pnpm build`；三个包有 vitest。**含 `.marko` tag 的包（theme-docs / plugin-search）必须声明 `@marko/runtime-tags` devDep**（编译产物 import 它；收包前靠 root 上溯解析，收包后 pnpm 严格布局下上溯链断——2026-10-25 踩过）。markopack 已接 npm `^0.4.0`（0.4.0 发版于 2026-10-25，含本仓库需要的全部修复：热路由/crawler 并发/public/ 约定/水合盲区等；本地工作区 `../markopack` 仅作上游开发参考——要试未发版改动时临时切回 `link:`）。**pnpm 12 坑**：lockfile 变更后 `pnpm run`（dev/build）可能卡死在「Verifying lockfile against supply-chain policies」——直跑 `node scripts/rspack-dev.ts` / `node scripts/rspack-build.ts`（在 packages/site 下）绕过。
+Node ≥ 22.18（原生 type stripping，workspace 包以 TS 源码分发，无构建步骤），pnpm 12（esbuild 构建审批在 `pnpm-workspace.yaml` 的 `allowBuilds`——package.json 的 `pnpm` 字段已不读）。app 级无 linter —— 验收靠浏览器手测（Playwright MCP）与 `pnpm build`；测试全在引擎包（86 个）。**含 `.marko` tag 的包（engine / theme-docs / theme-blog）必须声明 `@marko/runtime-tags` devDep**（编译产物 import 它；pnpm 严格布局下不声明就解析不到——2026-10-25 起踩过三次：theme-docs、engine 先后中招）。markopack 已接 npm `^0.4.0`（0.4.0 发版于 2026-10-25，含本仓库需要的全部修复：热路由/crawler 并发/public/ 约定/水合盲区等；本地工作区 `../markopack` 仅作上游开发参考——要试未发版改动时临时切回 `link:`）。**pnpm 12 坑**：lockfile 变更后 `pnpm run`（dev/build）可能卡死在「Verifying lockfile against supply-chain policies」——在 site 下直跑 `node_modules/.bin/markopress dev|build` 绕过。
 
 ## 架构（数据流）
 
@@ -49,7 +47,7 @@ Node ≥ 22.18（原生 type stripping，workspace 包以 TS 源码分发，无�
 content*/ ──glob loader(markdownEntryType)──▶ .markopress/store/<collection>.json（devalue）
      │
      ▼  scripts/gen-routes.ts（数据源 = store.values()；含插件 routes 钩子产出的 +handler.mjs；
-        sidebar.ts 纯函数派生侧边栏树 + flat 序）
+        sidebar.ts 纯函数派生侧边栏树 + flat 序（产出并入 site.json））
 .markopress/ 生成物区（gitignore；用户区 = 同目录的 config.ts/components/）
   ├─ routes/+layout.marko      静态外壳：<mp-layout> 槽位（import sidebar.json，永不变化；
   │                              插件 UI 槽位接线 <@search><mp-search/></@search> 在此生成，
@@ -65,7 +63,8 @@ content*/ ──glob loader(markdownEntryType)──▶ .markopress/store/<colle
   │                              notFoundPath 落 404.html；404 不进侧边栏/prev-next
   ├─ routes/<seg%2E…>+handler.mjs  插件路由包装（路径段含 `.` 必须 %2E，动词逐个 export const）
   ├─ plugin-data/<name>.js     插件数据模块（setData 产物；经 virtual:mp/plugin/<name> 消费）
-  ├─ sidebar.json              侧边栏树+flat 序（模块 import；重写走模块图失效——prev/next 同源）
+  ├─ site.json                 站点数据模块（site/style/nav/head/tree/flat；模块 import，
+  │                              重写走模块图失效——prev/next 同源。原 sidebar.json 改名，生成期自愈清理旧文件）
   ├─ page-nav.js / urls.json   静态邻居助手（永不变化）/ SSG 显式清单
      │
      ▼  scripts/markopress-plugin.ts（markopress() Vite 插件）
@@ -100,7 +99,12 @@ packages/theme-docs / theme-blog：主题包（同槽位契约互斥；theme-blo
   分流 post/home/list/page，flat 由生成器传参——主题不得自 import sidebar.json，跨包解析
   app 文件是 taglib 同款坑）。机械内容样式（mp-image/容器/shiki 切换）共享于 theme-base
   （<mp-content-styles/>，各主题渲染一次）；themeOptions.nav/titleTemplate/sidebar.sortBy
-  经 sidebar.json/生成器透传。per-page <title> = postbuild HTML 补写（scripts/patch-titles.ts，
+  经 site.json/生成器透传。站点级 head 注入（GA/Clarity/字体/验证 meta）：config 顶层 `head: [{tag, attrs?, content?}]`
+  （站点关切，不进 themeOptions——换主题不丢统计）→ sidebar.json.head → 生成器传
+  mp-layout → 主题 <head> 渲染 <mp-head-entries/>（theme-base，裸 HTML 构造——内联
+  script 必须字面进首帧，走 Marko 编译会进 bundle 延迟执行）。自定义 CSS = public/
+  文件 + head link 条目；注意 markopack 主题 CSS 在 head 末注入，站点 CSS 需抬特异性
+  （html 前缀）才能稳赢。per-page <title> = postbuild HTML 补写（scripts/patch-titles.ts，
   marko-run 无 head 通道；rspack 在 rspack-build.ts 收尾，vite 在 build:vite 串联脚本——
   adapter 爬取晚于一切 Vite 钩子；dev 期显示站名 = 已知边界）。暗色 = data-theme 属性 +
   <html-script> 内联 pre-paint 脚本；契约细节见各包 AGENTS.md
