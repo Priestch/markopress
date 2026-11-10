@@ -315,6 +315,22 @@ describe("resolveImageSegments", () => {
     expect(more[0].html).not.toContain("<a ");
   });
 
+  it("md 来源独占段落：<p> 包装整体替换（块级产物不嵌非法 p>div）", async () => {
+    const dir = join(ROOT, "fixture");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "para.png"), pngBytesSync);
+    const tag = {
+      token: "<!--MPIMG0-->",
+      raw: "![x](para.png)",
+      attrs: { src: "para.png", alt: "x" },
+      origin: "md" as const,
+    };
+    const segments = htmlSegment(`<p>前文</p><p><!--MPIMG0--></p><p>后文</p>`);
+    await resolveImageSegments(segments, [tag], dir, settings());
+    expect(segments[0].html).toMatch(/^<p>前文<\/p><div class="mp-image mp-image--responsive"/);
+    expect(segments[0].html).toMatch(/<\/div><p>后文<\/p>$/);
+  });
+
   it("densities srcset 恒含源宽档（#12）：密度梯之外补 sourceWidth", async () => {
     const dir = join(ROOT, "fixture");
     mkdirSync(dir, { recursive: true });

@@ -18,10 +18,12 @@
 | 7 | 旁挂资产 digest 扫描不递归子目录（img/ 形态不级联失效） | markopress | 低——FAQ 图片基本不变，重启即愈 | **已修（2026-11-11 入库）**：entryDirsFor 改 subtreeDirs 递归（点前缀目录跳过），digest 折叠面与 watcher 归属同步放大（两处同面，防漏映射）；subtreeDirs 单测覆盖 |
 | 8 | 用户自定义页嵌套 index 路由（pages/guide/index.marko → /guide） | markopress | 中——卡 /guide 重定向页 | **已入库（2026-11-11）**：userPageFileFor/scanUserPages 补 `/\/index$/` 剥离，与集合通道 routeIdFor 对齐；撞车（目录 index vs 显式同名页）merge 期 fail fast；专测 scan/merge 两面覆盖 |
 | 9 | 内容配置指纹：schema 变更不失效 store（deltas #9 app 侧欠账） | markopress | 中——schema 加字段后旧数据带旧的剥离存活 | **已随 46bc488 提交（dev.proxy 批次，msg 未提 digest——2026-11-11 上游复核确认；content.ts 工作区无 diff）**。曾误记为 92ce4bc，已勘误 |
-| 10 | md `![]()` 接管缺默认值配置面（width/quality/densities 只有管线常量） | markopress | 高——卡 pdflux guide 15 页切接管（源站是全局配置驱动普通 md 的机制） | 见 §6 |
-| 11 | 「点开原图」无等价物，接管后消费方无补救钩子 | markopress | 中——行为差异（gatsby-remark-images 默认包 `<a href=原图>`） | 见 §6 |
-| 12 | srcset 不含原始宽度档（densities 封顶） | markopress | 低——与 gatsby 产物对齐时的噪音项 | 见 §6 |
+| 10 | md `![]()` 接管缺默认值配置面（width/quality/densities 只有管线常量） | markopress | 高——卡 pdflux guide 15 页切接管（源站是全局配置驱动普通 md 的机制） | **已入库（2026-11-11）+ pdflux 已切换**：`images.markdown` 对象形（boolean 兼容），见 §6 |
+| 11 | 「点开原图」无等价物，接管后消费方无补救钩子 | markopress | 中——行为差异（gatsby-remark-images 默认包 `<a href=原图>`） | **已入库（同批）**：`<mp-image link>` 属性 + 接管默认进 #10 配置对象，见 §6 |
+| 12 | srcset 不含原始宽度档（densities 封顶） | markopress | 低——与 gatsby 产物对齐时的噪音项 | **已入库（同批）**：densities 模式恒补 sourceWidth 档，见 §6 |
 | 13 | 非 md 内容通路的图片解析 API（strapi html 字符串内嵌图） | markopress | 中——pdflux /log 形态；即 v2 设计留的 real-CMS touchstone | 见 §6 |
+| 14 | adapter-static 爬虫把资源 `<a>` 当页面爬：404 噪音 + `xxx.png.html` 垃圾 404 文档 | markopack | 中——#11 link 落地后暴露（资产链接进页面 HTML 即触发） | **已修复（2026-11-11，markopack 工作区未提交）**：scheduleVisit 资源扩展名跳过 + 404 分支不写 404 文档 |
+| 15 | 浏览器产物无跨 entry 共享 chunk：每路由自包含 entry，共享模块（marko runtime/theme/公共组件）逐 entry 复制 | markopack | 中——首访仍占优（2~3×），但站内二次导航每页全量重下、CDN 产物重复（pdflux 3.4MB vs 源站 ~1MB） | **已反馈（2026-11-11）**：`markopack/docs/cross-entry-shared-chunks.md`——实测数据（16 个 guide 页 CSS 同 contenthash 4beae23f）+ 源码定位（config.ts:229 只配 runtimeChunk 无 splitChunks；rspack 默认 chunks:'async' 不拆同步 entry）+ ready() 单实例不变量（cacheGroup 钉 runtime-tags）+ 验收标准 |
 
 ## 1. i18n：双模式设计缺口（markopress）
 
@@ -89,7 +91,16 @@ Ask（markopress）：官方配方文档——`.markopress` 站点怎么接 less
 机制对位结论：v2 与 gatsby-remark-images 机制同构（构建期衍生 + 站点级一次性配置 +
 普通 `![]()`），wrapper 观感（650 封顶/边框/居中）可由站点 CSS 平移；真正缺的是下面四件。
 
-### #10 md 接管缺默认值配置面（高）
+### #10 md 接管缺默认值配置面（高）——**已入库（2026-11-11）**
+
+实现：`ImagesMarkdownDefaults`（plugins.ts）——`images.markdown` 接受对象（boolean 向后
+兼容），并入接管 attrs 作缺省（md 自带 src/alt/title 与显式 `<mp-image>` tag 永远优先）；
+进 attrs ⇒ resolveCache 键随配置换键，不命中旧产物。**pdflux 已按此切换**（guide 15 页 +
+FAQ）：width 650 / quality 100 / densities `0.25,0.5,1,1.5,2` / link true → srcset
+163/325/650/975/1300 + 源宽档，与线上 gatsby fluid 断点一致（原验收标准达成）；测试 +4
+（images.test.ts 27/27）。附带修正（同批）：md 独立图片段的 `<p>` 包装整段替换——产物是
+块级 `<div>`，嵌 p 非法（浏览器劈开 p、遗留空段双份边距）；gatsby-remark-images 在
+mdast 层同款行为。原反馈存档：
 
 - 现状：`images.markdown` 仅 boolean（images.ts:343）；接管 attrs 只有 `{src, alt, title?}`
   （images.ts:384-389），layout/quality/width/densities 全落管线常量
@@ -98,29 +109,29 @@ Ask（markopress）：官方配方文档——`.markopress` 站点怎么接 less
   maxWidth 650），md 保持普通 `![]()`。接管常量下 displayWidth=原图宽（如 1328）→ 渲染宽度
   直接错（线上 650 封顶）；把 md 改写成 `<mp-image width=650>` 则内容文件与源仓库持续漂移
   （每次内容同步重改一遍）。
-- 建议：`images.markdown` 接受对象（boolean 向后兼容）：
-  `markdown: { width?, quality?, densities?, layout?, placeholder?, sizes? }`，并入接管 attrs
-  作缺省（md 内显式 `<mp-image>` tag 仍可覆盖）。
-- 验收：pdflux guide 15 页切接管——width 650 + quality 100 + densities `0.25,0.5,1,1.5,2`
-  → srcset 163/325/650/975/1300，与线上 gatsby fluid 断点一致（gatsby 的 maxWidth/
-  outputPixelDensities 即此模型）。
 
-### #11 「点开原图」无等价物，接管后消费方无补救钩子（中）
+### #11 「点开原图」无等价物（中）——**已入库（同批）**
+
+实现：`<mp-image link>` 属性（`link="false"` 显式关）+ 接管默认 `link: true`（进 #10 配置
+对象）；产物在容器内包 `<a class="mp-image-link" href={原图} style="display:block"
+target="_blank" rel="noopener">`——原图即管线拷贝的原名文件，URL 现成；gif/svg 直通分支
+同包。连带暴露 markopack 爬虫问题 → **#14**（资产 `<a>` 被当页面爬，产 `xxx.png.html`
+404 文档；已在 markopack 工作区修复）。原反馈存档：
 
 - 现状：gatsby-remark-images 默认把图包进 `<a href=原图 target=_blank rel=noopener>`；
   mp-image 无对应属性。关键：**接管注入的 DOM 在消费方模板里没有注入点**，站点想自行包
   `<a>` 也做不到——只能上游做。
-- 建议：`<mp-image link>`（或 linkToOriginal）属性 + 接管默认开关（并进 #10 的配置面对象）；
-  原图已被管线拷贝（public/_markopress/image/<sha>/ 原名文件），URL 现成。
-- 若决定不做：请在文档标注为「已知行为差异」——gatsby 迁移方会默认此交互存在。
 
-### #12 srcset 不含原始宽度档（低）
+### #12 srcset 不含原始宽度档（低）——**已入库（同批）**
+
+实现：densities 模式 `widths.add(sourceWidth)`（Set 去重）——gatsby fluid 的
+presentationWidth 同款。pdflux 验收：login 尾档 1328w、translate 1920w、FAQ 图 1540w，
+与线上一致。原反馈存档：
 
 - 现状：densities 模式封顶 sourceWidth（images.ts:431-438），原图只作 src 兜底不进 srcset；
   gatsby fluid 恒含 presentationWidth。
 - 场景：原图 1328 > 2×650=1300 → 高 DPR 屏拿 1300 变体而非 1328 原图（亚百分点差，视觉
   无感；但与 gatsby 产物逐项对齐时是噪音）。
-- 建议：封顶时若 sourceWidth > max(widths) 补 sourceWidth 一档。
 
 ### #13 非 md 内容通路的图片解析 API（中；即 v2 留的 real-CMS touchstone）
 
@@ -135,6 +146,12 @@ Ask（markopress）：官方配方文档——`.markopress` 站点怎么接 less
 ## 附：app 层已定、无需上游的项（备忘）
 
 - guide 派生页外壳 = **站点内主题包**（.markopress/theme/ + config.theme 指过去；link: 相对路径挂 site deps）。mp-layout/mp-page 两槽位即 Operation 外壳；主题包内模板对 site 组件用相对 import（taglib 发现不跨包，lasso-package-root 就近主题包自己的 package.json——`<mp-head-entries>` 靠主题包声明 theme-base 依赖）。2026-11-11 已验证：16 页字节级 + 几何全对；
+- guide/FAQ 图片通路（2026-11-11 切换）：静态收获（guide-images.ts 线上 CDN URL 冻结）已废，
+  改 config.images.markdown 对象形接管（#10/#11/#12 落地后）；md 与源仓库保持字节一致。
+  观感平移在 guide-content.scss / plugin.scss 的 `.mp-image` 作用域（**含
+  `max-width:100%!important`**——源 gatsby wrapperStyle 同款覆盖，实际显示宽 = 列宽）。
+  已知偏差：线上宽高比 = gatsby 163 最小变体高度的整数取整（±0.5px@163 放大 ~5.7×），
+  本地恒用原图真比例（图不变形），单图盒高差 ±2.5px——按「渲染级」标准接受；
 - nginx 尾斜杠：源 301 裸→斜杠、marko-run 302 斜杠→裸，上线 nginx 不得沿用源规则（环）；
 
 - /m 双路由 → 响应式单页（media query + matchMedia；上线时源站 nginx UA 302 规则移除/改 301，部署层处理）；

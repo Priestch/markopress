@@ -644,7 +644,8 @@ async function resolveTag(
 }
 
 /**
- * 解析并回填 segments（原位替换占位符）。归属目录由调用方给（resolveEntryDir；远程图
+ * 解析并回填 segments（原位替换占位符；md 来源独占段落时连 `<p>` 包装一起换掉——
+ * 块级产物嵌 p 非法，见回填处注）。归属目录由调用方给（resolveEntryDir；远程图
  * 无需目录）。解析失败的回填：md 接管来源 / 远程 / data → 直通 <img>（原文回填会字面
  * 显示 md 语法或不可见标签）；本地 tag 来源 → 原始标签文本（v1 语义）。
  */
@@ -704,7 +705,15 @@ export async function resolveImageSegments(
       for (const segment of segments) {
         // 组件段（segments.ts 切出）无 html 字段——MPIMG 占位符只活在 html 段
         if (segment.type !== "html") continue;
-        if (segment.html.includes(tag.token)) segment.html = segment.html.replaceAll(tag.token, replacement);
+        // md 独立图片段被 remark 包进 <p>，而产物是块级 <div>/<img>——div 嵌 p 是
+        // 非法 HTML（浏览器解析会劈开 p、遗留空段双份边距）。独占段落时整段替换
+        // （gatsby-remark-images 在 mdast 层同样换掉整个段落节点）
+        const wrapped = `<p>${tag.token}</p>`;
+        if (segment.html.includes(wrapped)) {
+          segment.html = segment.html.replaceAll(wrapped, replacement);
+        } else if (segment.html.includes(tag.token)) {
+          segment.html = segment.html.replaceAll(tag.token, replacement);
+        }
       }
     }),
   );

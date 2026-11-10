@@ -118,7 +118,7 @@ export async function renderContentModule(
 
   // 段提取两级：组件 tag（白名单，占位符是段边界）→ <mp-image> tag / md ![]() 接管
   // （opt-in，images.markdown——boolean 走管线常量，对象形并入站点级默认属性；
-  // 占位符在 html 段内原位回填）。两个提取器互不冲突：
+  // 占位符在 html 段内原位回填，独占段落时连 <p> 一起换）。两个提取器互不冲突：
   // 组件白名单不含 image，image 正则只认 <mp-image 前缀与独立段落图片语法。
   const { tags: componentTags, body: withoutComponents } = extractComponentTags(body);
   const { tags, body: withPlaceholders } = extractImageTags(withoutComponents, { markdown: images.markdown });
