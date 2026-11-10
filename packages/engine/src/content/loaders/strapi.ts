@@ -9,7 +9,8 @@
  *     dig() 沿路径逐层摊平包装，v5 形状原样透传——contentPath/mediaPath 按摊平后
  *     的逻辑路径书写，v4/v5 同一条路径。启发式：组件字段恰好叫 "data"/"attributes"
  *     会误判（pdflux 组件字段是 content/medias/videos，不撞）
- *   - body：contentPath（默认 'content.content'，pdflux 单组件）取 md 源文本，经
+ *   - body：contentPath（默认 'content'——扁平 Rich Text 字符串，pdflux-changelog
+ *     实测形状；组件包装形态显式传 'content.content'）取 md 源文本，经
  *     '.md' entryType 的 getEntryInfo 剥离 frontmatter——store 里的 body 与文件集合
  *     形态一致（渲染器不剥离 frontmatter，剥离只发生在 load 期）；frontmatter 数据
  *     嵌套进 data.frontmatter（与 REST 列分源，永不撞名）
@@ -44,9 +45,11 @@ export interface StrapiOptions {
 	populate?: string
 	/** 分页大小；默认 100 */
 	pageSize?: number
-	/** md 源文本的取值路径（摊平后形状）；默认 'content.content'（pdflux 单组件） */
+	/** md 源文本的取值路径（摊平后形状）；默认 'content'（扁平 Rich Text 字符串，
+	 *  pdflux-changelog 生产实例实测）；单组件包装形态显式传 'content.content' */
 	contentPath?: string
-	/** 媒体数组的取值路径（摊平后形状）；默认 'content.medias' */
+	/** 媒体数组的取值路径（摊平后形状）；默认 'medias'（扁平形状与 content 同级）；
+	 *  单组件包装形态显式传 'content.medias' */
 	mediaPath?: string
 	/** 重试退避基数（毫秒）；测试注入用，默认 300 */
 	retryDelayMs?: number
@@ -163,8 +166,10 @@ export function strapi(options: StrapiOptions): Loader {
 		: deriveEndpoint(options.contentType)
 	const populate = options.populate ?? '*'
 	const pageSize = options.pageSize ?? 100
-	const contentPath = options.contentPath ?? 'content.content'
-	const mediaPath = options.mediaPath ?? 'content.medias'
+	// 默认 = 扁平形状（blockers #3：真实 pdflux-changelog REST 的 content 是扁平字符串，
+	// 102 条生产实例验证；组件包装形态两条路径显式传 'content.content'/'content.medias'）
+	const contentPath = options.contentPath ?? 'content'
+	const mediaPath = options.mediaPath ?? 'medias'
 
 	return {
 		name: 'strapi',

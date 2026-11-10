@@ -81,7 +81,7 @@ route 仍是 gen 层关切（sync/store 不读，`types.ts` 既有注释），�
 | `id` | v5 `String(entry.documentId)`；v4 `String(entry.id)` | 双形状兼容（`documentId ?? id`），无需实现前探测版本 |
 | `slug` | 派生：frontmatter `slug` 回退 `version`（sanitized）；都无 ⇒ `String(id)` | changelog 无用户可改 slug 字段；本集合不进 URL（列表页），稳定可读即可 |
 | `data` | REST 列（title/publishAt/medias）+ **`data.frontmatter`**（剥离产物） | frontmatter 数据**嵌套进 `data.frontmatter`**（与 REST 列分源、永不撞名）；「version 进不进顶层 data」的争论就此终结——进，但在嵌套键下 |
-| `body` | `contentPath`（默认 `content.content`，pdflux 单组件）取 md 源文本，**经 `.md` entryType 的 `getEntryInfo` 剥离 frontmatter 后入 store** | store 的 body 与文件集合形态一致（渲染器不剥离 frontmatter——剥离只发生在 load 期，原稿「body 原文含 frontmatter 头」自相矛盾，已修正）；contentType `text/markdown`，走站内同一条 md 管线（shiki/容器/segments）——changelog 白得渲染能力 |
+| `body` | `contentPath`（默认 `content`——扁平 Rich Text 字符串；单组件包装形态显式传 `content.content`）取 md 源文本，**经 `.md` entryType 的 `getEntryInfo` 剥离 frontmatter 后入 store** | store 的 body 与文件集合形态一致（渲染器不剥离 frontmatter——剥离只发生在 load 期，原稿「body 原文含 frontmatter 头」自相矛盾，已修正）；contentType `text/markdown`，走站内同一条 md 管线（shiki/容器/segments）——changelog 白得渲染能力 |
 | `digest` | `generateDigest(entry)`（整个 REST entry） | 改 title 也失效；命中跳过 parseData（契约 #1 同款，glob 的比对位置在 parse 之前） |
 | `filePath` | `undefined` | 契约 #2 已允许 ✓ |
 
@@ -93,7 +93,13 @@ loader 在取值途中逐层摊平包装（v5 形状原样透传）——`conten
 逻辑路径书写，v4/v5 实例同一条路径。上游同款证据：id 用 `documentId || id` 双兼容、
 增量用时间戳游标 + 全量差集删删除、富文本字段以 `text/markdown` 源文本存储渲染后置。
 
-提取面（定稿）：**pdflux 形状默认 + 少量选项**——`contentPath`/`mediaPath` 可覆盖取值
+默认值修正（2026-11-11，blockers #3）：上面的 `content.content` 是「content 为单组件」
+的形状推断；真实 pdflux-changelog 生产实例的 `content` 是**扁平 Rich Text 字符串**
+（102 条全量拉取验证）——默认 `contentPath` 修正为 `content`、`mediaPath` 修正为
+`medias`（扁平形状与 content 同级）；单组件包装形态两条路径显式传
+（`content.content` / `content.medias`，单测保有 dig 对包装形状的摊平覆盖）。
+
+提取面（定稿）：**pdflux 形状默认（扁平）+ 少量选项**——`contentPath`/`mediaPath` 可覆盖取值
 路径（摊平后形状）；REST 列名（title/publishAt）写死 pdflux 形状，第二个真实源出现前
 不抽象（无 mapEntry 回调）。
 
@@ -162,6 +168,12 @@ pdflux `/log` 全链路（pai-websites 项目内验证）：dev/build 拉全量�
 token 缺失；集合模块渲染形状；sitemap/rss/search 对 null urlOf 的跳过。
 
 ## 9. 后续门（原开放问题的收敛）
+
+- **GraphQL 不支持**（2026-11-09 定）——REST 是 Strapi 常驻原生 API，GraphQL 是实例
+  可选插件：REST loader 适配所有实例，功能面（populate/分页/过滤）零缺口；GraphQL
+  另有一套响应包装 = 双倍归一化维护面。契约/下游全传输无关，真要支持是纯加法
+  （独立 loader 或 transport 选项）。重开条件：仅有 GraphQL 的实例 / 万条级载荷
+  裁剪瓶颈 / 订阅式实时（= 热更需求复活）；
 
 - ~~生产实例版本（v4/v5）~~——`documentId ?? id` 双兼容，无需探测；
 - ~~contentType vs endpoint 选项形状~~——`contentType`（uid）+ 复数派生，`endpoint` 显式覆盖；

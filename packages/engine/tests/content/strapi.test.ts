@@ -74,8 +74,34 @@ function mockFetch(pages: Array<unknown>) {
 	return fn
 }
 
-/** v4 REST 形状：字段在 attributes 下、组件/媒体再包 data */
+/** v4 REST 扁平形状（默认路径基准，blockers #3 生产实例实测）：字段在 attributes 下、
+ *  content 为扁平 Rich Text 字符串、媒体数组包 data（v4 媒体包装与内容形状无关） */
 function v4Row(id: number): Record<string, unknown> {
+	return {
+		id,
+		attributes: {
+			title: `Release ${id}`,
+			publishAt: '2026-10-01T00:00:00.000Z',
+			content: `---\nversion: 1.0.${id}\ndate: "2026-10-0${id}"\n---\n\n# Hello ${id}`,
+			medias: {
+				data: [
+					{
+						id: 5000 + id,
+						attributes: {
+							alternativeText: `图 ${id}`,
+							url: `/uploads/a${id}.png`,
+							mime: 'image/png',
+						},
+					},
+				],
+			},
+		},
+	}
+}
+
+/** v4 组件包装形状（显式路径用例）：content/medias 在单组件的 data/attributes 里——
+ *  contentPath 'content.content' / mediaPath 'content.medias' */
+function wrappedV4Row(id: number): Record<string, unknown> {
 	return {
 		id,
 		attributes: {
@@ -165,14 +191,10 @@ describe('strapi loader：v5 形状', () => {
 						documentId: 'abc123',
 						title: 'V5 Release',
 						publishAt: '2026-11-01T00:00:00.000Z',
-						content: {
-							id: 42,
-							documentId: 'c42',
-							content: '---\nversion: 2.0.0\n---\n\n# V5 body',
-							medias: [
-								{ id: 9, alternativeText: 'pic', url: 'https://cdn.test/x.png', mime: 'image/png' },
-							],
-						},
+						content: '---\nversion: 2.0.0\n---\n\n# V5 body',
+						medias: [
+							{ id: 9, alternativeText: 'pic', url: 'https://cdn.test/x.png', mime: 'image/png' },
+						],
 					},
 				],
 				meta: { pagination: { page: 1, pageCount: 1 } },
@@ -186,6 +208,24 @@ describe('strapi loader：v5 形状', () => {
 		expect(entry!.body).toContain('# V5 body')
 		expect(entry!.slug).toBe('2-0-0')
 		expect(entry!.data.medias[0].url).toBe('https://cdn.test/x.png')
+	})
+})
+
+describe('strapi loader：组件包装形态（显式路径）', () => {
+	it("contentPath 'content.content' / mediaPath 'content.medias'：dig 途中摊平包装，与扁平默认等效", async () => {
+		const f = await makeFixture({
+			loaderOptions: { contentPath: 'content.content', mediaPath: 'content.medias' },
+		})
+		mockFetch([{ data: [wrappedV4Row(4)], meta: { pagination: { page: 1, pageCount: 1 } } }])
+		await f.syncer.sync(f.config())
+
+		const entry = f.store.get('changelog', '4')!
+		expect(entry.body).toContain('# Hello 4')
+		expect(entry.data.frontmatter).toMatchObject({ version: '1.0.4', date: '2026-10-04' })
+		expect(entry.data.medias[0]).toMatchObject({
+			alt: '图 4',
+			url: 'https://strapi.test/uploads/a4.png',
+		})
 	})
 })
 
