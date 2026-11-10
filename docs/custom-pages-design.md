@@ -85,6 +85,13 @@ marko-run 0.11.13 dev server 的竞态死锁（新增 page + 修改 layout 同�
   | `index.marko` | `_pages/+page.marko` | `/` |
   | `about.marko` | `_pages/about+page.marko` | `/about` |
   | `pricing/team.marko` | `_pages/pricing.team+page.marko` | `/pricing/team` |
+  | `guide/index.marko` | `_pages/guide+page.marko` | `/guide` |
+
+  嵌套 index 尾段折叠（2026-11-11 补，blockers #8）：与集合通道 `routeIdFor`
+  同语义——目录 index = 目录着陆页。不折叠会落 `guide.index+page.marko`，
+  marko-run 只按字面段服务 `/guide/index`（pdflux `/guide` 重定向页实测踩中）。
+  折叠把「目录 index」与「显式同名页」（`guide.marko`）收进同一 URL——merge 期
+  taken 占用表 fail fast，不静默遮蔽。
 
 - **watch 增量路径（评审补全，原稿缺口）**：gen 期 merge 只在 store/config 变化时
   跑，用户改 `pages/foo.marko` 需要独立事件路：`pages/` 加进 watcher 监听 → 文件
@@ -132,6 +139,13 @@ marko-run 0.11.13 dev server 的竞态死锁（新增 page + 修改 layout 同�
   #5），且外壳决策藏在壳内部不如树所有权清晰，弃。
 - 用户页天然不进 sidebar / prev-next / site.json tree（它们是 store 的投影）。
   若将来要 opt-in，走约定 frontmatter，不在本期。
+- **用户 404（2026-11-10 补）**：`pages/404.marko` 是根特例——`userPageFileFor`
+  映射到 `+404.marko`（marko-run NotFound 身位，与集合通道 `pageFileFor` 的 404
+  特例同款语义：未知路由渲染 + 404 状态），包装落 **routes 根**而非 `_pages/`
+  （带组前缀会失去 special 身位）；路由仍占 `/404`（与集合 404 共存经 taken
+  fail fast）。撤走清理走根级差集：`MergeResult.hasNotFoundPage` → gen-routes
+  并入 expectedRoot。marko-run 侧注意：+404 只对 `Accept: text/html` 的请求渲染
+  （非 HTML 协商请求回空 body 404，`curl` 裸测会误判）。
 
 ### 4.3 SSG
 

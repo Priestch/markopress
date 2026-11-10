@@ -26,10 +26,17 @@ export interface UserPage {
   route: string;
 }
 
-/** 用户页相对路径 → 生成文件名：index → +page.marko；a/b → a.b+page.marko */
+/** 用户页相对路径 → 生成文件名：index → +page.marko；404 → +404.marko（marko-run
+ *  NotFound 约定，与集合通道 pageFileFor 的 404 特例同款——用户 404 页同样是
+ *  「未知路由渲染 + 404 状态」的兜底语义；其余 a/b → a.b+page.marko。
+ *  嵌套 index（guide/index.marko）与集合通道 routeIdFor 同款剥 /index 尾——
+ *  落 guide+page.marko 服务 /guide；不剥会落 guide.index+page.marko，marko-run
+ *  只按字面段服务 /guide/index（2026-11-11 pdflux /guide 实测踩中）。 */
 export function userPageFileFor(rel: string): string {
   const id = rel.replace(/\.marko$/, "");
-  return id === "index" ? "+page.marko" : `${id.replaceAll("/", ".")}+page.marko`;
+  if (id === "404") return "+404.marko";
+  const routeId = id === "index" ? "" : id.replace(/\/index$/, "");
+  return routeId === "" ? "+page.marko" : `${routeId.replaceAll("/", ".")}+page.marko`;
 }
 
 /** 递归扫描 pages/，只认 .marko；违禁命名 fail fast（错误信息含改法指引） */
@@ -47,7 +54,8 @@ export function scanUserPages(pagesDir: string): Array<UserPage> {
       if (!entry.name.endsWith(".marko")) continue; // 辅助文件（.ts 等）经 import 生效，不产路由
       validateSegment(entry.name.replace(/\.marko$/, ""), rel);
       const id = rel.replace(/\.marko$/, "");
-      pages.push({ rel, file: userPageFileFor(rel), route: id === "index" ? "/" : `/${id}` });
+      const routeId = id === "index" ? "" : id.replace(/\/index$/, "");
+      pages.push({ rel, file: userPageFileFor(rel), route: routeId === "" ? "/" : `/${routeId}` });
     }
   };
   walk(pagesDir, "");
@@ -87,6 +95,9 @@ function writeIfChanged(file: string, content: string): boolean {
 export interface MergeResult {
   written: Array<string>;
   removed: Array<string>;
+  /** 用户 404 页存在（包装已落 routes 根）——调用方据此把 +404.marko 并入根级
+   *  期望集，用户撤走 404 时根级差集清理才能接管（见 gen-routes） */
+  hasNotFoundPage: boolean;
 }
 
 /**
@@ -111,13 +122,18 @@ export function mergeUserPages(pagesDir: string, routesDir: string, taken: Taken
     taken.set(page.route, `pages/${page.rel}`);
   }
 
-  const expected = new Set(pages.map((p) => p.file));
+  // +404 是根特例（marko-run 约定根目录无前缀才有 NotFound 身位）：包装落 routes 根，
+  // 不进 _pages/；根级差集清理由调用方把 file 并入 expectedRoot 后统一做
+  const notFoundFile = "+404.marko";
+  const hasNotFoundPage = pages.some((p) => p.file === notFoundFile);
+  const expected = new Set(pages.filter((p) => p.file !== notFoundFile).map((p) => p.file));
   if (pages.length > 0) {
     mkdirSync(wrapperDir, { recursive: true });
     for (const page of pages) {
       const source = join(pagesDir, page.rel);
-      if (writeIfChanged(join(wrapperDir, page.file), userPageWrapperSource(source, wrapperDir))) {
-        written.push(`_pages/${page.file}`);
+      const targetDir = page.file === notFoundFile ? routesDir : wrapperDir;
+      if (writeIfChanged(join(targetDir, page.file), userPageWrapperSource(source, targetDir))) {
+        written.push(page.file === notFoundFile ? page.file : `_pages/${page.file}`);
       }
     }
   }
@@ -135,5 +151,5 @@ export function mergeUserPages(pagesDir: string, routesDir: string, taken: Taken
       }
     }
   }
-  return { written, removed };
+  return { written, removed, hasNotFoundPage };
 }

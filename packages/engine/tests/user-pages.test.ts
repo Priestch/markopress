@@ -1,6 +1,8 @@
 // 用户自定义页非派生通道测试（docs/custom-pages-design.md §6）。
 // mergeUserPages / pruneGeneratedTree 是纯函数（目录进目录出）——不需要站点 fixture；
 // 树迁移自愈与「用户文件不被清理」在 pruneGeneratedTree 层验证。
+// 404 特例（2026-11-10）：pages/404.marko → routes 根 +404.marko（marko-run
+// NotFound 身位），包装不进 _pages/。
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -40,6 +42,20 @@ describe("scanUserPages 文件名映射与命名禁令", () => {
     expect(userPageFileFor("index.marko")).toBe("+page.marko");
   });
 
+  // 嵌套 index 折叠（2026-11-11，#8）：guide/index.marko 必须服务 /guide 而非
+  // /guide/index——不折叠的话落 guide.index+page.marko，marko-run 只按字面段
+  // 服务 /guide/index（pdflux /guide 重定向页实测踩中）。
+  it("嵌套 index 折叠：pricing/index.marko → /pricing + pricing+page.marko", () => {
+    writePage("pricing/index.marko");
+    writePage("guide/index.marko");
+    const pages = scanUserPages(pagesDir);
+    expect(pages.map((p) => p.route).sort()).toEqual(["/guide", "/pricing"]);
+    expect(pages.find((p) => p.rel === "pricing/index.marko")?.file).toBe("pricing+page.marko");
+    expect(pages.find((p) => p.rel === "guide/index.marko")?.file).toBe("guide+page.marko");
+    expect(userPageFileFor("guide/index.marko")).toBe("guide+page.marko");
+    expect(userPageFileFor("a/b/index.marko")).toBe("a.b+page.marko");
+  });
+
   it.each(["[slug].marko", "+layout.marko", "_group/x.marko", "v1.2.marko"])(
     "违禁命名 fail fast：%s",
     (rel) => {
@@ -70,6 +86,29 @@ describe("mergeUserPages 薄包装与镜像清理", () => {
     expect(() => mergeUserPages(pagesDir, routesDir, taken)).toThrow(
       /pages\/index\.marko.*集合 entry "index"/,
     );
+  });
+
+  it("404 特例：包装落 routes 根（marko-run NotFound 身位），不进 _pages/；撤走后标记复位", () => {
+    writePage("404.marko");
+    const first = mergeUserPages(pagesDir, routesDir, new Map());
+    expect(first.hasNotFoundPage).toBe(true);
+    expect(existsSync(join(routesDir, "+404.marko"))).toBe(true);
+    expect(existsSync(join(routesDir, "_pages", "404+page.marko"))).toBe(false);
+    expect(first.written).toContain("+404.marko");
+    // 根级文件的删除归 gen-routes 根清理（hasNotFoundPage → expectedRoot），这里只验标记
+    rmSync(join(pagesDir, "404.marko"));
+    const after = mergeUserPages(pagesDir, routesDir, new Map());
+    expect(after.hasNotFoundPage).toBe(false);
+  });
+
+  it("嵌套 index 折叠 merge 面（blockers #8）：包装落 _pages/guide+page.marko；与显式同名页撞车 fail fast", () => {
+    writePage("guide/index.marko");
+    const merged = mergeUserPages(pagesDir, routesDir, new Map());
+    expect(merged.written).toContain("_pages/guide+page.marko");
+    expect(existsSync(join(routesDir, "_pages", "guide+page.marko"))).toBe(true);
+    // 折叠把「目录 index」与「显式同名页」收进同一 URL——taken 渐进占用，后者 fail fast
+    writePage("guide.marko");
+    expect(() => mergeUserPages(pagesDir, routesDir, new Map())).toThrow(/路由撞车/);
   });
 
   it("删源 → 包装清理；pages 空 → _pages 目录消失", () => {

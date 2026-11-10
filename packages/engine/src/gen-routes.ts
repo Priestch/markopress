@@ -274,8 +274,11 @@ export async function generateRoutes(): Promise<GenerateResult> {
     }
   }
 
-  // 用户自定义页通道（§4.1）：撞车校验 + 薄包装落盘 + _pages/ 镜像差集自管
+  // 用户自定义页通道（§4.1）：撞车校验 + 薄包装落盘 + _pages/ 镜像差集自管。
+  // 用户 404 的包装在 routes 根（mergeUserPages 已分流）——并入根级期望集，
+  // 撤走时由根级差集清理接管；与集合 404 的共存冲突经 taken（"/404"）fail fast。
   const merged = mergeUserPages(PAGES_DIR, ROUTES_DIR, taken);
+  if (merged.hasNotFoundPage) expectedRoot.add("+404.marko");
   written.push(...merged.written, ...merged.removed);
 
   // 差集清理（按来源）：根级期望 = 两个组目录 + 根特例文件（+404 / 插件 handler）
