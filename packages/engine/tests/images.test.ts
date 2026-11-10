@@ -315,6 +315,24 @@ describe("resolveImageSegments", () => {
     expect(more[0].html).not.toContain("<a ");
   });
 
+  it("densities srcset 恒含源宽档（#12）：密度梯之外补 sourceWidth", async () => {
+    const dir = join(ROOT, "fixture");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "ladder.png"), await pngBytes(1000, 750));
+    const tag = {
+      token: "<!--MPIMG0-->",
+      raw: "",
+      attrs: { src: "ladder.png", alt: "x", densities: "0.5,1", width: "400" },
+      origin: "tag" as const,
+    };
+    const segments = htmlSegment("<!--MPIMG0-->");
+    await resolveImageSegments(segments, [tag], dir, settings());
+    const srcset = /srcset="([^"]*)"/.exec(segments[0].html)?.[1] ?? "";
+    expect(srcset).toContain("200w");
+    expect(srcset).toContain("400w");
+    expect(srcset).toContain("1000w");
+  });
+
   it("授权远程（mock fetch）：变体 + picture（formats 含 avif）", async () => {
     fetchStub(() => pngResponse(pngBytesSync, { "cache-control": "max-age=3600" }));
     const tag = {

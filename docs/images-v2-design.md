@@ -180,6 +180,9 @@ import { entries } from "virtual:mp/collection/changelog"
 - **densities**：fixed 布局默认 [1,2]（v1 现状不变），可 `densities=[1,2,3]`；
   带显式 width 的 responsive/constrained 可用乘法梯 [0.25,0.5,1,2]×width（gatsby
   `outputPixelDensities` 同式），上限 = 源宽。纯梯子模式（无 width）继续 WIDTH_LADDER。
+  **srcset 恒含源宽档**（2026-11-11，#12）：密度梯之外无条件补 sourceWidth 一档
+  （gatsby fluid 的 presentationWidth 同款——源宽 > 梯最大时高 DPR 拿原图而非最近
+  变体；密度已覆盖源宽时 Set 去重无副作用）。
 - **placeholder: "color"**：sharp `.stats().dominant` 主色（gatsby 默认占位）——
   `placeholder=blur|color|none`，默认仍 blur（v1 不变）。color = 包裹元素背景色内联，
   零额外文件。

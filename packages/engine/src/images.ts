@@ -446,6 +446,9 @@ function targetWidths(
       if (w > 0 && w <= sourceWidth) widths.add(w);
     }
     widths.add(base);
+    // srcset 恒含源宽档（#12，gatsby fluid 的 presentationWidth 同款）：源宽 > 梯最大
+    // 时补一档——高 DPR 屏拿原图而非最近变体；密度已覆盖源宽时 Set 去重无副作用
+    widths.add(sourceWidth);
   } else if (layout === "fixed") {
     // v1 语义（默认输出逐字节兼容）：1× + 2×（超源宽回落源宽）
     const base = Math.min(displayWidth, sourceWidth);
