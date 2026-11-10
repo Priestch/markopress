@@ -15,7 +15,7 @@ import type { ContentConfig } from "./content/index.ts";
 import { CONFIG_FILE, ROOT, ensureSynced, resetSynced } from "./content.ts";
 import { generateRoutes } from "./gen-routes.ts";
 import { writeContentModules } from "./content-modules.ts";
-import { assetOwners } from "./images.ts";
+import { assetOwners } from "./images-owners.ts";
 import { PAGES_DIR } from "./paths.ts";
 import { enqueueContentSynced } from "./plugins.ts";
 import { mpRspack, prepare } from "./rspack-shared.ts";
@@ -31,6 +31,9 @@ let queue: Array<Job> = [];
 let draining = false;
 
 await prepare();
+
+// 图片管线 v2 的失败分流：dev 远程图失败软降级（warn + 直通），build 硬失败（rspack-build.ts）
+process.env.MARKOPRESS_PHASE = "dev";
 
 // prepare 已装配；这里取 watchDirs（config 里 loader 声明的 base 目录）+ dev 关切（proxy）
 const { config: initialConfig, dev: devOptions } = await ensureSynced();

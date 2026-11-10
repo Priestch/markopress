@@ -34,6 +34,13 @@ export default defineMarkoPressConfig({
     style: "docusaurus",
     sidebar: { collections: ["docs"] },
   },
+  // 图片管线 v2（docs/images-v2-design.md）：授权域 + md ![]() 接管（opt-in）+ AVIF。
+  // 未列名域的远程图直通原始 URL（不 fetch 不优化）。
+  images: {
+    domains: ["docs.astro.build"],
+    markdown: true,
+    formats: ["avif", "webp"],
+  },
   // markdown 管线（R1）：shiki 默认开；remarkPlugins/rehypePlugins 直通 unified。
   markdown: {
     shiki: { themes: { light: "github-light", dark: "github-dark" } },

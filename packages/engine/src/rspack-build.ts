@@ -14,6 +14,9 @@ import { mpRspack, prepare } from "./rspack-shared.ts";
 // 先清 dist：Rspack 不会自清（vite 会），不清的话切配置后旧 HTML 残留混入产物
 await rm(join(ROOT, "dist"), { recursive: true, force: true });
 
+// 图片管线 v2 的失败分流：build 远程图失败硬退（CI 正确性优先），dev 软降级
+process.env.MARKOPRESS_PHASE = "build";
+
 await prepare();
 await build({
   root: ROOT,

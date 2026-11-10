@@ -95,6 +95,45 @@ export interface HeadEntry {
   content?: string;
 }
 
+/** 远程图 URL 模式（Astro remotePatterns 子集：protocol/hostname 通配，v2 不做 pathname/port） */
+export interface RemotePattern {
+  protocol?: string;
+  /** 通配 `*.example.com`（匹配任意子域，不含裸域）；无通配 = 精确匹配 */
+  hostname?: string;
+}
+
+/** 图片管线 v2 配置（config.images；详见 docs/images-v2-design.md §2） */
+export interface ImagesConfig {
+  /** 远程图处理授权域名（精确 host）。默认 [] = 一切远程图直通不优化 */
+  domains?: Array<string>;
+  /** 远程图授权模式（与 domains 取并集） */
+  remotePatterns?: Array<RemotePattern>;
+  /** md 正文 ![]() 接管（默认 false——只接管独立段落的图片语法，行内不接管） */
+  markdown?: boolean;
+  /** 输出格式梯（默认 ["webp"] = v1 单格式 <img srcset>；含 "avif" = <picture> 多格式） */
+  formats?: Array<"webp" | "avif">;
+}
+
+/** images.ts 消费的归一化形状（ensureSynced 期定形，下游不再判空） */
+export interface ImagesSettings {
+  domains: Set<string>;
+  remotePatterns: Array<RemotePattern>;
+  markdown: boolean;
+  formats: Array<"webp" | "avif">;
+}
+
+/** config.images → ImagesSettings（纯函数；住 plugins.ts 与 content.ts 无导入环） */
+export function normalizeImagesConfig(config?: ImagesConfig): ImagesSettings {
+  const formats = (config?.formats?.length ? config.formats : ["webp"])
+    .filter((f): f is "webp" | "avif" => f === "webp" || f === "avif");
+  return {
+    domains: new Set(config?.domains ?? []),
+    remotePatterns: config?.remotePatterns ?? [],
+    markdown: config?.markdown === true,
+    formats: formats.length ? formats : ["webp"],
+  };
+}
+
 export interface MarkoPressConfig {
   /** 站点级 head 条目（与主题无关——换主题不丢统计/字体；经 sidebar.json → 生成器 → 主题） */
   head?: Array<HeadEntry>;
@@ -119,6 +158,13 @@ export interface MarkoPressConfig {
    * /api 等前缀反代到远端（如 Strapi）绕开浏览器 CORS——build 不受影响。
    */
   dev?: { proxy?: DevProxyConfig };
+  /**
+   * 图片管线 v2（docs/images-v2-design.md）：远程图授权（SSRF 防线——未列名的远程
+   * 源不 fetch 不优化）、md ![]() 接管开关（默认关 = v1 行为逐字节不变）、输出格式
+   * 梯（含 avif 即 <picture> 多格式）。per-tag 属性（quality/layout/formats…）
+   * 可覆盖站点默认。
+   */
+  images?: ImagesConfig;
   /**
    * 主题包名（D5：主题 = npm 包；marko.json tags-dir 经 root 包依赖探测全局发现，
    * docs/research/themes.md §9）。省略 = 默认主题 markopress-theme-docs。

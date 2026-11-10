@@ -1,0 +1,24 @@
+// 页面侧 <mp-image>（docs/images-v2-design.md §5）——构建期解析的静态响应式图。
+//
+// 用法（用户页 / .markopress/components；主题包内不可用——taglib 发现从 app 根就近）：
+//   <mp-image src="https://strapi.example.com/uploads/x.png" alt="截图" layout="responsive"/>
+// 属性面与 md 里的 <mp-image/> tag 一致（src/alt/layout/width|height/quality/sizes/
+// placeholder/fetchpriority/formats/densities/title/class）+ class 透传到包裹元素。
+//
+// 零 JS 机制：
+//   - `server import`：浏览器编译丢弃绑定（sharp 管线不进浏览器图；本 tag 无事件无
+//     状态 ⇒ 不进水合闭包，浏览器侧零执行）
+//   - `<await>` 不带 @placeholder：服务端持有该段直到 resolve 才写流——SSG 爬取等
+//     流结束，最终 HTML 即产物（无占位残渣、无替换脚本）；dev 首渲染阻塞一次，
+//     resolveCache + 磁盘变体让后续即时
+//   - `<@catch>`：dev 期解析失败可视化（build 期错误直接炸构建，不走这里）
+server import { resolveImageTagHtml } from "../src/images.ts"
+
+<try>
+  <await|html|=resolveImageTagHtml(input)>
+    <div style="display:contents">$!{html}</div>
+  </await>
+  <@catch|err|>
+    <span class="mp-image-error">[mp-image] ${err.message}</span>
+  </@catch>
+</try>

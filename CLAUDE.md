@@ -26,7 +26,7 @@ pnpm gen       # 手动跑路由生成器（dev/build 会自动跑，一般不�
 
 **perf 与默认链路解耦**：默认 `.markopress/config.ts` 只有 docs 集合；perf 走 `MP_CONTENT_CONFIG=.markopress/perf.config.ts`（dev:perf/build:perf 已带）。两配置 digest 不同 ⇒ 切换触发 store 全量重建 + 生成目录收缩/扩张（write-if-changed + 差集清理，自愈，切换是低频操作）。
 
-pnpm --filter markopress test  # 引擎全家 vitest：content 63 + markdown 21 + search 12 + 根级 24（route-prefix/user-pages/collection-module）
+pnpm --filter markopress test  # 引擎全家 vitest：content 63 + markdown 21 + search 12 + images 23 + 根级 25（route-prefix/user-pages/collection-module）
 ```
 
 **双路并行纪律（同树双命令，不用 git 分支）**：内容层/store/`gen-routes.ts`/`content-modules.ts` 为两路共享，新功能落共享层；打包器特定代码只允许出现在 `virtual:mp/content/` 解析与 watcher 层（Vite = markopress-plugin.ts，Rspack = rspack-*.ts）。对比数据见 `docs/perf-rspack-vs-vite.md`。
@@ -93,14 +93,24 @@ md 内 Marko 组件段（engine/src/segments.ts）：.markopress/components/ 的
   hydrate 发射只看 .marko→.marko 闭包，.js 中转的组件需 MarkoRspackPlugin 补浏览器入口
   import（clientHydrateImports，必须在 ?browser-entry 之前执行否则注册晚于 init）。
   已知边缘：dev 会话中途新增组件文件要重启（taglib 进程缓存）；fenced code 内安全。
-资产管线（engine/src/images.ts，app 共享层，两后端共用）：md 块级 <mp-image …/>（mp-* 保留命名空间；
-  行尾内联形态归一；属性三形态（双/单/无引号）；fenced code 安全）→ 预提取占位符 → sharp webp srcset 梯 + blur 占位 +
-  原图拷贝 → public/_markopress/image/<源内容 sha1 前8>/ 内容寻址落盘（vite 原生服务
-  publicDir；rspack 靠 markopack dev sirv 链 + adapter-static buildEnd 拷贝——两处 public/
-  约定是本次在 markopack 配套落地的）。资产不进 store、不进核心包（content AGENTS.md
-  红线）；资产 digest 折进 entry 有效 digest（渲染/变换/pageData 缓存全级联），watcher 资产
-  事件 → assetOwners（同目录/同名子目录）→ 重渲染归属 entry。v1 属性面：src/alt/layout/width|height/quality/sizes/placeholder/fetchpriority（per-tag quality 进变体文件名防覆盖）。
-  v2 门（未做）：AVIF/<picture>/DPR densities/远程图优化/`image()` helper/组件内用图。
+资产管线 v2（engine/src/images.ts = 叶子管线 + images-owners.ts = ensureSynced 归属三件套，app 共享层，
+  docs/images-v2-design.md 定稿）：md 块级 <mp-image …/> + **md ![]() 接管（config.images.markdown，
+  默认关——只接管独立段落，行内不接管）** + **页面侧 <mp-image> Marko 组件**（engine tags/，用户页/
+  .markopress/components 可用；`server import` + `<await>` 无占位 = 零客户端 JS）→ 预提取占位符 →
+  sharp 变体（formats 默认 ["webp"]，含 "avif" 即 <picture> 多格式）+ blur/color/none 占位 + 原图拷贝 →
+  public/_markopress/image/<源内容 sha1 前8>/ 内容寻址落盘。**远程图**（授权面 config.images.domains/
+  remotePatterns，SSRF 防线；未授权 = 直通 <img>）fetch 走 .markopress/cache/images/ HTTP 语义缓存
+  （max-age/24h 启发式新鲜度 + etag/last-modified 条件重验 + 失败陈旧降级；build 硬炸 dev 软降级 =
+  MARKOPRESS_PHASE）。属性面 v2 增 formats/densities/title/class/placeholder=color。
+  **叶子层纪律（踩过）**：tags/*.marko 的 server import 只能指叶子模块——ensureSynced 边会把
+  内容层/CLI 集群拖进 server bundle（cli.ts TLA + markopack sirv 解析全炸）；设置经
+  .markopress/images-settings.json 传递（setup 落盘、渲染期 mtime 缓存读）；sharp 在 rspack
+  server 侧 externals 绝对路径外部化（vite SSR 默认 externalize，无需处理）。
+  资产不进 store、不进核心包（content AGENTS.md 红线）；资产 digest 折进 entry 有效 digest
+  （渲染/变换/pageData 缓存全级联），watcher 资产事件 → assetOwners（同目录/同名子目录）→ 重渲染
+  归属 entry。v1 属性面：src/alt/layout/width|height/quality/sizes/placeholder/fetchpriority
+  （per-tag quality 进变体文件名防覆盖）。
+  剩余门（未做）：frontmatter `image()` helper。
   解析缓存键必须含源内容 digest——同路径换字节不折叠键的话 vcontent 逐字节不变、失效断链（踩过）。
   **mp-* 命名空间治理（装配期 validateNamespace，fail fast）**：① 主题组件显式 import
   （生成器经 resolveTheme 包路径写 import——多主题共存时 taglib 全局发现撞名，theme-blog

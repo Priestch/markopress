@@ -22,7 +22,8 @@ import {
   STORE_DIR,
   VIRTUAL_PREFIX,
 } from "./content.ts";
-import { assetOwners, isImageFile } from "./images.ts";
+import { isImageFile } from "./images.ts";
+import { assetOwners } from "./images-owners.ts";
 import { generateRoutes } from "./gen-routes.ts";
 import { PAGES_DIR } from "./paths.ts";
 import { SEGMENT_PREFIX, VSEG_DIR } from "./segments.ts";
@@ -86,6 +87,8 @@ export function markopressPlugin(): Plugin {
     enforce: "pre",
 
     async config(_config, env) {
+      // 图片管线 v2 失败分流（Vite 对照路径同款）：build 硬失败 / dev 软降级
+      process.env.MARKOPRESS_PHASE = env.command === "build" ? "build" : "dev";
       const synced = await ensureSynced();
       for (const collection of Object.values(synced.config.collections)) {
         for (const dir of collection.loader.watchDirs ?? []) watchDirs.add(resolve(dir));

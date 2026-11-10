@@ -92,6 +92,15 @@ export function mpRspack() {
     if (config.mode === "production" && side === "browser") {
       config.devtool = false;
     }
+    // server 侧 sharp 外部化（绝对路径）：原生绑定不能进 bundle（rspack 解析不了
+    // .node 二进制）。页面侧 <mp-image> 组件（tags/mp-image.marko → src/images.ts）
+    // 把 sharp 带进 server 图——external 后运行时 require，构建机本地解析（SSG 的
+    // server bundle 不随产物分发，绝对路径无泄漏面）。vite 对照路径无需处理：
+    // vite SSR 默认 externalize node_modules。
+    if (side === "server") {
+      const require = createRequire(import.meta.url);
+      config.externals = [...(Array.isArray(config.externals) ? config.externals : config.externals ? [config.externals] : []), { sharp: `node-commonjs ${require.resolve("sharp")}` }];
+    }
   };
 }
 

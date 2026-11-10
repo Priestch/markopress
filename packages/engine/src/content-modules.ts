@@ -12,7 +12,8 @@ import { dirname, join } from "node:path";
 import { getGenerateDigest, type DataEntry } from "./content/index.ts";
 import type { MarkdownRenderer } from "./markdown/index.ts";
 import { ensureSynced, ROOT } from "./content.ts";
-import { entryAssetDigest, extractImageTags, resolveEntryDir, resolveImageSegments } from "./images.ts";
+import { extractImageTags, resolveImageSegments } from "./images.ts";
+import { entryAssetDigest, resolveEntryDir } from "./images-owners.ts";
 import {
   SEGMENT_PREFIX,
   VSEG_DIR,
@@ -90,7 +91,7 @@ export async function renderContentModule(
       `[markopress] no renderer for contentType ${String(entry.contentType)} ("${entry.id}")`,
     );
   }
-  const { plugins, pluginCtx } = await ensureSynced();
+  const { plugins, pluginCtx, images } = await ensureSynced();
   const generateDigest = await getGenerateDigest();
 
   // 有效 digest 的两级折叠（渲染器/transformBody/pageData 三处缓存共用的失效键）：
@@ -115,10 +116,11 @@ export async function renderContentModule(
     }
   }
 
-  // 段提取两级：组件 tag（白名单，占位符是段边界）→ <image>（占位符在 html 段内原位回填）。
-  // 两个提取器互不冲突：组件白名单不含 image，image 正则只认 <image 前缀。
+  // 段提取两级：组件 tag（白名单，占位符是段边界）→ <mp-image> tag / md ![]() 接管
+  // （opt-in，images.markdown；占位符在 html 段内原位回填）。两个提取器互不冲突：
+  // 组件白名单不含 image，image 正则只认 <mp-image 前缀与独立段落图片语法。
   const { tags: componentTags, body: withoutComponents } = extractComponentTags(body);
-  const { tags, body: withPlaceholders } = extractImageTags(withoutComponents);
+  const { tags, body: withPlaceholders } = extractImageTags(withoutComponents, { markdown: images.markdown });
   // 渲染 digest 加命名空间：pluginCtx.render（搜索等插件，原始 body）与本处（提取后
   // body）不能共用缓存键——否则先跑的插件渲染会以同 digest 污染缓存，模块渲染命中
   // 未提取的 html（token 消失、<tag/> 原样透传）。blog spike 期没暴露：posts 不在搜索集合。
@@ -132,8 +134,10 @@ export async function renderContentModule(
     componentTags,
   );
   if (tags.length) {
+    // entryDir 可为 undefined（strapi 集合无 filePath / loader 无 base）——远程图解析
+    // 不依赖目录，本地图此时只认 / 根路径
     const entryDir = await resolveEntryDir(collection, entry);
-    if (entryDir) await resolveImageSegments(segments, tags, entryDir);
+    await resolveImageSegments(segments, tags, entryDir, images);
   }
   const segFiles = writeSegmentFiles(collection, entry.id, componentTags);
 

@@ -30,4 +30,23 @@ webp 响应梯 + blur 占位，容器 aspect-ratio 预留空间（零 CLS）：
 
 <mp-image src="images-sample.png" alt="低质量样图" quality=40 width=640/>
 
-远程 URL 与 data URI 原样透传（不进管线）；fenced code 里的写法不会被提取。
+## 远程图（v2）
+
+`config.images.domains` 列名的远程源会被 fetch 进管线（HTTP 缓存语义 + 条件重验），
+与本地同款变体；未列名的域直通原始 URL（不 fetch 不优化）：
+
+![Astro images 指南 OG 图（docs.astro.build，已授权域）](https://docs.astro.build/open-graph/en/guides/images.webp)
+
+<mp-image src="https://docs.astro.build/open-graph/en/guides/images.webp" alt="同图的 tag 形态（主色占位）" placeholder="color"/>
+
+<mp-image src="https://example.com/not-authorized.png" alt="未授权域——直通原始 URL"/>
+
+## 多格式与密度（v2）
+
+`formats` 含 `avif` 时输出 `<picture>`（source 按格式优先序 + 原图 fallback）——本站
+config 已开 `["avif", "webp"]`，上面所有图都是 picture 形态。`densities` 控制 DPR 梯：
+
+<mp-image src="images-sample.png" alt="三倍密度梯" layout="fixed" width=480 densities="1,2,3"/>
+
+data URI 原样透传（不进管线）；fenced code 里的写法不会被提取。
+

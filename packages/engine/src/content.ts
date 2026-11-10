@@ -39,6 +39,9 @@ import {
   routeIdFor,
   validateNamespace,
   type HeadEntry,
+  type ImagesConfig,
+  normalizeImagesConfig,
+  type ImagesSettings,
   writePluginData,
 } from "./plugins.ts";
 
@@ -84,6 +87,8 @@ export interface SyncedContent {
   head: Array<HeadEntry>;
   /** dev 服务器关切（config.dev 透传；仅 rspack-dev 消费——dev.proxy 反代远端 API） */
   dev: MarkoPressConfig["dev"];
+  /** 图片管线 v2 设置（config.images 归一化后透传；images.ts / content-modules 消费） */
+  images: ImagesSettings;
   /** 全量 contentSynced 的完成信号。build 必须等待（产物要齐）；dev 可不阻塞 */
   pluginsReady: Promise<void>;
 }
@@ -237,6 +242,21 @@ async function setup(): Promise<SyncedContent> {
   // build 调用方 await pluginsReady（rspack-shared prepare / vite build 的 config 钩子）。
   const pluginsReady = enqueueContentSynced(pressConfig.plugins, pluginCtx, undefined);
 
+  // 图片管线 v2 设置落盘（write-if-changed）：server bundle 里的 <mp-image> 组件走
+  // 叶子层（images.ts），不能 import 本模块（ensureSynced 会把内容层拖进 bundle）——
+  // 归一化设置经此 JSON 传递，images.ts 渲染期 mtime 缓存读取。config 变更 →
+  // resetSynced → setup 重写 → 下一渲染生效。
+  const images = normalizeImagesConfig(pressConfig.images);
+  const settingsFile = join(ROOT, ".markopress", "images-settings.json");
+  const settingsJson = `${JSON.stringify(
+    { ...images, domains: [...images.domains] },
+    null,
+    2,
+  )}\n`;
+  if (!existsSync(settingsFile) || readFileSync(settingsFile, "utf-8") !== settingsJson) {
+    writeFileSync(settingsFile, settingsJson);
+  }
+
   return {
     store,
     meta,
@@ -248,6 +268,7 @@ async function setup(): Promise<SyncedContent> {
     theme,
     head: pressConfig.head ?? [],
     dev: pressConfig.dev,
+    images,
     pluginsReady,
   };
 }
