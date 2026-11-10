@@ -11,27 +11,48 @@ import { ensureSynced } from "./content.ts";
 import { fileDigest, IMAGE_EXTENSIONS, isImageFile } from "./images.ts";
 
 // ── entry 归属目录 ────────────────────────────────────────────────────────────
-// entry.filePath 相对 loader root（= watchDirs[0]，glob loader 的 base）。两种布局：
-//   content/<slug>/index.md + 同目录图片        → entryDir 本身
-//   content/<slug>.md + content/<slug>/*.png   → entryDir/<去扩展名 basename>（blog 形态）
+// entry.filePath 相对 loader root（= watchDirs[0]，glob loader 的 base）。归属面 =
+// entry 所在目录的整个子树：同目录图片（content/<slug>/index.md + 图）、slug 同名
+// 子目录（content/<slug>.md + content/<slug>/*.png，blog 形态）、以及 img/ 等任意
+// 深层旁挂目录（blockers #7：不递归则兄弟子目录资产改字节不级联失效该 entry）。
+// 子树语义有意偏过度失效（兄弟 entry 的 slug 子目录也进本 entry 的折叠面）——
+// 失效方向安全（多重渲染 vs 漏渲染），目录子树属该目录全部 entries 的语义也自洽。
 
-function entryStem(entry: DataEntry): string {
-  return (entry.filePath ?? "").replace(/\.[^./]*$/, "").split("/").at(-1) ?? "";
+/** entry 自身目录（src 相对解析基）。loader 未声明 base / 无 filePath 时 undefined。 */
+function entryDirFor(base: string, entry: DataEntry): string | undefined {
+  if (!entry.filePath) return undefined;
+  return resolve(base, dirname(entry.filePath));
 }
 
-function entryDirsFor(base: string, entry: DataEntry): Array<string> {
-  if (!entry.filePath) return [];
-  const dir = resolve(base, dirname(entry.filePath));
-  const slugDir = resolve(dir, entryStem(entry));
-  return slugDir === dir ? [dir] : [dir, slugDir];
+/** 目录子树全部目录（含自身；点前缀目录跳过）。资产 digest 折叠面与 watcher
+ *  归属共用——两处必须同面，否则 watcher 事件映射不到 digest 已折叠的 entry。 */
+export function subtreeDirs(root: string): Array<string> {
+  const out = [root];
+  const stack = [root];
+  while (stack.length) {
+    const dir = stack.pop()!;
+    let dirents;
+    try {
+      dirents = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      continue; // 竞态删除——该目录跳过
+    }
+    for (const dirent of dirents) {
+      if (!dirent.isDirectory() || dirent.name.startsWith(".")) continue;
+      const sub = join(dir, dirent.name);
+      out.push(sub);
+      stack.push(sub);
+    }
+  }
+  return out;
 }
 
-/** entry 归属目录（src 相对解析与资产扫描共用）。loader 未声明 base / 无 filePath 时 undefined。 */
+/** entry 归属目录（src 相对解析基 = entry 自身目录，不含子树）。 */
 export async function resolveEntryDir(collection: string, entry: DataEntry): Promise<string | undefined> {
   const { config } = await ensureSynced();
   const base = config.collections[collection]?.loader.watchDirs?.[0];
   if (!base) return undefined;
-  return entryDirsFor(resolve(base), entry)[0];
+  return entryDirFor(resolve(base), entry);
 }
 
 // ── 资产发现：digest 折叠 ─────────────────────────────────────────────────────
@@ -64,12 +85,14 @@ function dirAssetDigest(dir: string): string | undefined {
   return digest;
 }
 
-/** entry 旁挂资产 digest（两个归属目录取并集后折叠）。无资产 = undefined（有效 digest 不折叠）。 */
+/** entry 旁挂资产 digest（归属子树各目录取并集后折叠）。无资产 = undefined（有效 digest 不折叠）。 */
 export async function entryAssetDigest(collection: string, entry: DataEntry): Promise<string | undefined> {
   const { config } = await ensureSynced();
   const base = config.collections[collection]?.loader.watchDirs?.[0];
   if (!base || !entry.filePath) return undefined;
-  const digests = entryDirsFor(resolve(base), entry)
+  const dir = entryDirFor(resolve(base), entry);
+  if (!dir) return undefined;
+  const digests = subtreeDirs(dir)
     .map(dirAssetDigest)
     .filter((d): d is string => d !== undefined);
   if (digests.length === 0) return undefined;
@@ -77,7 +100,7 @@ export async function entryAssetDigest(collection: string, entry: DataEntry): Pr
   return createHash("sha1").update(digests.join("|")).digest("hex");
 }
 
-/** watcher：资产文件 → 归属 entries（同目录或同名子目录）。O(entries)，资产事件低频，够用。 */
+/** watcher：资产文件 → 归属 entries（entry 目录子树内）。O(entries × 子树)，资产事件低频，够用。 */
 export async function assetOwners(file: string): Promise<Array<{ collection: string; id: string }>> {
   if (!isImageFile(file)) return [];
   const { store, config } = await ensureSynced();
@@ -87,7 +110,8 @@ export async function assetOwners(file: string): Promise<Array<{ collection: str
     const base = collection.loader.watchDirs?.[0];
     if (!base) continue;
     for (const entry of store.values(name)) {
-      if (entryDirsFor(resolve(base), entry).some((dir) => dir === assetDir)) {
+      const dir = entryDirFor(resolve(base), entry);
+      if (dir && subtreeDirs(dir).includes(assetDir)) {
         owners.push({ collection: name, id: entry.id });
       }
     }

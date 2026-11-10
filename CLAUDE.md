@@ -107,7 +107,8 @@ md 内 Marko 组件段（engine/src/segments.ts）：.markopress/components/ 的
   .markopress/images-settings.json 传递（setup 落盘、渲染期 mtime 缓存读）；sharp 在 rspack
   server 侧 externals 绝对路径外部化（vite SSR 默认 externalize，无需处理）。
   资产不进 store、不进核心包（content AGENTS.md 红线）；资产 digest 折进 entry 有效 digest
-  （渲染/变换/pageData 缓存全级联），watcher 资产事件 → assetOwners（同目录/同名子目录）→ 重渲染
+  （渲染/变换/pageData 缓存全级联），watcher 资产事件 → assetOwners（entry 目录子树递归——
+  img/ 等深层旁挂目录也级联，blockers #7）→ 重渲染
   归属 entry。v1 属性面：src/alt/layout/width|height/quality/sizes/placeholder/fetchpriority
   （per-tag quality 进变体文件名防覆盖）。
   剩余门（未做）：frontmatter `image()` helper。
