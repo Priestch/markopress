@@ -19,6 +19,9 @@ import type {
   MarkdownRendererOptions,
   RenderedMarkdown,
 } from "./markdown/index.ts";
+// type-only（运行时零依赖）：dev.proxy 的形状直接复用 markopack 导出的类型，
+// 与 dev({ proxy }) 的消费端保持单一事实源
+import type { DevProxyConfig } from "@markopack/rspack";
 import { ROOT } from "./paths.ts";
 
 /** 插件数据模块的虚拟前缀：virtual:mp/plugin/<name>（与 content 模块同机制，双后端各自解析） */
@@ -108,6 +111,14 @@ export interface MarkoPressConfig {
    * renderer 实例随 setup() 重建，缓存天然新鲜（无跨配置缓存投毒）。
    */
   markdown?: MarkdownRendererOptions;
+  /**
+   * dev 服务器关切（仅 markopack/Rspack 主链路消费——rspack-dev.ts 透传给
+   * markopack dev()；Vite 对照路径不需要：vite.config.ts 自带 server.proxy）。
+   * proxy 形状 = Vite server.proxy：键为路径前缀，值是 http-proxy-middleware
+   * options（target/changeOrigin/ws/pathRewrite…）+ 可选 bypass。dev 期把
+   * /api 等前缀反代到远端（如 Strapi）绕开浏览器 CORS——build 不受影响。
+   */
+  dev?: { proxy?: DevProxyConfig };
   /**
    * 主题包名（D5：主题 = npm 包；marko.json tags-dir 经 root 包依赖探测全局发现，
    * docs/research/themes.md §9）。省略 = 默认主题 markopress-theme-docs。

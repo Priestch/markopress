@@ -32,8 +32,8 @@ let draining = false;
 
 await prepare();
 
-// prepare 已装配；这里取 watchDirs（config 里 loader 声明的 base 目录）
-const { config: initialConfig } = await ensureSynced();
+// prepare 已装配；这里取 watchDirs（config 里 loader 声明的 base 目录）+ dev 关切（proxy）
+const { config: initialConfig, dev: devOptions } = await ensureSynced();
 for (const collection of Object.values(initialConfig.collections)) {
   for (const dir of collection.loader.watchDirs ?? []) watchDirs.add(resolve(dir));
 }
@@ -48,6 +48,9 @@ await dev({
   entry: "./.markopress/entry.ts",
   adapter: staticAdapter(),
   rspack: mpRspack(),
+  // 站点级 dev.proxy（config.dev 透传；Vite server.proxy 同形状——dev 期反代远端
+  // API 绕开 CORS，build 不受影响）。markopack dev proxy 是未发版本地特性
+  proxy: devOptions?.proxy,
 });
 
 startWatchers();

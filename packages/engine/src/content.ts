@@ -15,6 +15,7 @@ import {
   ContentSyncer,
   type ContentConfig,
   generateTypes,
+  getGenerateDigest,
   MutableStore,
   metaFile,
   PersistentMetaStore,
@@ -81,6 +82,8 @@ export interface SyncedContent {
   theme: ResolvedTheme;
   /** 站点级 head 条目（config.head 透传；站点关切，与主题无关） */
   head: Array<HeadEntry>;
+  /** dev 服务器关切（config.dev 透传；仅 rspack-dev 消费——dev.proxy 反代远端 API） */
+  dev: MarkoPressConfig["dev"];
   /** 全量 contentSynced 的完成信号。build 必须等待（产物要齐）；dev 可不阻塞 */
   pluginsReady: Promise<void>;
 }
@@ -166,10 +169,20 @@ function resolveTheme(pressConfig: MarkoPressConfig): ResolvedTheme {
 }
 
 async function setup(): Promise<SyncedContent> {
-  // 单文件配置装载后按键分发：collections → 内容层（digest 只看集合子树）；
-  // 其余 → 管线。内部分发与合并前的两文件形态等价。
+  // 单文件配置装载后按键分发：collections → 内容层；其余 → 管线。
+  // 内部分发与合并前的两文件形态等价。
   const merged = await loadConfig();
-  const config: ContentConfig = { collections: (merged.collections ?? {}) as ContentConfig["collections"] };
+  // 配置指纹 = config 文件内容 digest（失效三件套之三的输入；deltas #9 的 app 侧
+  // 补全）。sync 层的兜底投影（集合名 + loader 名）探测不到 zod schema 变化——
+  // schema 是运行时值，改名/加字段后旧 store 数据带着旧的剥离开局存活（2026-11-11
+  // pdflux 加 slug/class 字段实测踩中）。文件级指纹：任何 config 编辑 ⇒ clearAll
+  // 全量重跑（schema/loader/route 全覆盖；代价 = strapi 等远端集合重拉，config
+  // 编辑低频，可接受）。
+  const configDigest = (await getGenerateDigest())(readFileSync(CONFIG_FILE, "utf-8"));
+  const config: ContentConfig = {
+    collections: (merged.collections ?? {}) as ContentConfig["collections"],
+    digest: configDigest,
+  };
   // plugins 归一化：覆盖配置（perf/blog spike）可以不带插件键
   const pressConfig: MarkoPressConfig = { ...merged, collections: undefined, plugins: merged.plugins ?? [] };
   // 字面量密钥 fail fast（strapi-loader-design §7）——在一切网络/装载之前
@@ -234,6 +247,7 @@ async function setup(): Promise<SyncedContent> {
     pluginCtx,
     theme,
     head: pressConfig.head ?? [],
+    dev: pressConfig.dev,
     pluginsReady,
   };
 }
