@@ -109,7 +109,7 @@ describe("extractImageTags", () => {
 
   it("对象形接管配置：站点默认属性并入 attrs 作缺省（#10）；md 自带属性优先", () => {
     const { tags } = extractImageTags('![alt](pic.png "标题")', {
-      markdown: { width: 650, quality: 100, densities: [0.25, 0.5, 1, 1.5, 2], alt: "不应覆盖" },
+      markdown: { width: 650, quality: 100, densities: [0.25, 0.5, 1, 1.5, 2], link: true, alt: "不应覆盖" },
     });
     expect(tags[0].attrs).toEqual({
       src: "pic.png",
@@ -118,6 +118,7 @@ describe("extractImageTags", () => {
       width: "650",
       quality: "100",
       densities: "0.25,0.5,1,1.5,2",
+      link: "true",
     });
   });
 });
@@ -286,6 +287,32 @@ describe("resolveImageSegments", () => {
     const segments = htmlSegment("<!--MPIMG0-->");
     await resolveImageSegments(segments, [tag], join(ROOT), settings());
     expect(segments[0].html).toContain('<img src="missing.png" alt="alt"');
+  });
+
+  it("link 属性（#11）：div 内包原图 <a>；缺省不包、link=false 显式关", async () => {
+    const dir = join(ROOT, "fixture");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "linked.png"), pngBytesSync);
+    const linked = {
+      token: "<!--MPIMG0-->",
+      raw: "",
+      attrs: { src: "linked.png", alt: "x", link: "true" },
+      origin: "tag" as const,
+    };
+    const segments = htmlSegment("<!--MPIMG0-->");
+    await resolveImageSegments(segments, [linked], dir, settings());
+    const html = segments[0].html;
+    expect(html).toContain('<a class="mp-image-link" href="/_markopress/image/');
+    expect(html).toContain('target="_blank" rel="noopener"');
+    // 层序：div.mp-image > a.mp-image-link > img（与 gatsby wrapper > link > img 对位）
+    expect(html.indexOf('<a class="mp-image-link"')).toBeGreaterThan(html.indexOf('<div class="mp-image'));
+    expect(html).toMatch(/<\/a><\/div>$/);
+
+    const plain = { ...linked, token: "<!--MPIMG1-->", attrs: { src: "linked.png", alt: "x" } };
+    const off = { ...linked, token: "<!--MPIMG2-->", attrs: { src: "linked.png", alt: "x", link: "false" } };
+    const more = htmlSegment("<!--MPIMG1-->\n<!--MPIMG2-->");
+    await resolveImageSegments(more, [plain, off], dir, settings());
+    expect(more[0].html).not.toContain("<a ");
   });
 
   it("授权远程（mock fetch）：变体 + picture（formats 含 avif）", async () => {

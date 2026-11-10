@@ -543,6 +543,13 @@ async function resolveTag(
   const urlFor = (name: string): string => encodeURI(`${OUTPUT_URL_PREFIX}/${contentDigest.slice(0, 8)}/${name}`);
   const alt = attrs.alt ?? "";
   const titleAttr = attrs.title ? ` title="${escapeHtml(attrs.title)}"` : "";
+  // 原图链接包装（#11，gatsby-remark-images 缺省行为）：href = 管线拷贝的原图
+  // （public/_markopress/image/<sha>/ 原名文件），新窗口打开；link="false" 显式关闭
+  const wantsLink = attrs.link !== undefined && attrs.link !== "false";
+  const linkWrap = (innerHtml: string): string =>
+    wantsLink
+      ? `<a class="mp-image-link" href="${urlFor(outName)}" style="display:block" target="_blank" rel="noopener">${innerHtml}</a>`
+      : innerHtml;
 
   // gif / svg：拷原图，简单 <img>（无 aspect 盒无变体；远程同规则）
   if (ext === ".gif" || ext === ".svg") {
@@ -553,9 +560,10 @@ async function resolveTag(
     const dims =
       meta?.width && meta?.height ? ` width="${meta.width}" height="${meta.height}"` : "";
     return {
-      html:
+      html: linkWrap(
         `<img class="mp-image-plain" src="${urlFor(outName)}" alt="${escapeHtml(alt)}"` +
-        `${titleAttr}${dims} loading="lazy" decoding="async"/>`,
+          `${titleAttr}${dims} loading="lazy" decoding="async"/>`,
+      ),
     };
   }
   if (!RASTER_EXTENSIONS.has(ext)) {
@@ -628,7 +636,7 @@ async function resolveTag(
       : `aspect-ratio:${meta.width}/${meta.height}` + (layout === "responsive" ? `;max-width:${displayWidth}px` : "");
   const classAttr = attrs.class ? ` ${escapeHtml(attrs.class)}` : "";
   const html =
-    `<div class="mp-image mp-image--${layout}${classAttr}" style="${style};${placeholderStyle}">${inner}</div>`;
+    `<div class="mp-image mp-image--${layout}${classAttr}" style="${style};${placeholderStyle}">${linkWrap(inner)}</div>`;
   return { html };
 }
 

@@ -46,6 +46,7 @@ export default defineMarkoPressConfig({
       width: 650,                        // 显示宽（fluid maxWidth 同位）
       quality: 100,
       densities: [0.25, 0.5, 1, 1.5, 2], // 或 attr 形态字符串 "0.25,0.5,1,1.5,2"
+      link: true,                        // #11：产物包 <a href=原图 target=_blank rel=noopener>
       // height / layout / placeholder / sizes / formats 同理可选
     },
     // 输出格式梯（默认 ["webp"] = v1 形状；含 "avif" 即 <picture> 多格式）
@@ -59,6 +60,10 @@ export default defineMarkoPressConfig({
 - per-tag 覆盖：`<mp-image formats="avif,webp" quality=70 …/>`（md tag 与组件同一属性面 +
   组件多一个 `class` 透传）。接管默认三态：站点默认（对象形）→ 管线常量
   （layout=responsive / quality=80 / placeholder=blur）→ per-tag 显式属性。
+- `link` 属性（#11，2026-11-11）：`<mp-image link="true"/>` / 接管默认 `link: true` 时，
+  产物在容器 div 内包 `<a class="mp-image-link" href={原图} style="display:block"
+  target="_blank" rel="noopener">`（gatsby-remark-images 缺省行为——原图由管线拷贝到
+  public/_markopress/image/<sha>/ 原名文件，URL 现成）；`link="false"` 显式关闭。
 - mp-* 命名空间治理不变：`mp-image` 是框架 tag（engine taglib），用户组件目录禁 mp-*
   前缀的规则不冲突。
 

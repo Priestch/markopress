@@ -118,6 +118,11 @@ export interface ImagesMarkdownDefaults {
   placeholder?: "blur" | "color" | "none";
   sizes?: string;
   formats?: Array<"webp" | "avif">;
+  /**
+   * 原图链接包装（#11）：产物包进 `<a href=原图 target=_blank rel=noopener>`
+   * （gatsby-remark-images 缺省行为——迁移方默认此交互存在）。tag 上同名属性可覆盖。
+   */
+  link?: boolean;
 }
 
 /** 图片管线 v2 配置（config.images；详见 docs/images-v2-design.md §2） */
