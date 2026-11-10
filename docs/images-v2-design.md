@@ -38,8 +38,16 @@ export default defineMarkoPressConfig({
     // （hostname 支持通配，形状对齐 Astro，v1 不做 pathname/port）
     domains: ["strapi.paodingai.com"],
     remotePatterns: [{ protocol: "https", hostname: "*.example.com" }],
-    // md 正文 ![]() 接管（默认 false —— 既有集合零行为变化；true = 所有集合）
-    markdown: true,
+    // md 正文 ![]() 接管（默认 false —— 既有集合零行为变化）。
+    // true = 接管、属性走管线常量；对象形 = 接管 + 站点级默认属性并入 attrs 作缺省
+    //（pdflux 反馈 #10：gatsby-remark-images 全局配置一次的机制对位——md 保持普通
+    // ![]() 写法，不逐图写 tag；md 语法自带的 src/alt/title 与显式 <mp-image> tag 永远优先）
+    markdown: {
+      width: 650,                        // 显示宽（fluid maxWidth 同位）
+      quality: 100,
+      densities: [0.25, 0.5, 1, 1.5, 2], // 或 attr 形态字符串 "0.25,0.5,1,1.5,2"
+      // height / layout / placeholder / sizes / formats 同理可选
+    },
     // 输出格式梯（默认 ["webp"] = v1 形状；含 "avif" 即 <picture> 多格式）
     formats: ["avif", "webp"],
   },
@@ -47,10 +55,10 @@ export default defineMarkoPressConfig({
 ```
 
 - `images` 子树进 config digest 语义不变：config.ts 任何变更走既有 resetSynced 全量重建，
-  无新失效通道。
+  无新失效通道。默认属性并入 attrs ⇒ resolveCache 键随配置换键，不命中旧产物。
 - per-tag 覆盖：`<mp-image formats="avif,webp" quality=70 …/>`（md tag 与组件同一属性面 +
-  组件多一个 `class` 透传）。md 普通图片语法表达不了属性 ⇒ 接管时用常量默认
-  （layout=responsive / quality=80 / placeholder=blur），要调参就写 `<mp-image>` tag。
+  组件多一个 `class` 透传）。接管默认三态：站点默认（对象形）→ 管线常量
+  （layout=responsive / quality=80 / placeholder=blur）→ per-tag 显式属性。
 - mp-* 命名空间治理不变：`mp-image` 是框架 tag（engine taglib），用户组件目录禁 mp-*
   前缀的规则不冲突。
 
@@ -92,15 +100,15 @@ host 命中 `domains` 或 `remotePatterns` → 授权；未授权 = **直通原�
 
 - **开关**：`images.markdown: true` 才启用；默认 false = 既有集合输出逐字节不变（用户
   拍板，与 Astro 默认开相反——理由：markopress 的 `<mp-image>` 已是显式优化入口，接管是
-  行为变化，让站点自己选时机）。
+  行为变化，让站点自己选时机）。对象形 = 接管 + 站点级默认属性（§2，pdflux 反馈 #10）。
 - **接管范围**：**独立段落**的图片语法（`![alt](src "title")` 前后是空行/文档边界）。
   行内嵌在句子中的图不接管（responsive 包裹元素会打断行内排版——Astro 全量接管是它的
   `<Image>` 无包裹策略撑的，我们有布局包裹，收缩到块级是语义正确的选择）。fenced code
   安全沿用 v1 的扫描防护。
 - **实现位置**：images.ts 预提取阶段（现有 `<mp-image …/>` 块扫描的同一 pass）——正则
   命中后转成与 tag 路径相同的占位符机制，属性 = { src 相对 md 文件解析, alt, title,
-  layout: "responsive" }。相对/绝对路径规则同 v1：相对 = 集合内容目录解析；`/` 开头
-  根路径 = 站点静态资产直通不处理；远程 = §3 授权判定。
+  layout: "responsive" } + 站点默认（对象形时）。相对/绝对路径规则同 v1：相对 = 集合
+  内容目录解析；`/` 开头根路径 = 站点静态资产直通不处理；远程 = §3 授权判定。
 - **与 `<mp-image>` tag 的关系**：tag 仍是全属性面的显式入口；接管只影响裸语法。md 里
   写 tag 永远优先（预处理先于 markdown 编译，二者不冲突）。
 

@@ -106,6 +106,20 @@ describe("extractImageTags", () => {
     expect(tags).toHaveLength(1);
     expect(tags[0].attrs.src).toBe("https://allowed.example.com/a.png");
   });
+
+  it("对象形接管配置：站点默认属性并入 attrs 作缺省（#10）；md 自带属性优先", () => {
+    const { tags } = extractImageTags('![alt](pic.png "标题")', {
+      markdown: { width: 650, quality: 100, densities: [0.25, 0.5, 1, 1.5, 2], alt: "不应覆盖" },
+    });
+    expect(tags[0].attrs).toEqual({
+      src: "pic.png",
+      alt: "alt",
+      title: "标题",
+      width: "650",
+      quality: "100",
+      densities: "0.25,0.5,1,1.5,2",
+    });
+  });
 });
 
 // ── 远程缓存状态机（HTTP 语义）───────────────────────────────────────────────

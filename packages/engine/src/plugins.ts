@@ -102,14 +102,35 @@ export interface RemotePattern {
   hostname?: string;
 }
 
+/**
+ * md ![]() 接管的站点级默认属性（images.markdown 对象形，pdflux 反馈 #10）：
+ * 并入接管 attrs 作缺省——md 保持普通 `![]()` 写法（与 gatsby-remark-images 全局
+ * 配置一次的机制对位），md 内显式 `<mp-image>` tag 不受影响（自带属性优先）。
+ * 值经 String() 归一为 attr 形态（数字数组 densities 逗号连接）。
+ */
+export interface ImagesMarkdownDefaults {
+  width?: number;
+  height?: number;
+  quality?: number;
+  /** attr 形态字符串（"0.25,0.5,1,1.5,2"）或数字数组 */
+  densities?: string | Array<number>;
+  layout?: "responsive" | "fixed" | "fluid";
+  placeholder?: "blur" | "color" | "none";
+  sizes?: string;
+  formats?: Array<"webp" | "avif">;
+}
+
 /** 图片管线 v2 配置（config.images；详见 docs/images-v2-design.md §2） */
 export interface ImagesConfig {
   /** 远程图处理授权域名（精确 host）。默认 [] = 一切远程图直通不优化 */
   domains?: Array<string>;
   /** 远程图授权模式（与 domains 取并集） */
   remotePatterns?: Array<RemotePattern>;
-  /** md 正文 ![]() 接管（默认 false——只接管独立段落的图片语法，行内不接管） */
-  markdown?: boolean;
+  /**
+   * md 正文 ![]() 接管（默认 false——只接管独立段落的图片语法，行内不接管）。
+   * true = 接管且属性走管线常量；对象形 = 接管 + 站点级默认属性（ImagesMarkdownDefaults）。
+   */
+  markdown?: boolean | ImagesMarkdownDefaults;
   /** 输出格式梯（默认 ["webp"] = v1 单格式 <img srcset>；含 "avif" = <picture> 多格式） */
   formats?: Array<"webp" | "avif">;
 }
@@ -118,7 +139,7 @@ export interface ImagesConfig {
 export interface ImagesSettings {
   domains: Set<string>;
   remotePatterns: Array<RemotePattern>;
-  markdown: boolean;
+  markdown: boolean | ImagesMarkdownDefaults;
   formats: Array<"webp" | "avif">;
 }
 
@@ -129,7 +150,7 @@ export function normalizeImagesConfig(config?: ImagesConfig): ImagesSettings {
   return {
     domains: new Set(config?.domains ?? []),
     remotePatterns: config?.remotePatterns ?? [],
-    markdown: config?.markdown === true,
+    markdown: config?.markdown ?? false,
     formats: formats.length ? formats : ["webp"],
   };
 }

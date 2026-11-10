@@ -23,7 +23,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSyn
 import { basename, dirname, extname, join, resolve } from "node:path";
 import sharp from "sharp";
 import { ROOT } from "./paths.ts";
-import type { ImagesSettings } from "./plugins.ts";
+import type { ImagesMarkdownDefaults, ImagesSettings } from "./plugins.ts";
 
 /** 发现集合：参与归属/失效扫描的全部图片后缀 */
 export const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".avif", ".gif", ".svg"]);
@@ -335,15 +335,18 @@ const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
  * 的语法是教学文本，不是资产引用。
  *
  * options.markdown（config.images.markdown，默认 false）：接管 `![alt](src "title")`
- * 独立行 → 与 tag 同一占位符机制（属性面 { src, alt, title? }，布局/质量走管线常量，
- * 要调参写 `<mp-image>` tag）。默认关 = 既有集合输出逐字节不变。
+ * 独立行 → 与 tag 同一占位符机制。boolean = 接管且属性走管线常量；对象形
+ * （ImagesMarkdownDefaults，pdflux 反馈 #10）= 接管 + 站点级默认属性并入 attrs
+ * 作缺省（md 语法自带的 src/alt/title 优先）。默认关 = 既有集合输出逐字节不变。
  */
 export function extractImageTags(
   body: string,
-  options?: { markdown?: boolean },
+  options?: { markdown?: boolean | ImagesMarkdownDefaults },
 ): { body: string; tags: Array<ImageTag> } {
   const lines = body.split("\n");
   const tags: Array<ImageTag> = [];
+  // 对象形接管配置 → 站点级默认属性（merge 进 attrs；String() 归一，数组 densities 逗号连接）
+  const mdDefaults = typeof options?.markdown === "object" ? options.markdown : undefined;
   let fence: string | undefined;
   for (let i = 0; i < lines.length; i++) {
     const fenceMatch = lines[i].match(FENCE_RE);
@@ -376,6 +379,13 @@ export function extractImageTags(
         const attrs: Record<string, string> = { src: md[2], alt: md[1] };
         const title = md[3] ?? md[4];
         if (title) attrs.title = title;
+        // 站点级默认属性作缺省（#10）——md 语法自带的 src/alt/title 永远优先；
+        // 进 attrs ⇒ resolveCache 键随配置变化换键，不命中旧产物
+        if (mdDefaults) {
+          for (const [key, value] of Object.entries(mdDefaults)) {
+            if (value !== undefined && attrs[key] === undefined) attrs[key] = String(value);
+          }
+        }
         tag = { token: `<!--MPIMG${tags.length}-->`, raw: lines[i], attrs, origin: "md" };
       }
     }
