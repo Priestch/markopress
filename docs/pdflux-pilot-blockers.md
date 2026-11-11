@@ -160,3 +160,24 @@ presentationWidth 同款。pdflux 验收：login 尾档 1328w、translate 1920w�
 - react-bootstrap 组件 → bootstrap 纯 CSS + Marko 手写等价结构；react-highlight → md 管线 shiki；
 - GTM/Clarity → markopress 站点级 head 注入（4b2604d 已有）；
 - /404 客户端 redirect → `+404` 页 onMount 处理（小坑：markopress 404 是渲染型）。
+
+## 2026-11-11：guide 集合数据烤进 client chunk（585.js，体积 ask 非功能 blocker）
+
+现象（rsdoctor 1.6.5 归因 + 产物字节核查，pdflux 试点）：guide 各页共享的
+`585.js`（36K raw/13K gz）磁盘内容 **89% 是 15 个 guide 页的 vcontent html 段**
+（27,362 chars，`id:"basic",slug:…,data:{…},segments:[{type:"html",html:'…'}]`
+形态；源码归因 = `operation-nav.marko` 编译产物 46.2K src + 15×vcontent 模块）。
+该 chunk 被**每个 guide 页的 entry 引用**，即每次进 guide（含从别的 guide 页二跳）
+都重新下载这 13K gz——而 resumability 下同样的内容已经内联在 SSR HTML 里，
+client 在用户不触发交互时根本不需要它。
+
+推断链路：collection/vcontent 数据模块（站点 `.markopress/vcontent/guide/*.js`
+或其 virtual module）没有区分 server-only 与 client 通道，浏览器构建把全部
+html 段打进了共享 chunk。#15（entry 去重）已消 entry 级 JS 重复，这是同一
+主题的残留：**数据应只进 server bundle，client 只需要组件模板**。
+
+ask：markopress/markopack 的 browser 构建侧不打包（或 tree-shake 掉）
+collection 数据模块的 html segments——可能的做法是 vcontent 虚拟模块按
+`side === "browser"` 拆分导出，或把 html 段从共享 chunk 挪到仅 SSR 引用。
+pdflux 侧 16 页 guide 二跳可各省 13K gz。数字与归因细节：
+`pai-websites/docs/pdflux-analysis.md` §3.7。
