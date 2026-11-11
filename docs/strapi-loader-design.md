@@ -138,14 +138,23 @@ loader 在取值途中逐层摊平包装（v5 形状原样透传）——`conten
 `/log` 是**列表页**：自定义页（`pages/log.marko`）import 整个集合的 entries。现状虚拟
 模块只有 per-entry 的 `virtual:mp/content/<collection>/<id>`。实现定稿：
 
-- **模块源**（`content-modules.ts`，双后端唯一来源）：静态 import 全部 per-entry 模块 +
-  导出 `entries` 数组（`{ id, slug, data, segments, headings }` 每条；排序/投影由消费方
-  做）。渲染缓存各自按 entry digest 生效，集合模块零渲染成本。
+- **模块源**（`content-modules.ts`，双后端唯一来源）：静态 import 全部 per-entry **meta**
+  模块（`virtual:mp/meta/<c>/<id>`，`{ data, headings }`，client-safe）+ 导出 `entries`
+  数组（`{ id, slug, data, headings }` 每条；排序/投影由消费方做）。渲染缓存各自按
+  entry digest 生效，集合模块零渲染成本。
+  **为何聚合 meta 而非内容模块**（2026-11 pdflux 反馈，585.js 事故）：集合模块的典型
+  消费方是 nav 等会被水合的组件——聚合 vcontent 会把全集合 html 正文（SSR 渲染载荷）
+  烤进浏览器共享 chunk，resumability 下客户端永远不读它，纯死重且每页二跳重复下载。
+  `segments` 因此**不在**集合模块形状里；服务端要正文直接 import per-entry 模块
+  （`virtual:mp/content/…`，静态消费被 Marko 剪枝，同样不进 client 图）。
 - **Rspack**：落盘 `.markopress/vcollection/<name>.js`（不能是 `vcontent/<c>/index.js`——
-  entry id "index" 会撞名）；`NormalModuleReplacementPlugin` 加前缀分支；增删条目 ⇒ 文件
-  重写 ⇒ 原生 watcher 失效；内容编辑 ⇒ per-entry 模块变化沿编译图传播（集合模块源不变）。
-- **Vite**：`resolveId`/`load` 内存虚拟模块；失效接线——entry **集合**变化（增/删）时
-  失效对应集合模块（`syncOne`/`fullResync`），内容编辑经 per-entry 失效沿模块图传播。
+  entry id "index" 会撞名）+ per-entry meta 落盘 `.markopress/vmeta/<c>/<id>.js`；
+  `NormalModuleReplacementPlugin` 加前缀分支；增删条目 ⇒ 文件重写 ⇒ 原生 watcher 失效；
+  内容编辑 ⇒ per-entry 模块变化沿编译图传播（集合模块源不变）。
+- **Vite**：`resolveId`/`load` 内存虚拟模块（meta 与内容模块同一次渲染产出，渲染缓存
+  生效）；失效接线——entry **集合**变化（增/删）时失效对应集合模块
+  （`syncOne`/`fullResync`），内容编辑经 per-entry 失效（内容 + meta 两个虚拟模块
+  同批失效；集合模块 import 的是 meta，图传播只到 meta 这层，故 meta 必须显式失效）。
 - 消费方：`pages/log.marko` 内 `import { entries } from "virtual:mp/collection/changelog"`
   （用户页真身 import 虚拟模块，包装链既有机制不动）。
 

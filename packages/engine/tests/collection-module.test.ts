@@ -1,5 +1,6 @@
 // 集合级数据模块（virtual:mp/collection/<name>，strapi-loader-design §6）：
-// 源码形状 + 内置三件对 route:false 集合（urlOf=null）的跳过。
+// 源码形状（client-safe——聚合 meta 模块而非内容模块，html 正文不进 client 图）
+// + 内置三件对 route:false 集合（urlOf=null）的跳过。
 import { describe, expect, it, vi } from "vitest";
 import { renderCollectionModule } from "../src/content-modules.ts";
 import { sitemap } from "../src/builtins/sitemap.ts";
@@ -14,15 +15,20 @@ describe("renderCollectionModule", () => {
     expect(renderCollectionModule("changelog", [])).toContain("export const entries = []");
   });
 
-  it("聚合 per-entry 模块：import 引用 + entries 数组投影；data/segments 不内联", () => {
+  it("聚合 per-entry meta 模块（client-safe）：import 引用 + entries 投影；不带 html 正文", () => {
     const source = renderCollectionModule("changelog", [entry("42", "v1-2-3"), entry("43")]);
-    expect(source).toContain('import * as entry0 from "virtual:mp/content/changelog/42"');
-    expect(source).toContain('import * as entry1 from "virtual:mp/content/changelog/43"');
     expect(source).toContain(
-      '{ id: "42", slug: "v1-2-3", data: entry0.data, segments: entry0.segments, headings: entry0.headings },',
+      'import { data as data0, headings as headings0 } from "virtual:mp/meta/changelog/42";',
     );
+    expect(source).toContain(
+      'import { data as data1, headings as headings1 } from "virtual:mp/meta/changelog/43";',
+    );
+    expect(source).toContain('{ id: "42", slug: "v1-2-3", data: data0, headings: headings0 },');
+    // 红线：segments（html 渲染载荷）不得出现在集合模块——交互组件（nav 等）经它拿
+    // 标题/列表时，不能把全集合正文烤进浏览器共享 chunk（resumability 下是纯死重）
+    expect(source).not.toContain("segments");
     // 引用而非内联：per-entry digest 缓存各自生效，纯内容编辑下本文件字节不变
-    // （rspack 侧 write-if-changed 吸收 ⇒ 零文件事件，per-entry 模块沿编译图传播）
+    // （rspack 侧 write-if-changed 吸收 ⇒ 零文件事件，meta 模块沿编译图传播）
     expect(source).not.toMatch(/"data"\s*:/);
   });
 });

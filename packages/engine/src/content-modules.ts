@@ -28,10 +28,24 @@ export const VCONTENT_DIR = join(ROOT, ".markopress", "vcontent");
  *  entry id "index" 会占用 vcontent/<c>/index.js，撞名 */
 export const VCOLLECTION_DIR = join(ROOT, ".markopress", "vcollection");
 export const COLLECTION_PREFIX = "virtual:mp/collection/";
+/**
+ * per-entry 元数据模块（virtual:mp/meta/<c>/<id>）落盘目录：client-safe 面，只含
+ * data/headings。集合模块聚合本目录（而非 vcontent/）——html 正文是 SSR 渲染载荷，
+ * 经集合模块进任何会被水合的组件（如 nav）就会整集合烤进浏览器共享 chunk
+ * （resumability 下客户端永远不读它，纯死重；pdflux 反馈 2026-11）。服务端要正文
+ * 直接 import per-entry 模块（virtual:mp/content/…），静态消费被 Marko 剪枝同样不进 client。
+ */
+export const VMETA_DIR = join(ROOT, ".markopress", "vmeta");
+export const META_PREFIX = "virtual:mp/meta/";
 
 /** entry → 内容模块绝对路径：id 含 `/` 时嵌套目录（a/b → vcontent/<c>/a/b.js） */
 export function contentModuleFile(collection: string, id: string): string {
   return join(VCONTENT_DIR, collection, `${id}.js`);
+}
+
+/** entry → 元数据模块绝对路径（与 contentModuleFile 同构） */
+export function contentMetaFile(collection: string, id: string): string {
+  return join(VMETA_DIR, collection, `${id}.js`);
 }
 
 /** 集合 → 集合级数据模块绝对路径（vcollection/<name>.js） */
@@ -40,11 +54,13 @@ export function collectionModuleFile(collection: string): string {
 }
 
 /**
- * 渲染集合级数据模块源码（双后端唯一来源）：静态 import 全部 per-entry 模块 +
- * 导出 entries 数组（{ id, slug, data, segments, headings } 每条；排序/投影由
- * 消费方做）。渲染缓存各自按 entry digest 生效，集合模块零渲染成本。
- * 增删条目 ⇒ 本模块源码变 ⇒ vite 侧失效 / rspack 侧落盘重写走原生 watcher；
- * 纯内容编辑 ⇒ per-entry 模块变化沿模块图/编译图传播，本模块源不变（字节不变）。
+ * 渲染集合级数据模块源码（双后端唯一来源）：静态 import 全部 per-entry **meta** 模块 +
+ * 导出 entries 数组（{ id, slug, data, headings } 每条；排序/投影由消费方做）。
+ * 只聚合 meta（client-safe）——集合模块的典型消费方是 nav 等会被水合的组件，聚合
+ * vcontent 会把全集合 html 正文烤进浏览器共享 chunk（见 VMETA_DIR 注释）。渲染缓存
+ * 各自按 entry digest 生效，集合模块零渲染成本。增删条目 ⇒ 本模块源码变 ⇒ vite 侧
+ * 失效 / rspack 侧落盘重写走原生 watcher；纯内容编辑 ⇒ per-entry meta 模块变化沿
+ * 模块图/编译图传播，本模块源不变（字节不变）。
  */
 export function renderCollectionModule(collection: string, entries: Array<DataEntry>): string {
   if (entries.length === 0) {
@@ -56,11 +72,15 @@ export function renderCollectionModule(collection: string, entries: Array<DataEn
   }
   return [
     `// 集合级数据模块（生成物）：virtual:mp/collection/${collection}`,
-    ...entries.map((entry, i) => `import * as entry${i} from "virtual:mp/content/${collection}/${entry.id}";`),
+    // client-safe：只聚合 meta 模块（data/headings）；正文经 per-entry 模块（SSR 渲染链）
+    ...entries.map(
+      (entry, i) =>
+        `import { data as data${i}, headings as headings${i} } from "${META_PREFIX}${collection}/${entry.id}";`,
+    ),
     `export const entries = [`,
     ...entries.map(
       (entry, i) =>
-        `  { id: ${JSON.stringify(entry.id)}, slug: ${JSON.stringify(entry.slug)}, data: entry${i}.data, segments: entry${i}.segments, headings: entry${i}.headings },`,
+        `  { id: ${JSON.stringify(entry.id)}, slug: ${JSON.stringify(entry.slug)}, data: data${i}, headings: headings${i} },`,
     ),
     `]`,
     ``,
@@ -74,9 +94,11 @@ const transformCache = new Map<string, string>();
 /** pageData 缓存：有效 digest → 各插件合并结果（链变了 digest 随之失配，天然失效） */
 const pageDataCache = new Map<string, Record<string, unknown>>();
 
-/** 渲染产物：source = 模块源码；segFiles = 本 entry 的组件段文件（已落盘，供差集清理） */
+/** 渲染产物：source = 模块源码；metaSource = 元数据模块源码（client-safe，集合模块聚合面）；
+ *  segFiles = 本 entry 的组件段文件（已落盘，供差集清理） */
 export interface RenderedModule {
   source: string;
+  metaSource: string;
   segFiles: Array<string>;
 }
 
@@ -183,7 +205,14 @@ export async function renderContentModule(
           `export const headings = ${JSON.stringify(rendered.headings)}`,
           ``,
         ].join("\n");
-  return { source, segFiles };
+  // meta 模块（virtual:mp/meta/<c>/<id>）：data/headings 的 client-safe 投影——
+  // 无 html、无组件段引用（rspack 侧落盘 vmeta/，vite 侧 load 时取本字段）
+  const metaSource = [
+    `export const data = ${JSON.stringify(data)}`,
+    `export const headings = ${JSON.stringify(rendered.headings)}`,
+    ``,
+  ].join("\n");
+  return { source, metaSource, segFiles };
 }
 
 export interface ContentModulesResult {
@@ -227,14 +256,20 @@ export async function writeContentModules(scope?: {
     for (const { collection, id } of scope.changed ?? []) {
       const entry = store.get(collection, id);
       if (!entry) continue; // 已被同批 removed 或撞车清理
-      const { source } = await renderContentModule(collection, entry, renderer);
+      const { source, metaSource } = await renderContentModule(collection, entry, renderer);
       writeIfChanged(contentModuleFile(collection, id), source, result);
+      writeIfChanged(contentMetaFile(collection, id), metaSource, result);
     }
     for (const { collection, id } of scope.removed ?? []) {
       const file = contentModuleFile(collection, id);
       if (existsSync(file)) {
         rmSync(file);
         result.removed.push(file);
+      }
+      const metaFile = contentMetaFile(collection, id);
+      if (existsSync(metaFile)) {
+        rmSync(metaFile);
+        result.removed.push(metaFile);
       }
       removeSegmentFiles(collection, id);
     }
@@ -258,10 +293,12 @@ export async function writeContentModules(scope?: {
   for (const name of Object.keys(config.collections)) {
     for (const entry of store.values(name)) {
       const file = contentModuleFile(name, entry.id);
-      const { source, segFiles } = await renderContentModule(name, entry as DataEntry, renderer);
+      const { source, metaSource, segFiles } = await renderContentModule(name, entry as DataEntry, renderer);
       expected.add(file);
+      expected.add(contentMetaFile(name, entry.id));
       for (const seg of segFiles) expected.add(seg);
       writeIfChanged(file, source, result);
+      writeIfChanged(contentMetaFile(name, entry.id), metaSource, result);
     }
     // 集合级数据模块：每个配置集合一个（空集合也是 entries = []——消费方拿到稳定形状）
     const collectionFile = collectionModuleFile(name);
@@ -269,6 +306,7 @@ export async function writeContentModules(scope?: {
     writeIfChanged(collectionFile, renderCollectionModule(name, store.values(name)), result);
   }
   cleanStale(VCONTENT_DIR, expected, result);
+  cleanStale(VMETA_DIR, expected, result);
   cleanStale(VSEG_DIR, expected, result);
   cleanStale(VCOLLECTION_DIR, expected, result);
   return result;

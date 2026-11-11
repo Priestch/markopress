@@ -3,7 +3,9 @@
 //  - config:  sync + 生成路由。本插件排在 markoRun() 之前，Vite 顺序 await 各插件
 //             config 钩子 ⇒ 路由先于 marko-run 的 routes 目录 walk 生成。
 //  - 虚拟模块 virtual:mp/content/<collection>/<id> → { data, segments, headings }：
-//    查 store、按 digest 惰性渲染（渲染器内存缓存）。
+//    查 store、按 digest 惰性渲染（渲染器内存缓存）。virtual:mp/meta/<c>/<id> →
+//    { data, headings }（client-safe 投影，集合模块聚合面）；virtual:mp/collection/
+//    <name> → meta 模块静态聚合（不带 html 正文——正文只走 SSR 渲染链）。
 //  - configureServer: 监听所有集合 loader 声明的 watchDirs → 事件进队列（单飞串行，
 //    逐批 drain）→ 优先单文件增量（syncer.syncFile：只读事件文件，O(1)；无人认领
 //    则忽略）。config 文件变更走全量重建。失效一律走 Vite 模块图，不碰 routes 目录
@@ -13,7 +15,7 @@ import { resolve } from "node:path";
 import type { ContentConfig } from "./content/index.ts";
 import type { Plugin, ViteDevServer } from "vite";
 import { renderCollectionModule, renderContentModule } from "./content-modules.ts";
-import { COLLECTION_PREFIX } from "./content-modules.ts";
+import { COLLECTION_PREFIX, META_PREFIX } from "./content-modules.ts";
 import {
   CONFIG_FILE,
   ensureSynced,
@@ -35,6 +37,7 @@ import {
 
 const RESOLVED_PREFIX = "\0" + VIRTUAL_PREFIX;
 const RESOLVED_COLLECTION_PREFIX = "\0" + COLLECTION_PREFIX;
+const RESOLVED_META_PREFIX = "\0" + META_PREFIX;
 
 /** 队列任务：file = 单文件事件；full = config 变更的全量重建（覆盖同批文件事件） */
 type Job =
@@ -58,12 +61,16 @@ export function markopressPlugin(): Plugin {
   }
 
   function invalidate(server: ViteDevServer, key: string): void {
-    const mod = server.moduleGraph.getModuleById(RESOLVED_PREFIX + key);
-    if (mod) server.moduleGraph.invalidateModule(mod);
+    // per-entry 两个虚拟模块同批失效：内容模块（SSR 渲染链）+ meta 模块（集合模块聚合面
+    // ——集合模块 import 的是 meta 而非内容模块，图传播到不了 meta，必须显式失效）
+    for (const prefix of [RESOLVED_PREFIX, RESOLVED_META_PREFIX]) {
+      const mod = server.moduleGraph.getModuleById(prefix + key);
+      if (mod) server.moduleGraph.invalidateModule(mod);
+    }
   }
 
   /** 集合级数据模块失效（virtual:mp/collection/<name>）：条目集变化（增/删）时源码变。
-   *  纯内容编辑不需要——per-entry 模块失效沿模块图向 importer 传播自动到达这里。 */
+   *  纯内容编辑不需要——per-entry meta 模块失效沿模块图向 importer 传播自动到达这里。 */
   function invalidateCollection(server: ViteDevServer, collection: string): void {
     const mod = server.moduleGraph.getModuleById(RESOLVED_COLLECTION_PREFIX + collection);
     if (mod) server.moduleGraph.invalidateModule(mod);
@@ -114,6 +121,10 @@ export function markopressPlugin(): Plugin {
       if (id.startsWith(COLLECTION_PREFIX)) {
         return RESOLVED_COLLECTION_PREFIX + id.slice(COLLECTION_PREFIX.length);
       }
+      // per-entry 元数据模块（client-safe，集合模块聚合面——对照 rspack 侧 vmeta/ 落盘）
+      if (id.startsWith(META_PREFIX)) {
+        return RESOLVED_META_PREFIX + id.slice(META_PREFIX.length);
+      }
       // 组件段：解析到真实 .marko 文件（vseg；写盘发生在 load() 的 renderContentModule，
       // 先于本 import 的解析——顺序保证成立）
       if (id.startsWith(SEGMENT_PREFIX)) {
@@ -133,9 +144,14 @@ export function markopressPlugin(): Plugin {
     },
 
     async load(id) {
-      if (!id.startsWith(RESOLVED_PREFIX) && !id.startsWith(RESOLVED_COLLECTION_PREFIX)) return;
+      if (
+        !id.startsWith(RESOLVED_PREFIX) &&
+        !id.startsWith(RESOLVED_META_PREFIX) &&
+        !id.startsWith(RESOLVED_COLLECTION_PREFIX)
+      )
+        return;
       const { store, renderer } = await ensureSynced();
-      // 集合级数据模块：per-entry 模块的静态聚合（渲染缓存各自生效）
+      // 集合级数据模块：per-entry meta 模块的静态聚合（client-safe；渲染缓存各自生效）
       if (id.startsWith(RESOLVED_COLLECTION_PREFIX)) {
         const collection = id.slice(RESOLVED_COLLECTION_PREFIX.length);
         if (!store.collections.has(collection)) {
@@ -143,7 +159,8 @@ export function markopressPlugin(): Plugin {
         }
         return renderCollectionModule(collection, store.values(collection));
       }
-      const rest = id.slice(RESOLVED_PREFIX.length);
+      const prefix = id.startsWith(RESOLVED_META_PREFIX) ? RESOLVED_META_PREFIX : RESOLVED_PREFIX;
+      const rest = id.slice(prefix.length);
       const slash = rest.indexOf("/");
       const collection = rest.slice(0, slash);
       const entryId = rest.slice(slash + 1);
@@ -151,8 +168,10 @@ export function markopressPlugin(): Plugin {
       if (!entry) {
         throw new Error(`[markopress] no content entry "${collection}/${entryId}" (stale generated route? rerun sync)`);
       }
-      // 模块源码唯一来源在 content-modules.ts（Rspack 路径落盘共用）
-      return (await renderContentModule(collection, entry, renderer)).source;
+      // 模块源码唯一来源在 content-modules.ts（Rspack 路径落盘共用）；meta 与内容模块
+      // 同一次渲染产出（渲染器/变换/pageData 缓存生效，热路径零重复成本）
+      const { source, metaSource } = await renderContentModule(collection, entry, renderer);
+      return prefix === RESOLVED_META_PREFIX ? metaSource : source;
     },
 
     configureServer(server) {
