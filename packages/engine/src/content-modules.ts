@@ -108,10 +108,31 @@ export async function renderContentModule(
   entry: DataEntry,
   renderer: MarkdownRenderer,
 ): Promise<RenderedModule> {
-  if (entry.contentType !== "text/markdown" || entry.body === undefined) {
+  if (entry.body !== undefined && entry.contentType !== "text/markdown") {
     throw new Error(
       `[markopress] no renderer for contentType ${String(entry.contentType)} ("${entry.id}")`,
     );
+  }
+  if (entry.body === undefined) {
+    // 纯数据 entry（契约：body 可选——REST 元数据集合如分类表）。无渲染对象：
+    // segments/headings 为空，data 照常（pageData 插件链仍跑，需要 body 的插件自行判空）。
+    const { plugins, pluginCtx } = await ensureSynced();
+    let data = entry.data as Record<string, unknown>;
+    const dataPlugins = plugins.filter((p) => p.pageData);
+    if (dataPlugins.length) {
+      const bucket: Record<string, unknown> = {};
+      for (const plugin of dataPlugins) {
+        Object.assign(bucket, await plugin.pageData!(entry, pluginCtx));
+      }
+      data = { ...entry.data, ...bucket };
+    }
+    const source = [
+      `export const data = ${JSON.stringify(data)}`,
+      `export const segments = []`,
+      `export const headings = []`,
+      ``,
+    ].join("\n");
+    return { source, metaSource: source, segFiles: [] };
   }
   const { plugins, pluginCtx, images } = await ensureSynced();
   const generateDigest = await getGenerateDigest();

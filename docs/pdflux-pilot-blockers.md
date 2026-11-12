@@ -181,3 +181,22 @@ collection 数据模块的 html segments——可能的做法是 vcontent 虚拟
 `side === "browser"` 拆分导出，或把 html 段从共享 chunk 挪到仅 SSR 引用。
 pdflux 侧 16 页 guide 二跳可各省 13K gz。数字与归因细节：
 `pai-websites/docs/pdflux-analysis.md` §3.7。
+
+## 2026-11-13：content 契约作者面 + 纯数据 entry（chatdoc blog 首例，已修未提交）
+
+chatdoc 系 blog 迁移（CRM REST 源）牵出的两个上游项，当日已在 markopress
+工作区落地（**未提交**，与 dev-proxy 批次同策略）：
+
+1. **契约作者面**（原 §5-1 预测"generic REST loader"的方向修正）：契约层本就是
+   插件设计，缺的是公开承诺——`defineLoader`（identity+形状校验，defineCollection
+   共用）、根出口导出 Loader/LoaderContext/DataStore/MetaStore/EntryType 类型、
+   补写欠账的 `packages/engine/CONTRACT.md`（注释一直在引用、文件不存在）、
+   用户向指南 `docs/custom-loaders.md`。不做 generic REST loader（产品端点形状
+   特化，Loader 契约才是正确扩展点，Astro 同构决策）。首个消费者 =
+   `pai-websites/packages/chatdoc-crm`（chatdoc 主站 source=15 / studio source=28）。
+2. **纯数据 entry 拒收 bug**：契约 body 可选，但 content-modules 的
+   renderContentModule 对无 body entry 抛 `no renderer for contentType undefined`
+   ——分类表（无正文集合）暴露；已修（body-less → segments/headings 空数组、
+   pageData 链照跑；有 body 但 contentType 无渲染器仍 fail fast）+ 2 回归用例。
+   引擎 178 测试全绿。站点侧实测：CRM md 图被 images 管线完整接管（365/730/1460
+   webp q50），digest 二次构建 0 重写。
