@@ -24,7 +24,7 @@ markopress 的内核以 **content** 为基础，markdown 只是 content 的一�
 
 注意：Astro 的 content layer **不是独立包**（在 `packages/astro/src/content/`，集成面焊死在 Astro 内部），没有东西可以直接 `npm install`——所以我们自建，把 Astro 当参考实现读。
 
-## 契约要点（速览；完整版以 `CONTRACT.md` 为准）
+## 契约要点（速览；完整版以 `packages/engine/CONTRACT.md` 为准；自定义 loader 编写指南 `docs/custom-loaders.md`）
 
 ```
 Loader: ({ collection, store, meta, logger, parseData, generateDigest, ... }) => Promise<void>
@@ -58,6 +58,10 @@ typegen: 从 schema 生成 .markopress/content.d.ts（对齐 marko-run 的 .mark
 **新偏离必须记入 `docs/research/astro-deltas.md`**（含理由）。上游 bugfix 不会自动流过来，偶尔 diff 上游 `packages/astro/src/content/` 即可。
 
 ## 目录规划
+
+> 现实：本包已并入引擎（2026-10-29 包收敛），下列 `packages/content/` 是设计时的
+> 形状；实际落位 `packages/engine/src/content/`（+ 引擎测试目录的 content/ 子树）。
+> `CONTRACT.md` 落在 `packages/engine/CONTRACT.md`。
 
 ```
 packages/content/

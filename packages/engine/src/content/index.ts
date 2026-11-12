@@ -40,6 +40,29 @@ export interface CollectionSchemas {
 	[collection: string]: Record<string, unknown>
 }
 
+/** Loader 形状校验（defineCollection / defineLoader 共用；错误在定义点抛，不到 sync 深处）。 */
+function assertValidLoader(loader: Loader): void {
+	if (typeof loader !== 'object' || loader === null) {
+		throw new Error(`A loader must be an object with a \`load\` method (see Loader). Got: ${String(loader)}`)
+	}
+	if (typeof loader.load !== 'function') {
+		throw new Error(`A loader must have a \`load\` method (see Loader). Got: ${String(loader.load)}`)
+	}
+	if (typeof loader.name !== 'string' || loader.name === '') {
+		throw new Error('A loader must have a non-empty string `name`（唯一：内置名或 npm 包名）')
+	}
+}
+
+/**
+ * 声明一个自定义 loader（站点自有/第三方内容源）。identity + 形状校验：
+ * 配置文件里 `defineLoader({ name, load })` 拿到即时报错与类型提示。
+ * 与 Astro defineLoader 同名同意图；我们的 name 必填（契约见 CONTRACT.md §3）。
+ */
+export function defineLoader(loader: Loader): Loader {
+	assertValidLoader(loader)
+	return loader
+}
+
 /**
  * 定义一个集合（在 content config 模块里用）。schema 可省（data 透传不校验）。
  * 与 Astro 不同处：没有 legacy 类型分支，只有 content_layer 一种集合。
@@ -48,17 +71,7 @@ export function defineCollection<S extends z.ZodType>(config: {
 	schema?: S
 	loader: Loader
 }): { schema?: S; loader: Loader } {
-	if (!config.loader) {
-		throw new Error('A collection must have a `loader`. Got: undefined')
-	}
-	if (typeof config.loader !== 'object' || typeof config.loader.load !== 'function') {
-		throw new Error(
-			`A collection loader must be an object with a \`load\` method (see Loader). Got: ${String(config.loader)}`,
-		)
-	}
-	if (!config.loader.name || typeof config.loader.name !== 'string') {
-		throw new Error('A collection loader must have a string `name`')
-	}
+	assertValidLoader(config.loader)
 	return config
 }
 

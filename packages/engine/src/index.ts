@@ -4,8 +4,21 @@ export { markopressPlugin } from "./markopress-plugin.ts";
 export { defineMarkoPressConfig } from "./plugins.ts";
 // 内容层用户面（app 配置文件一站式 import；getCollection/getEntry 经 "./content" 子路径
 // 供深度用户——typegen 的 interface 增广也挂那个模块）
-export { defineCollection, defineContentConfig, getCollection, getEntry } from "./content/index.ts";
-export type { DataEntry, ContentConfig, CollectionConfig } from "./content/index.ts";
+export { defineCollection, defineContentConfig, defineLoader, getCollection, getEntry } from "./content/index.ts";
+// 自定义 loader 作者面（契约语义见 packages/engine/CONTRACT.md；编写指南 docs/custom-loaders.md）
+export type {
+	DataEntry,
+	ContentConfig,
+	CollectionConfig,
+	Loader,
+	LoaderContext,
+	DataStore,
+	MetaStore,
+	EntryType,
+	FileChangeEvent,
+	FileChangeResult,
+	Logger,
+} from "./content/index.ts";
 export { glob } from "./content/loaders/glob.ts";
 export { strapi } from "./content/loaders/strapi.ts";
 export type { StrapiOptions } from "./content/loaders/strapi.ts";
