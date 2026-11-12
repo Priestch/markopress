@@ -14,8 +14,8 @@ import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import type { ContentConfig } from "./content/index.ts";
 import type { Plugin, ViteDevServer } from "vite";
-import { renderCollectionModule, renderContentModule } from "./content-modules.ts";
-import { COLLECTION_PREFIX, META_PREFIX } from "./content-modules.ts";
+import { renderCollectionModule, renderCollectionContentModule, renderContentModule } from "./content-modules.ts";
+import { COLLECTION_PREFIX, COLLECTION_CONTENT_PREFIX, META_PREFIX } from "./content-modules.ts";
 import {
   CONFIG_FILE,
   ensureSynced,
@@ -37,6 +37,7 @@ import {
 
 const RESOLVED_PREFIX = "\0" + VIRTUAL_PREFIX;
 const RESOLVED_COLLECTION_PREFIX = "\0" + COLLECTION_PREFIX;
+const RESOLVED_COLLECTION_CONTENT_PREFIX = "\0" + COLLECTION_CONTENT_PREFIX;
 const RESOLVED_META_PREFIX = "\0" + META_PREFIX;
 
 /** 队列任务：file = 单文件事件；full = config 变更的全量重建（覆盖同批文件事件） */
@@ -47,6 +48,7 @@ type Job =
 export function markopressPlugin(): Plugin {
   // 「collection/id」→ digest 记忆：全量路径做 diff；增量路径 O(1) 维护
   let knownDigests = new Map<string, string>();
+  const loadedCollections = new Set<string>();
   let watchDirs = new Set<string>();
   let queue: Array<Job> = [];
   let draining = false;
@@ -72,8 +74,10 @@ export function markopressPlugin(): Plugin {
   /** 集合级数据模块失效（virtual:mp/collection/<name>）：条目集变化（增/删）时源码变。
    *  纯内容编辑不需要——per-entry meta 模块失效沿模块图向 importer 传播自动到达这里。 */
   function invalidateCollection(server: ViteDevServer, collection: string): void {
-    const mod = server.moduleGraph.getModuleById(RESOLVED_COLLECTION_PREFIX + collection);
-    if (mod) server.moduleGraph.invalidateModule(mod);
+    for (const prefix of [RESOLVED_COLLECTION_PREFIX, RESOLVED_COLLECTION_CONTENT_PREFIX]) {
+      const mod = server.moduleGraph.getModuleById(prefix + collection);
+      if (mod) server.moduleGraph.invalidateModule(mod);
+    }
   }
 
   /** config 里新出现的 watchDirs 补进 watcher（config 编辑可能新增集合/base） */
@@ -118,6 +122,9 @@ export function markopressPlugin(): Plugin {
         return RESOLVED_PREFIX + id.slice(VIRTUAL_PREFIX.length);
       }
       // 集合级数据模块（strapi-loader-design §6）：内存虚拟模块（与 per-entry 同款）
+      if (id.startsWith(COLLECTION_CONTENT_PREFIX)) {
+        return RESOLVED_COLLECTION_CONTENT_PREFIX + id.slice(COLLECTION_CONTENT_PREFIX.length);
+      }
       if (id.startsWith(COLLECTION_PREFIX)) {
         return RESOLVED_COLLECTION_PREFIX + id.slice(COLLECTION_PREFIX.length);
       }
@@ -147,17 +154,20 @@ export function markopressPlugin(): Plugin {
       if (
         !id.startsWith(RESOLVED_PREFIX) &&
         !id.startsWith(RESOLVED_META_PREFIX) &&
+        !id.startsWith(RESOLVED_COLLECTION_CONTENT_PREFIX) &&
         !id.startsWith(RESOLVED_COLLECTION_PREFIX)
       )
         return;
       const { store, renderer } = await ensureSynced();
       // 集合级数据模块：per-entry meta 模块的静态聚合（client-safe；渲染缓存各自生效）
-      if (id.startsWith(RESOLVED_COLLECTION_PREFIX)) {
-        const collection = id.slice(RESOLVED_COLLECTION_PREFIX.length);
+      if (id.startsWith(RESOLVED_COLLECTION_PREFIX) || id.startsWith(RESOLVED_COLLECTION_CONTENT_PREFIX)) {
+        const withContent = id.startsWith(RESOLVED_COLLECTION_CONTENT_PREFIX);
+        const collection = id.slice(withContent ? RESOLVED_COLLECTION_CONTENT_PREFIX.length : RESOLVED_COLLECTION_PREFIX.length);
         if (!store.collections.has(collection)) {
           throw new Error(`[markopress] no collection "${collection}" (stale import? check .markopress/config.ts)`);
         }
-        return renderCollectionModule(collection, store.values(collection));
+        loadedCollections.add(collection);
+        return (withContent ? renderCollectionContentModule : renderCollectionModule)(collection, store.values(collection));
       }
       const prefix = id.startsWith(RESOLVED_META_PREFIX) ? RESOLVED_META_PREFIX : RESOLVED_PREFIX;
       const rest = id.slice(prefix.length);
@@ -318,8 +328,10 @@ export function markopressPlugin(): Plugin {
     }
     knownDigests = current;
     for (const key of changed) invalidate(server, key);
-    // 集合级数据模块：条目集可能整体变了（集合增删/全量重建），全部失效
-    for (const name of Object.keys(config.collections)) invalidateCollection(server, name);
+    // A loaded empty collection has no per-entry dependency, including after config removal.
+    for (const name of new Set([...loadedCollections, ...Object.keys(config.collections)])) {
+      invalidateCollection(server, name);
+    }
     await generateRoutes();
     server.ws.send({ type: "full-reload" });
   }

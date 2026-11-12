@@ -28,6 +28,9 @@ export const VCONTENT_DIR = join(ROOT, ".markopress", "vcontent");
  *  entry id "index" 会占用 vcontent/<c>/index.js，撞名 */
 export const VCOLLECTION_DIR = join(ROOT, ".markopress", "vcollection");
 export const COLLECTION_PREFIX = "virtual:mp/collection/";
+/** Opt-in body aggregate. Consume with `server import` in Marko; never via client nav. */
+export const COLLECTION_CONTENT_PREFIX = "virtual:mp/collection-content/";
+export const VCOLLECTION_CONTENT_DIR = join(ROOT, ".markopress", "vcollection-content");
 /**
  * per-entry 元数据模块（virtual:mp/meta/<c>/<id>）落盘目录：client-safe 面，只含
  * data/headings。集合模块聚合本目录（而非 vcontent/）——html 正文是 SSR 渲染载荷，
@@ -51,6 +54,28 @@ export function contentMetaFile(collection: string, id: string): string {
 /** 集合 → 集合级数据模块绝对路径（vcollection/<name>.js） */
 export function collectionModuleFile(collection: string): string {
   return join(VCOLLECTION_DIR, `${collection}.js`);
+}
+
+export function collectionContentModuleFile(collection: string): string {
+  return join(VCOLLECTION_CONTENT_DIR, `${collection}.js`);
+}
+
+/** Explicit body aggregate, reusing the per-entry rendering/plugin/image/segment pipeline.
+ * Imports are opt-in: merely generating this module never adds bodies to the metadata graph.
+ * Consumers must use Marko `server import` so this graph stays out of browser bundles. */
+export function renderCollectionContentModule(collection: string, entries: Array<DataEntry>): string {
+  return [
+    `// Server collection content (generated): ${COLLECTION_CONTENT_PREFIX}${collection}`,
+    ...entries.map(
+      (entry, i) =>
+        `import { data as data${i}, segments as segments${i}, headings as headings${i} } from ${JSON.stringify(`virtual:mp/content/${collection}/${entry.id}`)};`,
+    ),
+    `export const entries = [${entries.length ? "\n" : ""}${entries.map(
+      (entry, i) =>
+        `  { id: ${JSON.stringify(entry.id)}, slug: ${JSON.stringify(entry.slug)}, data: data${i}, segments: segments${i}, headings: headings${i} },`,
+    ).join("\n")}${entries.length ? "\n" : ""}]`,
+    ``,
+  ].join("\n");
 }
 
 /**
@@ -306,6 +331,11 @@ export async function writeContentModules(scope?: {
         renderCollectionModule(collection, store.values(collection)),
         result,
       );
+      writeIfChanged(
+        collectionContentModuleFile(collection),
+        renderCollectionContentModule(collection, store.values(collection)),
+        result,
+      );
     }
     return result;
   }
@@ -325,10 +355,14 @@ export async function writeContentModules(scope?: {
     const collectionFile = collectionModuleFile(name);
     expected.add(collectionFile);
     writeIfChanged(collectionFile, renderCollectionModule(name, store.values(name)), result);
+    const collectionContentFile = collectionContentModuleFile(name);
+    expected.add(collectionContentFile);
+    writeIfChanged(collectionContentFile, renderCollectionContentModule(name, store.values(name)), result);
   }
   cleanStale(VCONTENT_DIR, expected, result);
   cleanStale(VMETA_DIR, expected, result);
   cleanStale(VSEG_DIR, expected, result);
   cleanStale(VCOLLECTION_DIR, expected, result);
+  cleanStale(VCOLLECTION_CONTENT_DIR, expected, result);
   return result;
 }

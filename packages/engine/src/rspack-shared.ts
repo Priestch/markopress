@@ -15,6 +15,8 @@ import { VIRTUAL_PREFIX } from "./content.ts";
 import {
   COLLECTION_PREFIX,
   VCOLLECTION_DIR,
+  COLLECTION_CONTENT_PREFIX,
+  VCOLLECTION_CONTENT_DIR,
   writeContentModules,
   VCONTENT_DIR,
   META_PREFIX,
@@ -72,13 +74,16 @@ export function mpRspack() {
         // virtual:mp/segment/<c>/<id>/<n> → vseg/<c>/<id>/<n>.marko（真实 .marko 进编译图）；
         // virtual:mp/plugin/<name> → plugin-data/<name>.js（真实文件 ⇒ 原生 watcher 失效）
         new RegExp(
-          `^(?:${VIRTUAL_PREFIX}|${COLLECTION_PREFIX}|${META_PREFIX}|${PLUGIN_VIRTUAL_PREFIX}|${SEGMENT_PREFIX})`,
+          `^(?:${VIRTUAL_PREFIX}|${COLLECTION_PREFIX}|${COLLECTION_CONTENT_PREFIX}|${META_PREFIX}|${PLUGIN_VIRTUAL_PREFIX}|${SEGMENT_PREFIX})`,
         ),
         (resource: { request: string }) => {
           // request 形如前缀+rest（无扩展名）→ 直接拼完整绝对路径，绕开 resolve extensions 歧义
           if (resource.request.startsWith(VIRTUAL_PREFIX)) {
             const rest = resource.request.slice(VIRTUAL_PREFIX.length);
             resource.request = path.join(VCONTENT_DIR, `${rest}.js`);
+          } else if (resource.request.startsWith(COLLECTION_CONTENT_PREFIX)) {
+            const name = resource.request.slice(COLLECTION_CONTENT_PREFIX.length);
+            resource.request = path.join(VCOLLECTION_CONTENT_DIR, `${name}.js`);
           } else if (resource.request.startsWith(COLLECTION_PREFIX)) {
             const name = resource.request.slice(COLLECTION_PREFIX.length);
             resource.request = path.join(VCOLLECTION_DIR, `${name}.js`);

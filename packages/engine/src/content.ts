@@ -28,6 +28,7 @@ import {
   type RenderedMarkdown,
 } from "./markdown/index.ts";
 import { ROOT } from "./paths.ts";
+import { generateVirtualTypes } from "./virtual-types.ts";
 import {
   assertNoLiteralSecrets,
   enqueueContentSynced,
@@ -213,6 +214,7 @@ async function setup(): Promise<SyncedContent> {
       .replace(/\.ts$/, ""),
     outPath: TYPES_FILE,
   });
+  await generateVirtualTypes(config, join(ROOT, ".markopress", "virtual.d.ts"));
 
   const renderer = createMarkdownRenderer(pressConfig.markdown);
   const theme = resolveTheme(pressConfig);

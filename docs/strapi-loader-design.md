@@ -145,8 +145,8 @@ loader 在取值途中逐层摊平包装（v5 形状原样透传）——`conten
   **为何聚合 meta 而非内容模块**（2026-11 pdflux 反馈，585.js 事故）：集合模块的典型
   消费方是 nav 等会被水合的组件——聚合 vcontent 会把全集合 html 正文（SSR 渲染载荷）
   烤进浏览器共享 chunk，resumability 下客户端永远不读它，纯死重且每页二跳重复下载。
-  `segments` 因此**不在**集合模块形状里；服务端要正文直接 import per-entry 模块
-  （`virtual:mp/content/…`，静态消费被 Marko 剪枝，同样不进 client 图）。
+  `segments` 因此**不在**元数据集合模块形状里；服务端要单篇正文可 import per-entry 模块
+  （`virtual:mp/content/…`），要聚合正文用下文显式 opt-in API。
 - **Rspack**：落盘 `.markopress/vcollection/<name>.js`（不能是 `vcontent/<c>/index.js`——
   entry id "index" 会撞名）+ per-entry meta 落盘 `.markopress/vmeta/<c>/<id>.js`；
   `NormalModuleReplacementPlugin` 加前缀分支；增删条目 ⇒ 文件重写 ⇒ 原生 watcher 失效；
@@ -155,8 +155,51 @@ loader 在取值途中逐层摊平包装（v5 形状原样透传）——`conten
   生效）；失效接线——entry **集合**变化（增/删）时失效对应集合模块
   （`syncOne`/`fullResync`），内容编辑经 per-entry 失效（内容 + meta 两个虚拟模块
   同批失效；集合模块 import 的是 meta，图传播只到 meta 这层，故 meta 必须显式失效）。
-- 消费方：`pages/log.marko` 内 `import { entries } from "virtual:mp/collection/changelog"`
-  （用户页真身 import 虚拟模块，包装链既有机制不动）。
+- 消费方：导航/目录等客户端安全列表仍用
+  `import { entries } from "virtual:mp/collection/changelog"`。
+
+### 6.1 服务端正文聚合（显式 opt-in）
+
+自定义 `/log` 等页面要渲染整个集合的正文，使用
+`virtual:mp/collection-content/<name>`，**Marko 消费页面必须用 `server import`**。
+导出 `entries: Array<{ id, slug, data, segments, headings }>`；排序/过滤由页面负责，
+条目顺序与 store 一致，空集合为 `[]`。`data` 含既有 pageData 插件结果；`segments`
+沿用 per-entry 的 `html | component` 联合，不把组件段拍平成 HTML。此 API 只聚合引用，
+不另做 markdown 渲染，不改 loader、路由或 `route: false` 行为。
+
+```marko
+server import { entries } from "virtual:mp/collection-content/changelog"
+
+<!doctype html>
+<html>
+  <head><title>Changelog</title></head>
+  <body>
+    <for|entry| of=entries>
+      <article>
+        <for|seg| of=entry.segments>
+          <if=seg.type === "html">$!{seg.html}</if>
+          <else><${seg.component}/></else>
+        </for>
+      </article>
+    </for>
+  </body>
+</html>
+```
+
+- `server import` 由 Marko 编译器从浏览器编译图移除；不要改成普通 import，
+  不要把完整 entries 捕获到客户端事件/状态，也不要把正文聚合传给需水合的列表组件。
+  需要交互时，只把确实需恢复的轻量 ID/元数据传给客户端组件。
+- 原 `virtual:mp/collection/<name>` **保持 metadata-only**，不含 `segments`，不反向
+  import 此 API，因此现有导航不会因新增正文 API 增加浏览器载荷。
+- Vite：内存虚拟模块 resolve/load；增删/slug 变更及全量同步失效两类集合模块，正文
+  编辑/资产变化继续沿 per-entry content 模块图传播。Rspack：独立生成目录
+  `.markopress/vcollection-content/<name>.js`，与 `vcollection/`、`vcontent/` 不撞名；
+  同批增量更新 membership，纯正文编辑不重写集合文件，全量重建差集清理已删集合。
+- 应用只 import 公共虚拟模块；生成目录是内部实现，禁止从页面导入它。
+- 装配期生成 `.markopress/virtual.d.ts`（与 `content.d.ts` 一起 include 到 tsconfig），
+  为每个配置集合声明两种 API；`data` 复用 CollectionSchemas 推断，正文 API 的
+  `segments` 是 `html | component` 联合，元数据 API 类型不含正文。
+
 
 ## 7. 安全与配置（硬约束）
 
