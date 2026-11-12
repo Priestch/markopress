@@ -22,6 +22,7 @@ import type {
 // type-only（运行时零依赖）：dev.proxy 的形状直接复用 markopack 导出的类型，
 // 与 dev({ proxy }) 的消费端保持单一事实源
 import type { DevProxyConfig } from "@markopack/rspack";
+import type { SsgOptions } from "./ssg.ts";
 import { ROOT } from "./paths.ts";
 
 /** 插件数据模块的虚拟前缀：virtual:mp/plugin/<name>（与 content 模块同机制，双后端各自解析） */
@@ -199,6 +200,15 @@ export interface MarkoPressConfig {
   theme?: string;
   /** 主题选项：site/sidebar 等数据面配置（装配期校验后经 SyncedContent 透传） */
   themeOptions?: ThemeOptions;
+  /**
+   * SSG 显式页面清单（仅 build 消费——rspack-build.ts 接到 adapter-static 的
+   * Options.urls）。参数路由（marko-run 原生 $slug/$$rest 用户页——如 /blog/$slug
+   * 详情）无法被 adapter-static 爬虫枚举（爬虫只跟 <a> 链接，链接可达性 ≠ 全量
+   * 内容），需显式给 URL 清单：数组形原样透传；函数形收 { routes, collections }
+   * （**sync 后的集合条目快照**——route:false 集合派生详情路径不用二次拉远端，
+   * 快照只有 id/slug/data，无 body）。dev 不消费（dev 路由实时匹配参数段）。
+   */
+  ssg?: SsgOptions;
 }
 
 export interface ThemeOptions {

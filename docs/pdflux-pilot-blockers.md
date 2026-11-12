@@ -200,3 +200,29 @@ chatdoc 系 blog 迁移（CRM REST 源）牵出的两个上游项，当日已在
    pageData 链照跑；有 body 但 contentType 无渲染器仍 fail fast）+ 2 回归用例。
    引擎 178 测试全绿。站点侧实测：CRM md 图被 images 管线完整接管（365/730/1460
    webp q50），digest 二次构建 0 重写。
+
+## 2026-11-13（第二批）：config.ssg.urls——参数路由的静态枚举（已落地未提交）
+
+chatdoc blog 详情路由 stub 实测（`pages/blog/$slug.marko` 用户页）牵出的上游
+缺口，当日已在 markopress 工作区落地（**未提交**，同批策略）：
+
+- **缺口**：marko-run 原生参数段（`$slug`/`$$rest`）经用户页通道本身全通——
+  validateSegment 不禁 `$`、wrapper 正常生成、dev 实时匹配、`$global.params`
+  取参（Marko 6 约定，薄包装不拦截）——但 **build 侧产物为空**：adapter-static
+  爬虫只跟 `<a>` 链接，链接可达性 ≠ 全量内容，25 篇文章一个页面都不产。
+  adapter-static 早有 `Options.urls`（数组/收 routes 的函数），markopress 的
+  rspack-build.ts `staticAdapter()` 裸调没接线。
+- **落地**：`config.ssg.urls`（数组直传 / 函数收 `{ routes, collections }`——
+  collections 是 **sync 后的集合条目快照**，route:false 集合派生详情路径不用
+  二次拉远端；快照只含 id/slug/data，body 不进）。落点：`src/ssg.ts`（纯函数
+  snapshotCollections + ssgAdapterOptions，routes 形状归一）、
+  MarkoPressConfig.ssg（plugins.ts）、SyncedContent.ssg（content.ts）、
+  rspack-build.ts 接 `staticAdapter(options)`。6 个单测，引擎 184 全绿。
+  首个消费者 = chatdoc 主站（`/blog/${slug}` 25 条），实测 build 爬取
+  27 = index + 25 blog + 404，`dist/server/public/blog/*.html` 全出、SSR 期
+  params 注入正确。
+- **顺带发现的 adapter-static 边角（未修，仅记录）**：末段为 `200` 的 URL
+  （本文源恰好有一篇测试文章 slugify 后是 "200"）与兜底页文件名 `200.html`
+  同名——实测文章页赢（后写覆盖），兜底丢失未观察到功能损害；`404` 同理。
+  test 数据怪癖，真实内容不会踩；若要修应在 adapter-static 侧（兜底改名或
+  冲突告警）。

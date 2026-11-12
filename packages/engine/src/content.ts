@@ -90,6 +90,8 @@ export interface SyncedContent {
   dev: MarkoPressConfig["dev"];
   /** 图片管线 v2 设置（config.images 归一化后透传；images.ts / content-modules 消费） */
   images: ImagesSettings;
+  /** SSG 显式页面清单（config.ssg 透传；仅 rspack-build 消费——参数路由枚举） */
+  ssg: MarkoPressConfig["ssg"];
   /** 全量 contentSynced 的完成信号。build 必须等待（产物要齐）；dev 可不阻塞 */
   pluginsReady: Promise<void>;
 }
@@ -271,6 +273,7 @@ async function setup(): Promise<SyncedContent> {
     head: pressConfig.head ?? [],
     dev: pressConfig.dev,
     images,
+    ssg: pressConfig.ssg,
     pluginsReady,
   };
 }

@@ -7,9 +7,10 @@ import { cp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { build } from "@markopack/rspack";
 import staticAdapter from "@markopack/adapter-static";
-import { ROOT } from "./content.ts";
+import { ROOT, ensureSynced } from "./content.ts";
 import { patchTitles } from "./patch-titles.ts";
 import { mpRspack, prepare } from "./rspack-shared.ts";
+import { snapshotCollections, ssgAdapterOptions } from "./ssg.ts";
 
 // 先清 dist：Rspack 不会自清（vite 会），不清的话切配置后旧 HTML 残留混入产物
 await rm(join(ROOT, "dist"), { recursive: true, force: true });
@@ -18,13 +19,21 @@ await rm(join(ROOT, "dist"), { recursive: true, force: true });
 process.env.MARKOPRESS_PHASE = "build";
 
 await prepare();
+// config.ssg.urls 接线：参数路由（$slug/$$rest 用户页）爬虫枚举不了，显式清单经
+// adapter-static Options.urls 透传。ensureSynced 单例（prepare 已 sync 过，只读）：
+// 函数形回调收 sync 后的集合条目快照——route:false 集合派生详情路径不二次拉远端。
+const synced = await ensureSynced();
+const adapterOptions = ssgAdapterOptions(
+  synced.ssg?.urls,
+  snapshotCollections(synced.store, synced.config.collections),
+);
 await build({
   root: ROOT,
   routesDir: ".markopress/routes",
   entry: "./.markopress/entry.ts",
   outputDir: "dist",
   mode: "production",
-  adapter: staticAdapter(),
+  adapter: staticAdapter(adapterOptions),
   rspack: mpRspack(),
 });
 
