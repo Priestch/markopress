@@ -93,6 +93,20 @@ packages/content/
 
 **包级完成定义**：上述全绿 + 依赖审计干净（无 vite/marko/@marko/run）。
 
+## 虚拟模块红线（vmeta / 集合模块；2026-11 pdflux 585.js 事故后定稿）
+
+- per-entry 元数据落盘 `.markopress/vmeta/<c>/<id>.js`（data/headings，client-safe）；
+  **集合模块 `virtual:mp/collection/<name>` 只聚合 vmeta**——html 正文只住 vcontent
+  的 SSR 渲染链。把正文聚合进集合模块会把全集合渲染载荷烤进浏览器共享 chunk
+  （nav 等水合组件经它拿标题；`import * as` + 对象属性 re-export 摇不掉），
+  resumability 下纯死重。设计细节与归因：`docs/strapi-loader-design.md` §6。
+- 要聚合正文（自定义 `/log` 类页面）用显式 opt-in 的
+  `virtual:mp/collection-content/<name>`，消费页必须 Marko `server import`
+  （§6.1）；双 API 的类型声明生成 `.markopress/virtual.d.ts`。
+- 失效接线：条目增删 / slug 变 → 集合模块失效（两个 API 都要；已加载的空集合、
+  已从 config 移除的集合也要）；内容编辑 → per-entry content + meta 双模块
+  同批失效（集合模块 import 的是 meta，模块图传播只到 meta 这层，必须显式）。
+
 ## 下游：第二步怎么用这个包（本包不做，但契约要为其留门）
 
 - `packages/markdown`：`.md` entryType（frontmatter → data，body 原文）+ unified renderer（gfm + slug/headings → **segments 数组**，为 md 内 Marko 标签穿插留门，本期只有 html 段）。

@@ -25,6 +25,11 @@
    与文件加载顺序无关——新增规则必须维持这个性质。
 3. 无框架依赖、无 runtime 依赖（devDep `@marko/runtime-tags` 除外——编译产物需要）。
 4. 改这里 = 改所有主题的契约行为，动前三思 + 双主题回归。
+5. `<mp-head-entries/>`（站点级 head 注入：config 顶层 `head:` → site.json.head
+   → mp-layout 传参 → 主题 `<head>` 渲染）是**裸 HTML 构造**，不走 Marko 编译——
+   内联 script 必须字面进首帧（走 Marko 编译会进 bundle 延迟执行）。
+6. markopack 把主题 CSS 注在 head **末尾**：站点自定义 CSS（public/ 文件 +
+   head link 条目）需抬特异性（如 `html` 前缀选择器）才能稳定覆盖主题样式。
 
 ## 验收
 

@@ -6,7 +6,8 @@
 
 - **EntryType 实现**：把 `.md` 文件接进 content layer（frontmatter → data，body 原文进 store）。
 - **渲染器**：body 源文本 → `{ segments: [{ type: 'html', html }], headings }`。渲染惰性且按 digest 内存缓存（deltas #1）。
-- **segments 数组的门**：本期只有 html 段；未来加 component 段（remark directive v1 / 编译期 Marko tag v2）时不改虚拟模块接口、不改生成的页面包装（只需在循环里加 `<if=seg.type === "component">` 分支）。
+- **segments 数组**：`html | component` 两态（component 段 = md 块级 Marko 组件，
+  v2 已落地，机制见下节）；渲染惰性且按 digest 内存缓存（deltas #1）。
 
 ## 依赖白名单（不得依赖 vite / marko / @marko/run）
 
@@ -15,6 +16,21 @@
 - **shiki + @shikijs/rehype**：默认语法高亮（R1）。双主题（light 内联、dark 走 `--shiki-dark*` CSS 变量，切换 CSS 由站点提供）。**语言懒加载**：`langs: []` + `lazy`（不传 langs 的话 @shikijs/rehype 会一次性加载全部 ~280 个内置语言，实测 ~3s/进程；懒加载后冷启动 ~100ms，新语言首次出现 ~2-20ms 进 singleton 一次性累积，未知语言回退 `fallbackLanguage: 'text'` 不炸）。highlighter 是进程级 singleton。
 - **gray-matter**：frontmatter 拆分（带 js-yaml），边界情况（CRLF / 体内 `---` / 空块）已被上游处理。
 - vitest / typescript / @types/node / @types/hast（dev）。
+
+## md 内 Marko 组件段（v2 已落地：engine/src/segments.ts）
+
+`.markopress/components/` 的 tag library（经生成的 marko.json `tags-dir` 发现）
+可在 md 块级直接 `<tag/>`。链路：提取 → 占位符注释 → 渲染后切段
+（html|component）→ 组件段落盘 `.markopress/vseg/<c>/<id>/<n>.marko` → 模块
+import `virtual:mp/segment/…`（rspack NormalModuleReplacement / vite resolveId
+双侧解析到真实文件，编译归 bundler）→ mp-page `<${seg.component}/>` 动态
+渲染 + Marko 水合。
+
+- **markopack 配套**：translator 的 hydrate 发射只看 .marko→.marko 闭包；
+  .js 中转的组件需 MarkoRspackPlugin 补浏览器入口 import（clientHydrateImports，
+  必须在 ?browser-entry 之前执行，否则注册晚于 init）。
+- 边缘：dev 会话中途**新增**组件文件要重启（taglib 进程缓存）；fenced code
+  内安全（不提取）。
 
 ## 已知边界
 
