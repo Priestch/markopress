@@ -1,3 +1,7 @@
 {
-  "tags-dir": "./tags"
+  "tags-dir": "./tags",
+  "<mp-image>": {
+    "template": "./tags/mp-image.marko",
+    "transform": "./tags/mp-image-transform.cjs"
+  }
 }

@@ -26,6 +26,7 @@ import { SEGMENT_PREFIX, VSEG_DIR } from "./segments.ts";
 import { ensureSynced } from "./content.ts";
 import { generateRoutes } from "./gen-routes.ts";
 import { PLUGIN_DATA_DIR, PLUGIN_VIRTUAL_PREFIX } from "./plugins.ts";
+import { IMAGE_MODULE_PREFIX } from "./image-modules.ts";
 
 /**
  * marko 全家单实例钉扎（resolve.alias）。link: 消费（引擎未发 npm 时的直连形态）
@@ -65,6 +66,19 @@ export function mpRspack() {
     config.resolve ??= {};
     config.resolve.alias = { ...(config.resolve.alias as Record<string, string>), ...familyAliases };
     config.plugins.push(
+      {
+        apply(compiler) {
+          compiler.hooks.compilation.tap("MarkoPressImages", (_compilation, { normalModuleFactory }) => {
+            normalModuleFactory.hooks.beforeResolve.tap("MarkoPressImages", (resource) => {
+              if (!resource.request.startsWith(IMAGE_MODULE_PREFIX)) return;
+              const props = resource.request.slice(IMAGE_MODULE_PREFIX.length);
+              const loader = fileURLToPath(new URL("./image-module-loader.cjs", import.meta.url));
+              const pipeline = fileURLToPath(new URL("./image-modules.ts", import.meta.url));
+              resource.request = `!!${loader}!${pipeline}?${props}`;
+            });
+          });
+        },
+      },
       new rspack.NormalModuleReplacementPlugin(
         // virtual:mp/content/<c>/<id> → vcontent/<c>/<id>.js；
         // virtual:mp/collection/<name> → vcollection/<name>.js（集合级数据模块，独立

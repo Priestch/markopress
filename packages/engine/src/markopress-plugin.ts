@@ -26,6 +26,7 @@ import {
 } from "./content.ts";
 import { isImageFile } from "./images.ts";
 import { assetOwners } from "./images-owners.ts";
+import { IMAGE_MODULE_PREFIX, renderImageModule } from "./image-modules.ts";
 import { generateRoutes } from "./gen-routes.ts";
 import { PAGES_DIR } from "./paths.ts";
 import { SEGMENT_PREFIX, VSEG_DIR } from "./segments.ts";
@@ -118,6 +119,7 @@ export function markopressPlugin(): Plugin {
     },
 
     resolveId(id) {
+      if (id.startsWith(IMAGE_MODULE_PREFIX)) return "\0" + id;
       if (id.startsWith(VIRTUAL_PREFIX)) {
         return RESOLVED_PREFIX + id.slice(VIRTUAL_PREFIX.length);
       }
@@ -151,6 +153,9 @@ export function markopressPlugin(): Plugin {
     },
 
     async load(id) {
+      if (id.startsWith("\0" + IMAGE_MODULE_PREFIX)) {
+        return renderImageModule(id.slice(1), (file) => this.addWatchFile(file));
+      }
       if (
         !id.startsWith(RESOLVED_PREFIX) &&
         !id.startsWith(RESOLVED_META_PREFIX) &&
