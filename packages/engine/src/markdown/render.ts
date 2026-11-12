@@ -62,6 +62,8 @@ export interface MarkdownRendererOptions {
 interface MdastNode {
 	type: string
 	name?: string
+	url?: string
+	value?: string
 	children?: Array<MdastNode>
 	data?: { hName?: string; hProperties?: Record<string, unknown> }
 }
@@ -83,6 +85,48 @@ function remarkContainers() {
 			}
 			walk(child)
 		}
+	}
+	return (tree: MdastNode) => walk(tree)
+}
+
+/**
+ * Extracted Markdown images retain image syntax until parsing has established
+ * list ancestry. Split their paragraph here: a responsive image emits
+ * a block div, so replacing an inline child alone would create invalid p>div HTML.
+ * Tight lists still unwrap the remaining prose paragraphs via remark-rehype.
+ */
+function remarkImagePlaceholders() {
+	const walk = (node: MdastNode) => {
+		if (!node.children) return
+		const children: MdastNode[] = []
+		for (const child of node.children) {
+			if (child.type !== 'paragraph' || !child.children?.some((part) =>
+				part.type === 'image' && /^markopress-image:\d+$/.test(part.url ?? ''),
+			)) {
+				walk(child)
+				children.push(child)
+				continue
+			}
+			let pending: MdastNode[] = []
+			const flush = () => {
+				// A newline separating prose from a whole-line image is not a paragraph.
+				if (pending.some((part) => part.type !== 'text' || part.value?.trim())) {
+					children.push({ ...child, children: pending })
+				}
+				pending = []
+			}
+			for (const part of child.children ?? []) {
+				const match = part.type === 'image' && part.url?.match(/^markopress-image:(\d+)$/)
+				if (match) {
+					flush()
+					children.push({ type: 'html', value: `<!--MPIMG${match[1]}-->` })
+				} else {
+					pending.push(part)
+				}
+			}
+			flush()
+		}
+		node.children = children
 	}
 	return (tree: MdastNode) => walk(tree)
 }
@@ -171,6 +215,7 @@ export function createMarkdownRenderer(
 		.use(remarkDirective)
 		.use(remarkContainers)
 		.use(options.remarkPlugins ?? [])
+		.use(remarkImagePlaceholders)
 		.use(remarkRehype, { allowDangerousHtml: true })
 		.use(rehypeSlug)
 		.use(

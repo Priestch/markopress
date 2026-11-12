@@ -4,6 +4,8 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, rmSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
+import { JSDOM } from "jsdom";
+import { createMarkdownRenderer } from "../src/markdown/render.ts";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 
 const ROOT = mkdtempSync(join(tmpdir(), "mp-images-"));
@@ -86,7 +88,8 @@ describe("extractImageTags", () => {
     expect(tags).toHaveLength(1);
     expect(tags[0].origin).toBe("md");
     expect(tags[0].attrs).toEqual({ src: "pic.png", alt: "alt text", title: "标题" });
-    expect(withToken).not.toContain("![");
+    expect(withToken).toContain("![](markopress-image:0)");
+    expect(withToken).not.toContain("pic.png");
   });
 
   it("行内嵌句与 fenced code 不接管", () => {
@@ -96,6 +99,14 @@ describe("extractImageTags", () => {
       "```md",
       "![fenced](x.png)",
       "```",
+      "",
+      "    ![indented code](x.png)",
+      "",
+      "- List with fenced code",
+      "",
+      "  ```md",
+      "  ![nested fenced](x.png)",
+      "  ```",
     ].join("\n");
     const { tags } = extractImageTags(body, { markdown: true });
     expect(tags).toHaveLength(0);
@@ -249,6 +260,42 @@ function htmlSegment(html: string): Array<{ type: string; html: string }> {
 }
 
 describe("resolveImageSegments", () => {
+  it.each([
+    ["lazy list continuation (studio Version1.0.1)", [
+      "2.**Sources Page Improvements**", "",
+      "- Add or remove files flexibly and quickly locate target files using the status filter.",
+      '- Newly uploaded files are now marked with a "New" tag for easy distinction from older files.',
+      "![3.png](nested.png)", "",
+      "3.**Published ChatApp Chat Window**",
+    ].join("\n"), "ul > li:nth-child(2)"],
+    ["indented image paragraph in a loose list", "- First item\n\n- Newly uploaded files\n\n  ![3.png](nested.png)\n\n  Following paragraph.", "ul > li:nth-child(2)"],
+    ["nested ordered list", "1. Outer\n   1. Newly uploaded files\n\n      ![3.png](nested.png)\n\n      Following paragraph.", "ol > li > ol > li"],
+    ["standalone image paragraph", "Newly uploaded files\n\n![3.png](nested.png)\n\nFollowing paragraph.", "body"],
+  ])("preserves image ancestry through extraction, Markdown rendering and resolution: %s", async (_name, body, selector) => {
+    const dir = join(ROOT, "fixture");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "nested.png"), pngBytesSync);
+    const extracted = extractImageTags(body, { markdown: { width: 650, link: true } });
+    expect(extracted.tags).toHaveLength(1);
+    const renderer = createMarkdownRenderer({ shiki: false });
+    const rendered = await renderer.render({ digest: body, body: extracted.body });
+    await resolveImageSegments(rendered.segments, extracted.tags, dir, settings());
+    const html = rendered.segments[0].html;
+    const document = new JSDOM(html, { url: "https://example.test/" }).window.document;
+    const image = document.querySelector(".mp-image");
+    expect(image).not.toBeNull();
+    expect(image!.parentElement === document.querySelector(selector)).toBe(true);
+    expect(image!.parentElement!.textContent).toContain("Newly uploaded files");
+    expect(document.querySelectorAll(".mp-image-link")).toHaveLength(1);
+    // Check the emitted source as well: browsers repair invalid p>div nesting silently.
+    expect(html).not.toMatch(/<p>[^<]*<div class="mp-image/);
+    expect(html).not.toContain("MPIMG");
+    expect(Array.from(document.querySelectorAll("p")).every((p) => p.textContent?.trim())).toBe(true);
+    if (body.includes("Following paragraph.")) {
+      expect(image!.nextElementSibling?.textContent).toBe("Following paragraph.");
+    }
+  });
+
   it("本地 tag：产物 html 原位回填", async () => {
     const dir = join(ROOT, "fixture");
     mkdirSync(dir, { recursive: true });

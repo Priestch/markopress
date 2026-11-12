@@ -22,6 +22,9 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync, readdirSync, copyFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import sharp from "sharp";
+import remarkGfm from "remark-gfm";
+import remarkParse from "remark-parse";
+import { unified } from "unified";
 import { ROOT } from "./paths.ts";
 import type { ImagesMarkdownDefaults, ImagesSettings } from "./plugins.ts";
 
@@ -329,13 +332,37 @@ function attrValue(match: RegExpMatchArray): string {
 }
 const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
 
+// Parse before replacing images: an unindented image can be a lazy continuation of
+// a list paragraph. A block HTML comment in its place would terminate that list.
+const imageParser = unified().use(remarkParse).use(remarkGfm);
+interface ImageNode {
+  type: string;
+  children?: ImageNode[];
+  position?: { start: { line: number }; end: { line: number } };
+}
+function markdownImageLines(body: string, lines: string[]): Set<number> {
+  const found = new Set<number>();
+  const walk = (node: ImageNode) => {
+    const pos = node.position;
+    if (node.type === "image" && pos && pos.start.line === pos.end.line) {
+      const line = pos.start.line - 1;
+      // Only a whole image line is eligible; inline prose and code stay untouched.
+      if (MD_IMAGE_RE.test(lines[line].trimStart())) found.add(line);
+    }
+    for (const child of node.children ?? []) walk(child);
+  };
+  walk(imageParser.parse(body));
+  return found;
+}
+
 /**
  * 从 body 块级提取自闭合 <mp-image …/>（行首 ≤3 空格；行尾内联形态拆行归一）与（opt-in）
  * 独立段落的 md 图片语法，替换为占位符注释。逐行扫描并跳过 fenced code——shiki 示例里
  * 的语法是教学文本，不是资产引用。
  *
  * options.markdown（config.images.markdown，默认 false）：接管 `![alt](src "title")`
- * 独立行 → 与 tag 同一占位符机制。boolean = 接管且属性走管线常量；对象形
+ * 独立行 → 保留图片语法的占位 URL，解析成树后才转 HTML 注释，避免截断列表。
+ * boolean = 接管且属性走管线常量；对象形
  * （ImagesMarkdownDefaults，pdflux 反馈 #10）= 接管 + 站点级默认属性并入 attrs
  * 作缺省（md 语法自带的 src/alt/title 优先）。默认关 = 既有集合输出逐字节不变。
  */
@@ -347,6 +374,7 @@ export function extractImageTags(
   const tags: Array<ImageTag> = [];
   // 对象形接管配置 → 站点级默认属性（merge 进 attrs；String() 归一，数组 densities 逗号连接）
   const mdDefaults = typeof options?.markdown === "object" ? options.markdown : undefined;
+  const mdLines = options?.markdown ? markdownImageLines(body, lines) : new Set<number>();
   let fence: string | undefined;
   for (let i = 0; i < lines.length; i++) {
     const fenceMatch = lines[i].match(FENCE_RE);
@@ -372,8 +400,8 @@ export function extractImageTags(
       const attrs: Record<string, string> = {};
       for (const match of tagText.matchAll(ATTRIBUTE_RE)) attrs[match[1]] = attrValue(match);
       if (attrs.src?.trim()) tag = { token: `<!--MPIMG${tags.length}-->`, raw: tagText, attrs, origin: "tag" };
-    } else if (options?.markdown) {
-      const md = lines[i].match(MD_IMAGE_RE);
+    } else if (mdLines.has(i)) {
+      const md = lines[i].trimStart().match(MD_IMAGE_RE);
       if (md) {
         // md 语法两分支同构：本地图（entry 目录解析）与远程图（授权判定）都进管线
         const attrs: Record<string, string> = { src: md[2], alt: md[1] };
@@ -391,7 +419,12 @@ export function extractImageTags(
     }
     if (!tag) continue;
     tags.push(tag);
-    lines[i] = prefix !== undefined ? `${prefix}\n${tag.token}` : tag.token;
+    // Keep Markdown image syntax (and indentation) until remark has established
+    // its parent list. The renderer converts this reserved URL to the
+    // HTML placeholder after parsing, splitting its paragraph at that point.
+    lines[i] = tag.origin === "md"
+      ? `${lines[i].match(/^\s*/)?.[0] ?? ""}![](markopress-image:${tags.length - 1})`
+      : prefix !== undefined ? `${prefix}\n${tag.token}` : tag.token;
   }
   return { body: lines.join("\n"), tags };
 }
