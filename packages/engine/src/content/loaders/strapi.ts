@@ -51,6 +51,12 @@ export interface StrapiOptions {
 	/** 媒体数组的取值路径（摊平后形状）；默认 'medias'（扁平形状与 content 同级）；
 	 *  单组件包装形态显式传 'content.medias' */
 	mediaPath?: string
+	/** 额外字段投影：REST row 顶层字段名清单（如 chatdoc-guide 的
+	 *  type/order/parents/seo），摊平 v4 包装（attributes/data）后原样进 data——
+	 *  形状由站点 zod schema 把关（z.object 默认 strip 未声明键）。默认集
+	 *  （title/publishAt/medias）之外的字段走这里；关系字段摊平后是
+	 *  {id, …attributes}，与 gatsby-source-strapi 节点形状同构，够站点按 id 链接 */
+	fields?: string[]
 	/** 重试退避基数（毫秒）；测试注入用，默认 300 */
 	retryDelayMs?: number
 }
@@ -258,12 +264,20 @@ export function strapi(options: StrapiOptions): Loader {
 								}))
 						: []
 
+					// 额外字段投影（fields 选项）：row 顶层字段摊平 v4 包装后原样透传——
+					// 关系/组件/排序标记等站点自有字段；zod schema 决定最终形状
+					const extra: Record<string, unknown> = {}
+					for (const key of options.fields ?? []) {
+						if (key in row) extra[key] = unwrapAttributes(unwrapData(row[key]))
+					}
+
 					const data = await ctx.parseData({
 						id,
 						data: {
 							title: row.title,
 							publishAt: row.publishAt,
 							medias,
+							...extra,
 							...(frontmatter ? { frontmatter } : {}),
 						},
 					})

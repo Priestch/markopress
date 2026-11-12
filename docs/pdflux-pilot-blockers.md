@@ -226,3 +226,17 @@ chatdoc blog 详情路由 stub 实测（`pages/blog/$slug.marko` 用户页）牵
   同名——实测文章页赢（后写覆盖），兜底丢失未观察到功能损害；`404` 同理。
   test 数据怪癖，真实内容不会踩；若要修应在 adapter-static 侧（兜底改名或
   冲突告警）。
+
+## 2026-11-13（第三批）：strapi loader `fields` 额外字段投影（已落地未提交）
+
+chatdoc 主站 guide 迁移牵出：loader 的 data 映射写死 pdflux-changelog 形状
+（title/publishAt/medias/frontmatter），chatdoc-guide 的 type/order/parents/seo
+全部进不了 store（站点 schema 声明了也没用——loader 侧就没传）。
+
+- **落地**：`StrapiOptions.fields?: string[]`——REST row 顶层字段名清单，摊平
+  v4 包装（unwrapAttributes∘unwrapData，关系 {data:{id,attributes}} → {id,…}，
+  与 gatsby-source-strapi 节点形状同构）后原样进 data；形状由站点 zod schema
+  把关（z.object 默认 strip）。默认集不变（pdflux 零影响）。首个消费者 =
+  chatdoc guide（fields: type/order/parents/seo，URL 派生依赖 parents 链 +
+  order 排序）。
+- 测试 +2（投影摊平/strip、未传 fields 默认集不变），引擎 186 全绿。

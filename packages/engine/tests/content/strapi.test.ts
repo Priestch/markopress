@@ -261,6 +261,61 @@ describe('strapi loader：失效与删除语义', () => {
 	})
 })
 
+describe('strapi loader：fields 额外字段投影', () => {
+	it('顶层字段摊平 v4 包装后进 data；schema 未声明的默认集键被 strip', async () => {
+		const f = await makeFixture({
+			schema: z.object({
+				title: z.string(),
+				order: z.number().optional(),
+				type: z.string().optional(),
+				parents: z.unknown().optional(),
+			}),
+			loaderOptions: { fields: ['type', 'order', 'parents'] },
+		})
+		mockFetch([
+			{
+				data: [
+					{
+						id: 11,
+						attributes: {
+							title: 'Upload documents',
+							publishAt: '2026-11-01T00:00:00.000Z',
+							content: '# Upload',
+							type: 'Heading_2',
+							order: 3,
+							parents: { data: { id: 7, attributes: { title: 'Get Started', type: 'Heading_1' } } },
+						},
+					},
+				],
+				meta: { pagination: { page: 1, pageCount: 1 } },
+			},
+		])
+		await f.syncer.sync(f.config())
+
+		const entry = f.store.get('changelog', '11')!
+		expect(entry.data.type).toBe('Heading_2')
+		expect(entry.data.order).toBe(3)
+		// 关系摊平：{data:{id,attributes}} → {id, …}（与 gatsby-source-strapi 节点形状同构）
+		expect(entry.data.parents).toMatchObject({ id: 7, title: 'Get Started', type: 'Heading_1' })
+		// schema 未声明 publishAt/medias ⇒ strip（fields 不等于放行默认集）
+		expect(entry.data).not.toHaveProperty('publishAt')
+		expect(entry.data).not.toHaveProperty('medias')
+	})
+
+	it('未传 fields：默认集之外的字段不进 data（pdflux 形状不变）', async () => {
+		const f = await makeFixture()
+		mockFetch([
+			{
+				data: [v4Row(1)],
+				meta: { pagination: { page: 1, pageCount: 1 } },
+			},
+		])
+		await f.syncer.sync(f.config())
+		const entry = f.store.get('changelog', '1')!
+		expect(Object.keys(entry.data).sort()).toEqual(['frontmatter', 'medias', 'publishAt', 'title'])
+	})
+})
+
 describe('strapi loader：失败与离线语义', () => {
 	it('STRAPI_OFFLINE=1：不 fetch、不动 store（差集不清空）', async () => {
 		const f = await makeFixture()
