@@ -62,8 +62,9 @@ function pageTemplate(theme: { dir: string; tagsDir: string }, collection: strin
 
 /** 内容驱动 404（根特例）：marko-run 约定根目录无前缀 +404 才是 NotFound 页（带前缀
  *  会被解析成路径段失去 special 身份）。根目录不放 layout（§4.2）⇒ 外壳在包装内
- *  显式包——调用形状同 layoutTemplate，Page 经 <@content> 属性体成为 Layout 的
- *  content 输入（与插件槽位 <@search> 同语法）。 */
+ *  显式包——调用形状同 layoutTemplate，Page 作为 Layout 的直接 body 子节点即
+ *  input.content（@marko/compiler ≥5.43 拒绝 <@content> 属性标签：content 与
+ *  body content 语义冲突，只能写成 body）。 */
 function notFoundTemplate(theme: { dir: string; tagsDir: string }, collection: string): string {
   const base = relative(ROUTES_DIR, join(theme.dir, theme.tagsDir)).replaceAll("\\", "/");
   return [
@@ -74,9 +75,7 @@ function notFoundTemplate(theme: { dir: string; tagsDir: string }, collection: s
     `import Layout from "${base}/mp-layout.marko"`,
     ``,
     `<Layout site=site.site nav=site.nav head=site.head tree=site.tree style=site.style>`,
-    `  <@content>`,
-    `    <Page page={ data, segments, headings } nav=neighbors("/404") flat=site.flat/>`,
-    `  </@content>`,
+    `  <Page page={ data, segments, headings } nav=neighbors("/404") flat=site.flat/>`,
     `</Layout>`,
     ``,
   ].join("\n");

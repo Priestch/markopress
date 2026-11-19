@@ -8,6 +8,8 @@ allowBuilds:
   esbuild: true
 minimumReleaseAgeExclude:
   - '@markopack/adapter-static@0.4.0'
+  - '@markopack/adapter-static@0.5.0'
+  - '@markopack/rspack@0.5.0'
   - '@markopack/compiler@0.4.0'
   - '@markopack/core@0.4.0'
   - '@markopack/rspack@0.4.0'

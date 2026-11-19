@@ -7,6 +7,6 @@
     "markopress-theme-base": "workspace:*"
   },
   "devDependencies": {
-    "@marko/runtime-tags": "6.4.5"
+    "@marko/runtime-tags": "6.4.16"
   }
 }

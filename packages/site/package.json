@@ -26,7 +26,7 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@marko/runtime-tags": "6.4.5",
+    "@marko/runtime-tags": "6.4.16",
     "vite": "^8.3.4"
   }
 }

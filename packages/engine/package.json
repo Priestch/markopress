@@ -10,9 +10,9 @@
     "markopress": "./src/cli.ts"
   },
   "dependencies": {
-    "@marko/compiler": "^5.42.11",
-    "@markopack/adapter-static": "link:/home/gp/Enter/markopack/packages/adapter-static",
-    "@markopack/rspack": "link:/home/gp/Enter/markopack/packages/rspack",
+    "@marko/compiler": "^5.42.14",
+    "@markopack/adapter-static": "^0.5.0",
+    "@markopack/rspack": "^0.5.0",
     "@rspack/core": "2.2.9",
     "@shikijs/rehype": "^4.5.0",
     "devalue": "^5.0.0",
@@ -43,7 +43,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@marko/runtime-tags": "6.4.5",
+    "@marko/runtime-tags": "6.4.16",
     "@types/hast": "^3.0.5",
     "@types/node": "^24.0.0",
     "jsdom": "29.1.1",
