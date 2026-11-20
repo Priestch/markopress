@@ -93,7 +93,9 @@ function notFoundTemplate(theme: { dir: string; tagsDir: string }, collection: s
 // 生成物在 .markopress/ 下，就近 root = app 根 ⇒ 探测命中（与 <mp-layout> 的发现同机制）。
 function layoutTemplate(theme: { dir: string; tagsDir: string }, slots: Array<string>): string {
   // 同 pageTemplate：显式 import 主题布局（多主题共存消歧）。插件功能槽位（mp-search
-  // 等）仍走 taglib 发现——插件名唯一、且从生成物（app 根就近）解析，无撞名面
+  // 等）仍走 taglib 发现——插件名唯一、且从生成物（app 根就近）解析，无撞名面。
+  // options.css 不在此注入——Marko 编译器丢弃模板内未引用的 side-effect import，
+  // 载体是 .markopress/entry.ts（content.ts writeConventions）
   const base = relative(join(ROUTES_DIR, "_content"), join(theme.dir, theme.tagsDir)).replaceAll("\\", "/");
   const bodies = slots
     .filter((slot) => slot !== "mp-layout" && slot !== "mp-page")
@@ -192,15 +194,23 @@ export async function generateRoutes(): Promise<GenerateResult> {
       // 侧边栏/prev-next/urls.json 全部经 routeFor/pageFileFor 自动跟随；虚拟模块
       // import 仍用 store id（p.id）。404+前缀在 routeIdFor fail fast（根特例文件名）。
       const routeId = routeIdFor(collectionConfig.route?.prefix, entry.id);
+      // 惯例字段视图：title/order/date/description 是各集合 zod schema 的可选面
+      // （data 静态类型随具体 schema 推导，这里按约定读取——rss/侧边栏/标题补写共用）
+      const data = entry.data as {
+        title: string;
+        order?: number;
+        date?: unknown;
+        description?: string;
+      };
       pages.push({
         collection: name,
         id: entry.id,
         file: pageFileFor(routeId),
         route: routeFor(routeId),
-        title: entry.data.title,
-        order: entry.data.order,
-        date: entry.data.date instanceof Date ? entry.data.date.toISOString() : entry.data.date,
-        description: entry.data.description,
+        title: data.title,
+        order: data.order,
+        date: data.date instanceof Date ? data.date.toISOString() : typeof data.date === "string" ? data.date : undefined,
+        description: data.description,
       });
     }
   }

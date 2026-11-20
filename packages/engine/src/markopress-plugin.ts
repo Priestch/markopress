@@ -163,12 +163,12 @@ export function markopressPlugin(): Plugin {
         !id.startsWith(RESOLVED_COLLECTION_PREFIX)
       )
         return;
-      const { store, renderer } = await ensureSynced();
+      const { store, renderer, config } = await ensureSynced();
       // 集合级数据模块：per-entry meta 模块的静态聚合（client-safe；渲染缓存各自生效）
       if (id.startsWith(RESOLVED_COLLECTION_PREFIX) || id.startsWith(RESOLVED_COLLECTION_CONTENT_PREFIX)) {
         const withContent = id.startsWith(RESOLVED_COLLECTION_CONTENT_PREFIX);
         const collection = id.slice(withContent ? RESOLVED_COLLECTION_CONTENT_PREFIX.length : RESOLVED_COLLECTION_PREFIX.length);
-        if (!store.collections.has(collection)) {
+        if (!(collection in config.collections)) {
           throw new Error(`[markopress] no collection "${collection}" (stale import? check .markopress/config.ts)`);
         }
         loadedCollections.add(collection);
@@ -298,7 +298,8 @@ export function markopressPlugin(): Plugin {
         touchedAsset = true;
       }
       if (touchedAsset) {
-        return { touched: true, changed, removed };
+        // 纯资产路径：上方守卫保证 outcome 无变化——空数组即语义本身
+        return { touched: true, changed: [], removed: [] };
       }
     }
     for (const { collection, id } of outcome.changed) {

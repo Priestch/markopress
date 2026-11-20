@@ -58,6 +58,15 @@ function markoFamilyAliases(): Record<string, string> {
   return aliases;
 }
 
+// rspack hook 链的自包含结构标注（RspackPlugin.apply 的回调参数无上下文类型，
+// rspack 类型包的 tap 重载不传导）——只声明本插件用到的面（beforeResolve 改写 request）
+type MpCompilationParams = {
+  normalModuleFactory: { hooks: { beforeResolve: { tap: (name: string, cb: (resource: { request: string }) => void) => void } } };
+};
+type MpCompilerLike = {
+  hooks: { compilation: { tap: (name: string, cb: (compilation: unknown, params: MpCompilationParams) => void) => void } };
+};
+
 export function mpRspack() {
   const familyAliases = markoFamilyAliases();
   return (config: Configuration, side: "browser" | "server") => {
@@ -65,11 +74,12 @@ export function mpRspack() {
     // （@marko/runtime-tags/debug/html）一起钉住
     config.resolve ??= {};
     config.resolve.alias = { ...(config.resolve.alias as Record<string, string>), ...familyAliases };
+    config.plugins ??= [];
     config.plugins.push(
       {
-        apply(compiler) {
-          compiler.hooks.compilation.tap("MarkoPressImages", (_compilation, { normalModuleFactory }) => {
-            normalModuleFactory.hooks.beforeResolve.tap("MarkoPressImages", (resource) => {
+        apply(compiler: MpCompilerLike) {
+          compiler.hooks.compilation.tap("MarkoPressImages", (_compilation, params: MpCompilationParams) => {
+            params.normalModuleFactory.hooks.beforeResolve.tap("MarkoPressImages", (resource: { request: string }) => {
               if (!resource.request.startsWith(IMAGE_MODULE_PREFIX)) return;
               const props = resource.request.slice(IMAGE_MODULE_PREFIX.length);
               const loader = fileURLToPath(new URL("./image-module-loader.cjs", import.meta.url));

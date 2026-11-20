@@ -6,6 +6,9 @@ import { join } from "node:path";
 
 const port = Number(process.env.PORT) || 3001;
 const adapter = staticAdapter();
+// startPreview 收事件对象 {entry, options}（markopack 0.5.0 契约）：options 内
+// cwd/args 必填 + dir = 产物目录 + port
 await adapter.startPreview!({
-  options: { dir: join(ROOT, "dist", "server"), port },
+  entry: undefined,
+  options: { cwd: ROOT, args: [], port, dir: join(ROOT, "dist", "server") },
 });

@@ -60,9 +60,12 @@ export function ssgAdapterOptions(
 	return {
 		urls: async (routes: Array<{ path?: { path?: string } }>) =>
 			urls({
-				routes: routes.map((r) => ({
-					path: typeof r.path === "object" && r.path !== null ? r.path.path : String(r.path),
-				})),
+				// 归一 + 过滤无 path 项（SsgUrls 回调契约是 { path: string }[]，
+				// 不认 string | undefined）
+				routes: routes.flatMap((r) => {
+					const path = typeof r.path === "object" && r.path !== null ? r.path.path : undefined;
+					return path === undefined ? [] : [{ path }];
+				}),
 				collections: snapshot,
 			}),
 	};

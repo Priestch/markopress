@@ -1,6 +1,6 @@
 // MiniSearch 配置的单一来源：服务端建索引与浏览器 loadJSON 必须用同一份
 // （options 含函数（tokenize），不经 JSON 序列化传递——toJSON/loadJSON 两端各自传）。
-import type MiniSearch from "minisearch";
+import type * as MiniSearch from "minisearch";
 
 /**
  * CJK 感知分词：拉丁/数字段整词 + 中文逐字（unigram）。

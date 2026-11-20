@@ -26,6 +26,7 @@ import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
 import { ROOT } from "./paths.ts";
+import type { MixedSegment } from "./segments.ts";
 import type { ImagesMarkdownDefaults, ImagesSettings } from "./plugins.ts";
 
 /** 发现集合：参与归属/失效扫描的全部图片后缀 */
@@ -534,7 +535,8 @@ function locateSource(src: string, entryDir: string | undefined): string | undef
   const stripped = src.split(/[?#]/)[0].replace(/^\/+/, "");
   const candidate = entryDir ? resolve(entryDir, stripped) : undefined;
   const candidatePublic = src.startsWith("/") ? join(ROOT, "public", stripped) : undefined;
-  const sourcePath = existsSync(candidate) ? candidate : candidatePublic && existsSync(candidatePublic) ? candidatePublic : undefined;
+  const sourcePath =
+    candidate && existsSync(candidate) ? candidate : candidatePublic && existsSync(candidatePublic) ? candidatePublic : undefined;
   if (!sourcePath || !IMAGE_EXTENSIONS.has(extname(stripped).toLowerCase())) {
     warnOnce(
       src,
@@ -683,7 +685,7 @@ async function resolveTag(
  * 显示 md 语法或不可见标签）；本地 tag 来源 → 原始标签文本（v1 语义）。
  */
 export async function resolveImageSegments(
-  segments: Array<{ type: string; html: string }>,
+  segments: Array<MixedSegment>,
   tags: Array<ImageTag>,
   entryDir: string | undefined,
   settings: ImagesSettings,

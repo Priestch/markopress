@@ -22,9 +22,11 @@ const commands: Record<string, () => Promise<unknown>> = {
   gen: () => import("./gen-routes.ts").then((m) => m.main()),
 };
 
-const run = commands[command];
+// 索引访问在 Record<string, F> 下不携带 undefined——显式标注缺路由分支
+const run: (() => Promise<unknown>) | undefined = commands[command];
 if (!run || rest.length) {
   console.error(usage);
-  process.exit(run ? 1 : 0);
+  // 函数值不做真值判断（TS2774）：显式比较
+  process.exit(run === undefined ? 0 : 1);
 }
 await run();
