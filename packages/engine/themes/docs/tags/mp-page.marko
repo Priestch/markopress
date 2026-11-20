@@ -14,7 +14,8 @@
 <const/toc=(input.page.headings ?? []).filter((h) => h.depth >= 2 && h.depth <= 3)>
 
 // 正文排版归本主题（.mp-doc scope）；内容契约的机械部分（mp-image/容器/shiki 切换）
-// 经 <mp-content-styles/> 来自 markopress-theme-base。$!{seg.html} 注入的内容没有组件边界，
+// 经 <mp-content-styles/> 来自 engine 内置内容样式（tags/，随 markopress 包分发）。
+// $!{seg.html} 注入的内容没有组件边界，
 // 裸元素选择器会泄漏到全站（VitePress .vp-doc 的教训，themes.md §7）。
 <style>
   .mp-page {
@@ -32,7 +33,7 @@
   .mp-doc a { color: var(--mp-accent); }
   .mp-doc img { max-width: 100%; }
 
-  /* .mp-image 家族 / .mp-container 家族 / shiki 双主题切换 → markopress-theme-base */
+  /* .mp-image 家族 / .mp-container 家族 / shiki 双主题切换 → engine 内置 mp-content-styles */
 
   .mp-doc pre.shiki {
     padding: 12px 16px;

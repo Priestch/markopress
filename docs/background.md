@@ -103,6 +103,14 @@ md 内嵌组件分两步：
 
 主题 = npm 包（layouts + components + `marko.json`），走编译器现成的 node_modules 发现机制；覆盖/继承走组件组合（Marko 的 attribute tags 与 render-body 原生强于 VitePress 的 35 个转发槽）。v1 先做一个 docs 布局（侧边栏来自文件树/标题）。frontmatter `layout:` 字段选布局。
 
+> **2026-11-20 修订（v0.1.0 发版准备，所有者改判）**：槽位契约不变，但**分发改
+> 单包**——docs/blog 两个内置主题并入 `markopress`（`engine/themes/`），不再
+> 独立发包。理由：npm 包名是一次性门（先拆后合并会占坑，先合并后拆出是纯增
+> 量）；0.x 期主题契约高频变动，拆包意味着每次发版 4 包联动 + runtime-tags 三
+> 处 pin 对齐；与 2026-10-29 rss/sitemap/search 并入同款判断。外部主题仍是
+> npm 包或本地路径（契约见 `packages/engine/AGENTS-themes.md`）；config 形态
+> 改纯对象 `theme: { name, options? }`。
+
 ### D6 · SSG：包 static adapter + 显式 url 清单
 
 路由在扫描时全知（VitePress 同理），既不需要 Astro 的 `getStaticPaths` 也不需要爬虫 —— 直接把清单喂给 static adapter 的 `urls`。逐路由 prerender 标记走 `+meta`。死链检查在编译期对着路由全清单做。搜索用 MiniSearch + 复用同一 md 渲染器分标题建索引（VitePress 模式，含按 locale 懒加载 chunk）。

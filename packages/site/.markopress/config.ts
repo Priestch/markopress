@@ -23,16 +23,18 @@ export default defineMarkoPressConfig({
     }),
   },
 
-  // 主题（D5：主题 = npm 包；槽位契约 <mp-layout>/<mp-page>，themes.md §9）。
-  // 换主题 = 改这一行 + 装对应包；省略则默认 markopress-theme-docs。
-  theme: "markopress-theme-docs",
-  themeOptions: {
-    site: "markopress",
-    // 页 <title> 模板（postbuild 补写；dev 期显示站名）
-    titleTemplate: "%s · markopress",
-    // 风格预设（纯样式）：default | vitepress | starlight | nextra | docusaurus
-    style: "docusaurus",
-    sidebar: { collections: ["docs"] },
+  // 主题（v0.1.0 形态：内置 "docs" | "blog" 一行切换，零额外安装；外部主题 =
+  // npm 包名或 "./本地路径"，槽位契约 themes.md §9 / engine/AGENTS-themes.md）。
+  theme: {
+    name: "docs",
+    options: {
+      site: "markopress",
+      // 页 <title> 模板（postbuild 补写；dev 期显示站名）
+      titleTemplate: "%s · markopress",
+      // 风格预设（纯样式）：default | vitepress | starlight | nextra | docusaurus
+      style: "docusaurus",
+      sidebar: { collections: ["docs"] },
+    },
   },
   // 图片管线 v2（docs/images-v2-design.md）：授权域 + md ![]() 接管（opt-in）+ AVIF。
   // 未列名域的远程图直通原始 URL（不 fetch 不优化）。

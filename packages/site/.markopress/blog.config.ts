@@ -19,16 +19,18 @@ export default defineMarkoPressConfig({
       }),
     }),
   },
-  theme: "markopress-theme-blog",
-  themeOptions: {
-    site: "Priestch's Blog",
-    titleTemplate: "%s · Priestch's Blog",
-    nav: [
-      { href: "/", label: "Home" },
-      { href: "/blogs", label: "Blogs" },
-      { href: "/excerpts", label: "Excerpts" },
-    ],
-    sidebar: { collections: ["posts"], sortBy: "date" },
+  theme: {
+    name: "blog",
+    options: {
+      site: "Priestch's Blog",
+      titleTemplate: "%s · Priestch's Blog",
+      nav: [
+        { href: "/", label: "Home" },
+        { href: "/blogs", label: "Blogs" },
+        { href: "/excerpts", label: "Excerpts" },
+      ],
+      sidebar: { collections: ["posts"], sortBy: "date" },
+    },
   },
   markdown: {
     shiki: { themes: { light: "github-light", dark: "github-dark" } },

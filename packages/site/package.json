@@ -21,8 +21,6 @@
     "@marko/run": "^0.11.13",
     "@marko/run-adapter-static": "^2.0.10",
     "markopress": "workspace:*",
-    "markopress-theme-blog": "workspace:*",
-    "markopress-theme-docs": "workspace:*",
     "zod": "^4.0.0"
   },
   "devDependencies": {

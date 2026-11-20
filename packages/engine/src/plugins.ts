@@ -193,13 +193,15 @@ export interface MarkoPressConfig {
    */
   images?: ImagesConfig;
   /**
-   * 主题包名（D5：主题 = npm 包；marko.json tags-dir 经 root 包依赖探测全局发现，
-   * docs/research/themes.md §9）。省略 = 默认主题 markopress-theme-docs。
-   * 生成器只认槽位名 <mp-layout>/<mp-page>，实现由主题包提供——换主题零改生成器。
+   * 主题（省略 = 内置 docs）。纯对象形态（发布面 v0.1.0 定案）：
+   *   name   "docs" | "blog"（内置，随 markopress 分发，零额外安装）
+   *          | npm 包名（外部主题包，槽位契约见 engine/AGENTS-themes.md）
+   *          | "./本地路径"（相对站点根——外部主题开发/私有主题）
+   *   options 数据面配置（site/nav/sidebar/style/titleTemplate/css）
+   * 槽位契约 <mp-layout>/<mp-page> 不变（themes.md §9）——生成器只认槽位名，
+   * 内置实现在 engine themes/，外部包自备同槽位实现，换主题零改生成器。
    */
-  theme?: string;
-  /** 主题选项：site/sidebar 等数据面配置（装配期校验后经 SyncedContent 透传） */
-  themeOptions?: ThemeOptions;
+  theme?: ThemeConfig;
   /**
    * SSG 显式页面清单（仅 build 消费——rspack-build.ts 接到 adapter-static 的
    * Options.urls）。参数路由（marko-run 原生 $slug/$$rest 用户页——如 /blog/$slug
@@ -209,6 +211,13 @@ export interface MarkoPressConfig {
    * 快照只有 id/slug/data，无 body）。dev 不消费（dev 路由实时匹配参数段）。
    */
   ssg?: SsgOptions;
+}
+
+export interface ThemeConfig {
+  /** 内置字面量收敛（IDE 补全）；外部主题 = 包名或 "./相对路径" */
+  name: "docs" | "blog" | (string & {});
+  /** 数据面配置（装配期校验后经 SyncedContent 透传） */
+  options?: ThemeOptions;
 }
 
 export interface ThemeOptions {
@@ -233,6 +242,13 @@ export interface ThemeOptions {
    * theme-docs 的 mp-layout 预设块注释）。经 sidebar.json → <html data-style> 驱动。
    */
   style?: ThemeStyle;
+  /**
+   * 手写 CSS 覆盖（tokens 微调层）：站点 public/ 下的 .css 路径或数组（约定——
+   * dev sirv 链 / build adapter 拷贝直接静态服务，head 注入 <link> 指原文件，
+   * 无快照：改文件即生效）。装配期校验位置与存在性。同特异性下与主题样式的
+   * 顺序不保证；要稳定覆盖建议抬特异性（如 html 前缀选择器）。
+   */
+  css?: string | Array<string>;
 }
 
 export type ThemeStyle = "default" | "vitepress" | "starlight" | "nextra" | "docusaurus";

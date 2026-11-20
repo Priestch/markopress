@@ -9,7 +9,7 @@
 // （build 等待、dev 不阻塞 ready——等待策略由调用方决定，见 rspack-shared/markopress-plugin）。
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, join, relative } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   ContentSyncer,
@@ -27,7 +27,7 @@ import {
   type MarkdownRenderer,
   type RenderedMarkdown,
 } from "./markdown/index.ts";
-import { ROOT } from "./paths.ts";
+import { ENGINE_PACKAGE_ROOT, ROOT } from "./paths.ts";
 import { generateVirtualTypes } from "./virtual-types.ts";
 import {
   assertNoLiteralSecrets,
@@ -72,6 +72,8 @@ export interface ResolvedTheme {
    *  会撞名，显式 import 是唯一确定性绑定） */
   dir: string;
   tagsDir: string;
+  /** options.css 解析结果（public/ 内的绝对路径；setup 组装进 head 的 <link> 条目） */
+  css: Array<string>;
 }
 
 export interface SyncedContent {
@@ -110,17 +112,31 @@ export function resetSynced(): void {
 
 async function loadConfig(): Promise<MarkoPressConfig> {
   // ?t= 防 ESM 模块缓存——resetSynced 后必须拿到新配置
-  const mod = await import(
-    `${fileURLToPath(new URL(CONFIG_FILE, import.meta.url))}?t=${Date.now()}`
-  );
-  return mod.default as MarkoPressConfig;
+  const configUrl = `${fileURLToPath(new URL(CONFIG_FILE, import.meta.url))}?t=${Date.now()}`;
+  try {
+    const mod = await import(configUrl);
+    return mod.default as MarkoPressConfig;
+  } catch (error) {
+    // 首次使用最常见坑（smoke 实测）：app package.json 无 "type": "module" ⇒
+    // .ts 按 CJS 解析（type stripping 只剥类型不改判格式），ESM 语法 SyntaxError。
+    // 给可动作的提示而不是裸语法错误。
+    if (error instanceof SyntaxError && /Cannot use (import|export) statement/.test(error.message)) {
+      throw new Error(
+        `[markopress] ${relative(ROOT, CONFIG_FILE)} uses ESM syntax but the app package.json has no "type": "module" — add it, or rename the config to .mts`,
+      );
+    }
+    throw error;
+  }
 }
 
 /**
  * 按约定生成的文件（write-if-changed，用户永远不手写）：
  *   marko.json —— components 目录存在 ⇒ tags-dir 指过去（Marko 编译器的 taglib
  *     发现约定，只能叫这个名字、只能在包根）；目录不存在则移除残留
- *   entry.ts   —— markopack 浏览器入口的缺省空模块
+ *   entry.ts   —— markopack 浏览器入口：缺省空模块 + options.css 注入。
+ *     css 经 entry 的 module import 进 bundler（纯 TS 模块 = 标准 bundler 路径；
+ *     保持真实模块依赖——改 css 即失效重建。.marko 模板里未引用的 side-effect
+ *     import 会被 Marko 编译器丢弃，不能用生成布局作注入载体）。
  */
 export function writeConventions(): void {
   const markoJson = join(ROOT, "marko.json");
@@ -132,32 +148,48 @@ export function writeConventions(): void {
   } else if (existsSync(markoJson)) {
     rmSync(markoJson);
   }
-  if (!existsSync(ENTRY_FILE)) {
+  const entryContent = "// markopress 浏览器入口（缺省空模块；水合入口由 MarkoRspackPlugin 按需注入）\nexport {};\n";
+  if (!existsSync(ENTRY_FILE) || readFileSync(ENTRY_FILE, "utf-8") !== entryContent) {
     mkdirSync(dirname(ENTRY_FILE), { recursive: true });
-    writeFileSync(ENTRY_FILE, "// markopress 浏览器入口（缺省空模块；水合入口由 MarkoRspackPlugin 按需注入）\nexport {};\n");
+    writeFileSync(ENTRY_FILE, entryContent);
   }
 }
 
 /** 省略 theme 时的默认主题（零配置路径的目标形态；themes.md §9 #1） */
-export const DEFAULT_THEME = "markopress-theme-docs";
+export const DEFAULT_THEME = "docs";
+/** 内置主题名（engine 包 themes/ 下同名目录，随 markopress 分发） */
+const BUILTIN_THEMES = new Set(["docs", "blog"]);
 
 /**
- * 解析 + 校验主题包（fail fast）：
- *  ① 从 app 上下文解析包目录（node_modules/workspace 链接——主题包不得用 exports
- *     限制 package.json 子路径，见 theme-docs/AGENTS.md）；
+ * 解析 + 校验主题（fail fast）：
+ *  ① 内置（"docs"/"blog"）→ engine 包内 themes/<name>；② "./x" 或绝对路径 →
+ *     相对站点根的本地主题目录；③ 其余 → npm 包，从 app 上下文解析（外部主题包
+ *     不得用 exports 限制 package.json 子路径，契约见 engine/AGENTS-themes.md）；
  *  ② marko.json 的 tags-dir（缺省 "tags"）下必须存在槽位实现 mp-layout/mp-page
- *     （生成器写死槽位名，缺实现是硬错误而非静默降级）。
+ *     （生成器写死槽位名，缺实现是硬错误而非静默降级）；
+ *  ③ options.css 逐个解析 + 存在性校验（生成布局 module import 注入）。
  */
 function resolveTheme(pressConfig: MarkoPressConfig): ResolvedTheme {
-  const name = pressConfig.theme ?? DEFAULT_THEME;
-  const require = createRequire(join(ROOT, "package.json"));
+  const { name = DEFAULT_THEME, options = {} } = pressConfig.theme ?? {};
   let dir: string;
-  try {
-    dir = dirname(require.resolve(`${name}/package.json`));
-  } catch {
-    throw new Error(
-      `[markopress] theme "${name}" not found — install it (pnpm add ${name}) or fix "theme" in markopress.config.ts`,
-    );
+  if (BUILTIN_THEMES.has(name)) {
+    dir = join(ENGINE_PACKAGE_ROOT, "themes", name);
+  } else if (name.startsWith(".") || isAbsolute(name)) {
+    dir = resolve(ROOT, name);
+    if (!existsSync(join(dir, "package.json"))) {
+      throw new Error(
+        `[markopress] local theme "${name}" has no package.json (resolved ${relative(ROOT, dir)}) — see engine/AGENTS-themes.md for the theme contract`,
+      );
+    }
+  } else {
+    const require = createRequire(join(ROOT, "package.json"));
+    try {
+      dir = dirname(require.resolve(`${name}/package.json`));
+    } catch {
+      throw new Error(
+        `[markopress] theme "${name}" not found — built-ins are "docs"/"blog"; external theme = install it (pnpm add ${name}) or use a local path "./…"`,
+      );
+    }
   }
   let tagsDir = "tags";
   const markoJson = join(dir, "marko.json");
@@ -173,7 +205,27 @@ function resolveTheme(pressConfig: MarkoPressConfig): ResolvedTheme {
       );
     }
   }
-  return { name, dir, tagsDir, options: pressConfig.themeOptions ?? {} };
+  const cssList = options.css === undefined ? [] : Array.isArray(options.css) ? options.css : [options.css];
+  const css = cssList.map((entry) => {
+    const file = resolve(ROOT, entry);
+    // 约定：css 文件必须住在站点 public/ 下（静态服务面：dev sirv 链 + build
+    // adapter 拷贝——head link 直指原文件，无 bundler 参与、无快照 staleness。
+    // bundler 注入两条路已实测否决：.marko 模板内 side-effect import 被编译器
+    // 丢弃；浏览器 entry 的 css chunk 不进 SSR html 的 <link> 集）
+    const publicDir = join(ROOT, "public");
+    if (!(file + sep).startsWith(publicDir + sep)) {
+      throw new Error(
+        `[markopress] theme options.css "${entry}" must live under the site's public/ directory (served statically; dev sirv + build copy)`,
+      );
+    }
+    if (!existsSync(file)) {
+      throw new Error(
+        `[markopress] theme options.css "${entry}" not found (resolved ${relative(ROOT, file) || file})`,
+      );
+    }
+    return file;
+  });
+  return { name, dir, tagsDir, options, css };
 }
 
 async function setup(): Promise<SyncedContent> {
@@ -270,7 +322,17 @@ async function setup(): Promise<SyncedContent> {
     plugins: pressConfig.plugins,
     pluginCtx,
     theme,
-    head: pressConfig.head ?? [],
+    head: [
+      ...(pressConfig.head ?? []),
+      // options.css → head link（静态服务：public/ 直指原文件；排在用户 head 之后）
+      ...theme.css.map((file) => ({
+        tag: "link",
+        attrs: {
+          rel: "stylesheet",
+          href: `/${relative(join(ROOT, "public"), file).replaceAll("\\", "/")}`,
+        },
+      })),
+    ],
     dev: pressConfig.dev,
     images,
     ssg: pressConfig.ssg,

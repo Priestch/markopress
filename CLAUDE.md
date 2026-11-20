@@ -10,10 +10,9 @@ markopress: a content framework built on Marko 6 + `@marko/run` (VitePress/Astro
 
 ## Packages
 
-- `packages/engine` (= npm package `markopress`): engine CLI + content layer + markdown renderer + asset pipeline + built-in rss/sitemap/search. Engine-wide ops manual: `packages/engine/AGENTS.md`.
-- `packages/theme-base` (mechanical content styles, shared by both themes), `packages/theme-docs` / `theme-blog` (mutually exclusive themes; each has its own AGENTS.md).
+- `packages/engine` (= npm package `markopress`): engine CLI + content layer + markdown renderer + asset pipeline + built-in rss/sitemap/search + **built-in themes** (`themes/{docs,blog}` slots + `tags/` engine taglib incl. mp-content-styles). Engine-wide ops manual: `packages/engine/AGENTS.md`.
 - `packages/site`: dogfood site = scaffold-template form; all scripts go through the `markopress` bin — the dogfood surface is the user surface.
-- npm publish surface = markopress + three theme packages; a user's package.json only ever sees markopress + one theme. Root only orchestrates.
+- npm publish surface = **single `markopress` package** (themes built in; v0.1.0 decision). External themes are npm packages or local paths — contract: `packages/engine/AGENTS-themes.md`. Root only orchestrates.
 
 ## Common commands
 
@@ -39,7 +38,8 @@ pnpm --filter markopress test  # All engine tests (content / markdown / search /
 - Node ≥ 22.18 (native type stripping; workspace packages ship as TS source, no build step), pnpm 12 (esbuild build approval in `pnpm-workspace.yaml` `allowBuilds` — package.json's `pnpm` field is no longer read).
 - **pnpm 12 can hang** at "Verifying lockfile against supply-chain policies" after lockfile changes — run `node_modules/.bin/markopress dev|build` directly under site/ to bypass.
 - **markopack is temporarily a local `link:`** — two engine deps point at `/home/gp/Enter/markopack/packages/*` via absolute paths (pnpm 12 mangles relative `link:` to @scope packages). After changing markopack, run `pnpm build` inside it first (dist emits a single-file index.js); no reinstall needed here. Switch back to the npm version once it ships one containing proxy.
-- **Any package containing `.marko` tags (engine / theme-docs / theme-blog) must declare `@marko/runtime-tags` as a devDep** — compiled output imports it; under pnpm's strict layout it won't resolve without the declaration.
+- **Any package containing `.marko` tags must declare `@marko/runtime-tags`** — compiled output imports it; under pnpm's strict layout it won't resolve otherwise. Engine declares it as a real **dependency** (published packages need it installable; devDep only fixes the workspace). External theme packages must do the same.
+- **markopress npm package shape**: `publishConfig` swaps exports/bin to compiled `dist/` (`prepack` = tsc + copy image-module-loader.cjs). The workspace still consumes `src/*.ts` directly — engine changes need no build during dev; only publishing builds.
 - No app-level linter — acceptance is manual browser testing (Playwright MCP) plus `pnpm build`.
 - **Dual-path discipline**: the content layer / store / `gen-routes.ts` / `content-modules.ts` are shared by the vite and rspack paths — new features land in the shared layer; bundler-specific code lives only in virtual-module resolution and the watcher layers (Vite = markopress-plugin.ts, Rspack = rspack-*.ts). Comparison data: `docs/perf-rspack-vs-vite.md`.
 
@@ -47,7 +47,7 @@ pnpm --filter markopress test  # All engine tests (content / markdown / search /
 
 ```
 .markopress/config.ts — the single user config: collections (loader + zod schema;
-  optional route.prefix decouples physical dir from URL) + theme/themeOptions/
+  optional route.prefix decouples physical dir from URL) + theme{name,options}/
   markdown/plugins + head[] (site-level head entries)
   → engine/src/content.ts (ensureSynced singleton: load store/meta → sync →
     typegen → plugin registration)
@@ -74,7 +74,7 @@ virtual:mp/collection-content/<name>  opt-in body aggregation — Marko `server 
 md Marko component segments (engine/src/segments.ts) and the asset pipeline v2
   (engine/src/images.ts) plug in here — see AGENTS-markdown.md / images-v2-design.md
 themes render the shell, <mp-content-styles/>, and the head-injection chain
-  (contract details in each theme package's AGENTS.md)
+  (contract details in packages/engine/AGENTS-themes.md)
 ```
 
 Invalidations: md edit → O(1) syncFile → only that entry's virtual module invalidates → full-reload; slug add/remove → a single `+page.marko` appears ("regenerate × re-walk"); config change → resetSynced full rebuild. The routes directory gets zero writes outside slug changes.
@@ -104,7 +104,7 @@ State `<let/count=0>` (updates are plain assignments, `count++`); events `onClic
 | Markdown renderer, segments / vseg mechanism | `packages/engine/AGENTS-markdown.md` |
 | Images & asset pipeline (leaf-layer discipline, SSRF, caches) | `docs/images-v2-design.md` |
 | Engine assembly, generators, mp-* governance, title patching, invalidation detail | `packages/engine/AGENTS.md` |
-| Themes (shell, head injection, dark mode, CSS contract) | `packages/theme-*/AGENTS.md` |
+| Themes (built-in docs/blog, slots, tokens contract, external packages) | `packages/engine/AGENTS-themes.md` |
 | Custom loader authoring | `docs/custom-loaders.md` |
 | Plugin contract | `docs/plugin-design.md` |
 | Pitfall archaeology (dev deadlock, re-walk storm, build OOM) | `docs/spike-notes.md` |

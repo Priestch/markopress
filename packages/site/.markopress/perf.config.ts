@@ -18,10 +18,12 @@ export default defineMarkoPressConfig({
       schema: z.object({ title: z.string() }),
     }),
   },
-  theme: "markopress-theme-docs",
-  themeOptions: {
-    site: "markopress (perf)",
-    // 万页夹具不进侧边栏——整树会内嵌每页 HTML（写放大，themes.md §8）
-    sidebar: { collections: ["docs"] },
+  theme: {
+    name: "docs",
+    options: {
+      site: "markopress (perf)",
+      // 万页夹具不进侧边栏——整树会内嵌每页 HTML（写放大，themes.md §8）
+      sidebar: { collections: ["docs"] },
+    },
   },
 });
