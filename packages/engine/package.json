@@ -3,16 +3,65 @@
   "version": "0.1.0",
   "type": "module",
   "description": "基于 Marko 6 的内容框架引擎：md 即页面，dev/build/preview 一命令；内置 rss/sitemap/search 三件（VitePress/Astro 形态）",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Priestch/markopress.git",
+    "directory": "packages/engine"
+  },
+  "bugs": "https://github.com/Priestch/markopress/issues",
+  "homepage": "https://github.com/Priestch/markopress#readme",
   "engines": {
     "node": ">=22.18"
   },
   "bin": {
     "markopress": "./src/cli.ts"
   },
+  "files": [
+    "dist",
+    "tags",
+    "themes",
+    "marko.json"
+  ],
+  "publishConfig": {
+    "bin": {
+      "markopress": "./dist/cli.js"
+    },
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./marko.json": "./marko.json",
+      "./themes/*": "./themes/*",
+      "./tags/*": "./tags/*",
+      "./rss-handler": {
+        "types": "./dist/builtins/rss-handler.d.ts",
+        "default": "./dist/builtins/rss-handler.js"
+      },
+      "./sitemap-handler": {
+        "types": "./dist/builtins/sitemap-handler.d.ts",
+        "default": "./dist/builtins/sitemap-handler.js"
+      },
+      "./content": {
+        "types": "./dist/content/index.d.ts",
+        "default": "./dist/content/index.js"
+      },
+      "./loaders/glob": {
+        "types": "./dist/content/loaders/glob.d.ts",
+        "default": "./dist/content/loaders/glob.js"
+      },
+      "./vite": {
+        "types": "./dist/markopress-plugin.d.ts",
+        "default": "./dist/markopress-plugin.js"
+      }
+    }
+  },
   "dependencies": {
     "@marko/compiler": "^5.42.14",
     "@markopack/adapter-static": "^0.5.0",
     "@markopack/rspack": "^0.5.0",
+    "@marko/runtime-tags": "6.4.16",
     "@rspack/core": "2.2.9",
     "@shikijs/rehype": "^4.5.0",
     "devalue": "^5.0.0",
@@ -34,20 +83,25 @@
   "exports": {
     ".": "./src/index.ts",
     "./marko.json": "./marko.json",
+    "./themes/*": "./themes/*",
+    "./tags/*": "./tags/*",
     "./rss-handler": "./src/builtins/rss-handler.ts",
     "./sitemap-handler": "./src/builtins/sitemap-handler.ts",
     "./content": "./src/content/index.ts",
-    "./loaders/glob": "./src/content/loaders/glob.ts"
+    "./loaders/glob": "./src/content/loaders/glob.ts",
+    "./vite": "./src/markopress-plugin.ts"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json && node -e \"require('node:fs').copyFileSync('src/image-module-loader.cjs','dist/image-module-loader.cjs')\"",
+    "prepack": "pnpm run build",
     "test": "vitest run"
   },
   "devDependencies": {
-    "@marko/runtime-tags": "6.4.16",
     "@types/hast": "^3.0.5",
     "@types/node": "^24.0.0",
     "jsdom": "29.1.1",
     "typescript": "^5.9.0",
+    "vite": "^8.3.4",
     "vitest": "^4.0.0"
   }
 }

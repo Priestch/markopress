@@ -10,7 +10,7 @@
 // 大站点直接 OOM——2026-10-14 实测）。带参数的路由未来才需要 urls 补充。
 import markoRun from "@marko/run/vite";
 import staticAdapter from "@marko/run-adapter-static";
-import { markopressPlugin } from "markopress";
+import { markopressPlugin } from "markopress/vite";
 
 export default {
   plugins: [
