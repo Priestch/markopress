@@ -1,23 +1,63 @@
 # markopress
 
-基于 Marko 6 + `@marko/run` 的内容框架 —— 目标形态介于 VitePress（文件即页面的文档 SSG）与 WordPress（动态内容、后台发布）之间，对标 Astro 在 Marko 生态中的位置。
+[English](#english-1) · [中文](#中文-1)
 
-核心差异化：Marko 6 的 resumability 让「内容里嵌交互组件」几乎零客户端成本 —— 没有 islands 核算、没有 hydration 运行时、静态页面近零 JS。
+A Markdown-driven content framework built on **Marko 6**. This repo is the monorepo; the npm package you install is [`markopress`](./packages/engine) — see its README for quick start.
 
-## 状态
+## English
 
-- [x] 调研（2026-10-14）：结论见 [docs/background.md](docs/background.md)
-- [x] Phase 0 spike（2026-10-14）：方案成立（Go），结论与踩坑见 [docs/spike-notes.md](docs/spike-notes.md)
-- [ ] Phase 1 文档 MVP（pages 模式 + unified 管线 + 默认 docs 主题 + SSG）
-- [ ] Phase 2 collections / 博客（内容层 + 动态路由 + 搜索）
-- [ ] Phase 3 WordPress 方向（DB loader + 后台 + 按需重验）
+### Repository layout
 
-## 文档
-
-| 文档 | 内容 |
+| Path | What |
 |---|---|
-| [docs/background.md](docs/background.md) | 调研结论、总体架构、关键技术决策（D1–D6）、分阶段路线图、风险 |
-| [docs/research/marko-internals.md](docs/research/marko-internals.md) | Marko 仓库：编译器公开 API、流式 SSR、resumability 机制、taglib 扩展点、公开/内部红线 |
-| [docs/research/marko-run.md](docs/research/marko-run.md) | `@marko/run`：Vite 插件架构、路由约定与代码生成、适配器、以及在它之上建框架的扩展点排序 |
-| [docs/research/astro.md](docs/research/astro.md) | Astro：Content Layer（最值得抄的部分）、Markdown 管线、islands 与 client 指令、三环境构建 |
-| [docs/research/vitepress.md](docs/research/vitepress.md) | VitePress：md→页面、主题契约、SSG 管线、数据加载；以及 WordPress 方向的分层判断 |
+| `packages/engine` | npm package `markopress` — engine CLI, content layer, markdown renderer, image pipeline, built-in rss/sitemap/search, built-in themes (`themes/{docs,blog}`) |
+| `packages/site` | Dogfood site (docs) in scaffold-template form — the dev surface mirrors the user surface |
+
+### Development
+
+```sh
+pnpm install
+pnpm dev          # Rspack dev server (docs site)
+pnpm build        # SSG build → dist/server/public
+pnpm dev:vite     # Vite comparison path
+pnpm --filter markopress test
+```
+
+Requires Node ≥ 22.18 (workspace packages ship as TS source, no build step) and pnpm 12. The npm package publishes compiled `dist/` via `prepack` — the workspace dev loop never builds.
+
+Deep docs live in `CLAUDE.md`, `packages/engine/AGENTS*.md`, and `docs/`.
+
+### License
+
+[MIT](./LICENSE)
+
+---
+
+## 中文
+
+基于 **Marko 6** 的内容框架 monorepo；用户安装的 npm 包是 [`markopress`](./packages/engine)（快速开始见其 README）。
+
+### 仓库结构
+
+| 路径 | 内容 |
+|---|---|
+| `packages/engine` | npm 包 `markopress` —— 引擎 CLI、内容层、markdown 渲染、图片管线、内置 rss/sitemap/search、内置主题（`themes/{docs,blog}`） |
+| `packages/site` | dogfood 文档站（scaffold 模板形态）——开发面即用户面 |
+
+### 开发
+
+```sh
+pnpm install
+pnpm dev          # Rspack dev 服务器（docs 站）
+pnpm build        # SSG 构建 → dist/server/public
+pnpm dev:vite     # Vite 对照路径
+pnpm --filter markopress test
+```
+
+需要 Node ≥ 22.18（workspace 包以 TS 源码分发，零构建步骤）与 pnpm 12。npm 包经 `prepack` 编译出 `dist/` 再发布——workspace 开发循环不构建。
+
+深度文档见 `CLAUDE.md`、`packages/engine/AGENTS*.md` 与 `docs/`。
+
+### 许可
+
+[MIT](./LICENSE)
